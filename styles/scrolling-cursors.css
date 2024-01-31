@@ -1,0 +1,9 @@
+.mouse-scroll-mode * {
+    cursor: url("../img/icons/scrolling-cursor-center.png") 16 16, row-resize !important;
+}
+.scroll-up * {
+    cursor: url("../img/icons/scrolling-cursor-up.png") 16 16, n-resize !important;
+}
+.scroll-down * {
+    cursor: url("../img/icons/scrolling-cursor-down.png") 16 16, s-resize !important;
+}

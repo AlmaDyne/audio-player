@@ -1,0 +1,809 @@
+:root {
+    --page-footer-height: 50px;
+    --site-color-main: #fafafa;
+    --site-shadow-hover: 0 0 12px rgba(240, 240, 240, 0.5);
+    --transition-time-main: 120ms;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    width: 100%;
+    height: 100%;
+}
+
+body {
+    position: relative;
+    min-height: 100%;
+    background: url("../img/Minimalist_Piano.jpg") no-repeat fixed;
+    background-size: cover;
+    color: var(--site-color-main);
+    font: 12pt/1.25 'Inter', 'Times New Roman', Times, serif;
+    font-weight: normal;
+    font-style: normal;
+    overflow-y: scroll;
+}
+
+h1 {
+    font-family: 'Garet';
+    font-size: 55pt;
+    text-transform: uppercase;
+}
+h2 {
+    font-size: 28pt;
+    font-weight: normal;
+}
+i {
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+main {
+    padding: 50px 0 calc(50px + var(--page-footer-height));
+}
+
+#player {
+    position: relative;
+    left: calc(50% - (500px + 20px * 2) / 2);
+    width: 500px;
+    padding: 26px 20px 0;
+    text-align: center;
+    text-transform: uppercase;
+    color: var(--player-color-main);
+    background: var(--player-background-color);
+    border-radius: 36px;
+    --player-global-color-emphase: #0ea109;
+}
+#player.color-black {
+    --player-color-main: var(--site-color-main);
+    --player-color-invert: #050505;
+    --player-background-color: linear-gradient(to left top, rgba(0, 0, 0, 0.5), rgba(0, 0, 0));
+    --player-background-hover1: linear-gradient(to right, rgba(136, 136, 136, 0), rgba(0, 0, 0, 0.75));
+    --player-background-hover2: linear-gradient(to right, rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 1));
+    --player-color-neutral: #555;
+    --player-color-inactive: #888;
+    --player-color-emphase: 0, 126, 230;
+    --player-color-demarcation-line: #eee;
+    --player-shadow-hover: var(--site-shadow-hover);
+    --playlist-color-static: #ccc;
+    --track-menu-color: #bbb;
+    --player-img-filter: none;
+}
+#player.color-white {
+    --player-color-main: #050505;
+    --player-color-invert: var(--site-color-main);
+    --player-background-color: linear-gradient(to left top, rgba(255, 255, 255, 0.5), rgba(255, 255, 255));
+    --player-background-hover1: linear-gradient(to right, rgba(136, 136, 136, 0), rgba(255, 255, 255, 0.75));
+    --player-background-hover2: linear-gradient(to right, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 1));
+    --player-color-neutral: #aaa;
+    --player-color-inactive: #888;
+    --player-color-emphase: 192, 0, 230;
+    --player-color-demarcation-line: #111;
+    --player-shadow-hover: 0 0 12px rgba(15, 15, 15, 0.5);
+    --playlist-color-static: #333;
+    --track-menu-color: #444;
+    --player-img-filter: invert(0.95);
+}
+
+.selected-track {
+    position: relative;
+    height: 60px;
+    margin-bottom: 24px;
+    overflow: hidden;
+}
+.selected-track > #display-info {
+    position: absolute;
+    width: 100%;
+    height: inherit;
+    font-size: 12pt;
+    text-transform: none;
+    color: var(--player-color-main);
+    overflow: auto;
+    opacity: 0;
+    transition: opacity 750ms;
+    scroll-behavior: smooth;
+}
+.selected-track > #display-info > .track {
+    color: rgb(var(--player-color-emphase));
+}
+.selected-track > #display-info > .time {
+    color: var(--player-global-color-emphase);
+}
+.selected-track > #display-info.finish-playlist {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28pt;
+}
+.selected-track .display {
+    display: inline-block;
+    position: relative;
+    white-space: nowrap;
+}
+.selected-track #display-title {
+    padding-bottom: 6px;
+    font-size: 20pt;
+}
+.selected-track #display-artist {
+    font-size: 11pt;
+}
+
+.track-time-info {
+    font-size: 10pt;
+    margin-bottom: 18px;
+}
+.track-time-info > .time-display {
+    display: inline-block;
+}
+.track-time-info > .time-display > div {
+    display: inline-block;
+    text-align: center;
+}
+.track-time-info > .time-display > div.digit {
+    width: 0.65em;
+}
+.track-time-info > .time-display > div.divider {
+    width: 0.42em;
+}
+.track-time-info > #time-range {
+    display: inline-block;
+    position: relative;
+    top: 0px;
+    width: 352px;
+    height: 8px;
+    margin: 0 12px;
+    background-color: var(--player-color-neutral);
+    border-radius: 4px;
+    cursor: default;
+    overflow: hidden;
+    transition: background-color var(--transition-time-main);
+}
+.track-time-info > #time-range > #timeline {
+    width: 8px;
+    height: 100%;
+    margin-left: -8px;
+    background-color: var(--player-color-main);
+    border-radius: 4px;
+    transition: background-color var(--transition-time-main);
+}
+.track-time-info > #time-range > #time-bar {
+    width: 1px;
+    height: inherit;
+    position: absolute;
+    top: 0;
+    left: 0;
+    background-color: rgb(var(--player-color-emphase));
+    touch-action: none;
+}
+
+player-controls {
+    user-select: none;
+}
+player-controls i {
+    margin: 0 5px;
+    font-size: 36pt;
+    transition: all var(--transition-time-main);
+}
+player-controls i:hover {
+    text-shadow: var(--player-shadow-hover);
+}
+player-controls i.icon-fast-forward {
+    position: relative;
+    left: 7px;
+}
+player-controls i.icon-fast-backward {
+    position: relative;
+    left: -7px;
+}
+player-controls #indicator {
+    background-color: var(--player-color-neutral);
+    transition: background-color 500ms;
+}
+player-controls #indicator.active {
+    background-color: rgb(var(--player-color-emphase));
+}
+player-controls .btn-img-wrapper, .key-info .btn-img-wrapper { /* Обёртка для объёма при наведении мышью */
+    display: inline-block;
+    padding: 6px;
+    border-radius: 50%;
+    cursor: pointer;
+}
+player-controls .circle-background, .key-info .circle-background {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 23px; /* Чётность должна совпадать с чётностью соотв. свойства эл-та i#volume */
+    height: 23px; /* Чётность должна совпадать с чётностью соотв. свойства эл-та i#volume */
+    background-color: var(--player-color-inactive);
+    border-radius: 50%;
+    transition: all var(--transition-time-main);
+}
+player-controls .circle-background.active, .key-info .circle-background.active {
+    background-color: var(--player-color-main);
+}
+player-controls .circle-background.hover {
+    box-shadow: var(--player-shadow-hover);
+}
+player-controls .circle-background > img, .key-info .circle-background > img {
+    width: 13px; /* Чётность должна совпадать с чётностью соотв. свойства эл-та .circle-background */
+    height: 13px; /* Чётность должна совпадать с чётностью соотв. свойства эл-та .circle-background */
+    filter: var(--player-img-filter);
+    transition: filter var(--transition-time-main);
+    pointer-events: none;
+}
+player-controls .volume-wrapper {
+    display: inline-block;
+    padding: 6px 0; /* Вертикальный padding равняется вертикальному padding эл-та i#volume */
+}
+player-controls i#volume {
+    margin: 0;
+    padding: 6px;
+    vertical-align: middle;
+    font-size: 17pt;
+    color: var(--player-color-inactive);
+}
+player-controls i#volume.active {
+    color: var(--player-color-main);
+}
+player-controls #volume-range {
+    display: inline-block;
+    position: relative;
+    width: 64px; /* Весь диапазон громкости (не учитывает ширину маркера) */
+    height: 5px;
+    margin-left: 10px;
+    vertical-align: middle;
+    border-radius: 4px;
+    cursor: pointer;
+}
+player-controls .inactive-range {
+    position: relative;
+    height: 1px;
+    top: 2px;
+    background-color: var(--player-color-inactive);
+}
+player-controls #volumeline {
+    position: relative;
+    width: 0;
+    height: 5px;
+    top: -1px;
+    left: 0;
+    background-color: var(--player-color-main);
+    border-radius: 4px;
+    transition: background-color var(--transition-time-main);
+}
+player-controls #volume-bar {
+    position: absolute;
+    width: 15px;
+    height: 15px;
+    top: -5px;
+    left: 0;
+    background-color: var(--player-color-inactive);
+    border-radius: 50%;
+    border-left: 1px solid var(--player-color-inactive);
+    touch-action: none;
+    transition: background-color var(--transition-time-main);
+}
+player-controls #volume-bar.active {
+    background-color: var(--player-color-main);
+}
+
+.playlist-container > .scroll-arrow {
+    width: 0;
+    margin: 12px auto;
+    border-left: 72px solid transparent;
+    border-right: 72px solid transparent;
+    filter: drop-shadow(0 0 6px var(--scroll-arrow-shadow));
+    opacity: 0;
+    transition: opacity var(--transition-time-main);
+    --scroll-arrow-color: rgb(var(--player-color-emphase));
+    --scroll-arrow-shadow: rgb(var(--player-color-emphase));
+}
+.playlist-container > .scroll-arrow.inactive {
+    --scroll-arrow-color: var(--player-color-inactive);
+    --scroll-arrow-shadow: var(--player-color-inactive);
+}
+.playlist-container > #scroll-arrow-up {
+    border-bottom: 12px solid var(--scroll-arrow-color);
+}
+.playlist-container > #scroll-arrow-down {
+    border-top: 12px solid var(--scroll-arrow-color);
+}
+
+#playlist-limiter {
+    --playlist-width: 500px;
+    --track-title-height: 40px;
+    --visible-tracks: 0;
+    width: var(--playlist-width);
+    height: calc(var(--track-title-height) * var(--visible-tracks));
+    overflow: hidden;
+}
+
+#playlist {
+    width: var(--playlist-width);
+    white-space: nowrap;
+}
+#playlist.smooth {
+    text-align: center;
+    --load-info-background-color: '';
+    --load-info-margin-top: -10px;
+    --load-info-elems-top: 0px;
+}
+#playlist.strict {
+    text-align: left;
+    --load-info-background-color: var(--player-color-invert);
+    --load-info-margin-top: -6px;
+    --load-info-elems-top: -7px;
+}
+
+#playlist > .track {
+    position: relative;
+    height: var(--track-title-height);
+    font-size: 13pt;
+    padding: 0 9%;
+    z-index: 2;
+}
+#playlist > .track > .loading-figure {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    top: 12px;
+    left: 0px;
+    background-color: var(--player-color-main);
+    border-radius: 50%;
+    animation: scaling 1.5s ease-in-out infinite;
+}
+#playlist > .track > .screen-limiter {
+    padding: 6px 0;
+    color: var(--playlist-color-static);
+    font-weight: normal;
+    overflow: hidden;
+    transition: font-size var(--transition-time-main);
+}
+#playlist.smooth > .track > .screen-limiter {
+    background: linear-gradient(to right, currentColor 90%, transparent 100%);
+    -webkit-text-fill-color: transparent;
+    -webkit-background-clip: text;
+    background-clip: text;
+}
+#playlist.strict > .track > .screen-limiter {
+    text-overflow: ellipsis;
+}
+#playlist > .track > .screen-limiter.selected {
+    color: var(--player-color-main);
+}
+#playlist.smooth > .track > .screen-limiter.selected {
+    margin: 0 -6%;
+    padding: 5px 0;
+    font-size: 14pt;
+    font-weight: bold;
+    line-height: 29px;
+}
+#playlist > .track > .screen-limiter.loading,
+#playlist > .track > .screen-limiter.selected.loading {
+    color: var(--player-color-inactive);
+}
+#playlist > .track > .screen-limiter.hover { /* Срабатывает, когда указатель над дочерним эл-том .author-title */
+    overflow: visible;
+    background: none;
+    -webkit-text-fill-color: currentColor;
+    -webkit-background-clip: border-box;
+    background-clip: border-box;
+}
+#playlist > .track > .screen-limiter > .author-title {
+    padding: 3px 5px;
+    line-height: 27px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: text-shadow var(--transition-time-main);
+}
+#playlist.strict > .track > .screen-limiter > .author-title.selected {
+    padding-left: 4px;
+    border: 1px solid var(--player-color-main);
+}
+#playlist > .track > .screen-limiter > .author-title:hover {
+    text-shadow: var(--player-shadow-hover);
+    background-image: var(--player-background-hover1);
+}
+
+#playlist > .track > .load-info {
+    position: relative;
+    width: calc(100% - 5px); /* Minus padding-left */
+    padding-left: 5px;
+    margin-top: var(--load-info-margin-top);
+    color: rgb(var(--player-color-emphase));
+    font-size: 7pt;
+    font-weight: lighter;
+    text-align: right;
+    text-transform: none;
+    opacity: 1;
+    transition: opacity 5s;
+}
+#playlist > .track > .load-info > .progress {
+    width: 0%;
+    height: 0;
+    text-align: center;
+    background: rgb(var(--player-color-emphase));
+    border-top: 1px solid rgb(var(--player-color-emphase));
+}
+#playlist > .track > .load-info > .progress > .status {
+    display: inline-block;
+    position: relative;
+    top: var(--load-info-elems-top);
+    padding: 0 2px;
+    background: var(--load-info-background-color);
+}
+#playlist > .track > .load-info > .display-progress {
+    display: inline-block;
+    width: 22px;
+    position: relative;
+    top: var(--load-info-elems-top);
+    padding-left: 1px;
+    padding-right: 2px;
+    background: var(--load-info-background-color);
+    text-align: right;
+}
+
+.player-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 80%;
+    height: 48px;
+    margin: auto;
+    /*border: 1px solid;*/
+    border-top: 2px solid var(--player-color-neutral);
+    transition: border-color var(--transition-time-main);
+}
+.player-footer .left-col {
+    flex: 1 1 0;
+    text-align: left;
+    user-select: none;
+    /*border: 1px solid;*/
+}
+.player-footer .center-col {
+    flex: 1 1 0;
+    line-height: 1em;
+    /*border: 1px solid;*/
+}
+.player-footer .right-col {
+    flex: 1 1 0;
+    text-align: right;
+    user-select: none;
+}
+.player-footer .config-wrapper {
+    display: inline-block;
+}
+.player-footer .config-wrapper.rotate {
+    animation: rotate-config-button 500ms;
+}
+.player-footer i {
+    padding: 6px;
+    color: var(--player-color-main);
+    font-size: 17pt;
+    transition: all var(--transition-time-main);
+}
+.player-footer i:hover {
+    text-shadow: var(--player-shadow-hover);
+}
+.player-footer .version {
+    font-size: 8pt;
+    font-weight: lighter;
+    text-transform: none;
+    color: rgb(var(--player-color-emphase));
+    transition: color var(--transition-time-main);
+}
+
+#settings-area {
+    position: absolute;
+    top: 0;
+    left: 101%;
+    color: var(--site-color-main);
+    text-align: center;
+    text-transform: none;
+    z-index: 1;
+    opacity: 0;
+    transition: opacity var(--transition-time-main);
+}
+#settings-area.active {
+    opacity: 1;
+}
+#settings-area > #current-playlist {
+    height: calc(18 * 1.2em); /* Количество строк * на высоту строки */
+    line-height: 1.2em;
+    padding: 0 5px;
+    font-size: 10pt;
+    word-break: break-all;
+    resize: none;
+    overflow: auto;
+    scroll-behavior: smooth;
+}
+#settings-area > .setting-block {
+    margin: 2px 0;
+    padding: 4px;
+    background-color: rgb(var(--player-color-emphase));
+    text-align: right;
+}
+#settings-area label {
+    font-size: 11pt;
+    vertical-align: middle;
+}
+#settings-area input {
+    width: 38px;
+    padding: 2px;
+    vertical-align: middle;
+}
+#settings-area > #default-settings {
+    margin-top: 10px;
+    padding: 4px;
+}
+#settings-area > #default-settings > i {
+    font-size: 11pt;
+}
+#settings-area > #close-settings {
+    position: absolute;
+    right: 2px;
+    bottom: 2px;
+    color: var(--site-color-main);
+    font-size: 18pt;
+    border: none;
+    background-color: transparent;
+    cursor: pointer;
+}
+
+#modal-area {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    padding: 50px;
+    box-sizing: border-box;
+    white-space: nowrap;
+    background: rgb(136, 136, 136, 0.75);
+    z-index: 100;
+    opacity: 0;
+    transition: opacity var(--transition-time-main);
+}
+#modal-area::before {
+    content: '';
+    display: inline-block;
+    height: 100%;
+    vertical-align: middle;
+}
+#modal-area.active {
+    opacity: 1;
+}
+
+.key-info {
+    --assigned-keys-width: 240px;
+    --key-info-padding: 40px;
+    display: inline-block;
+    position: relative;
+    max-width: 1400px;
+    min-width: 300px;
+    min-height: 300px;
+    height: 100%;
+    padding: var(--key-info-padding);
+    box-sizing: border-box;
+    background: linear-gradient(
+        to right,
+        var(--player-color-main) calc(var(--assigned-keys-width) + var(--key-info-padding) - 100px),
+        var(--player-color-demarcation-line) calc(var(--assigned-keys-width) + var(--key-info-padding)),
+        var(--player-color-main) calc(var(--assigned-keys-width) + var(--key-info-padding) + 100px)
+    );
+    color: var(--player-color-invert);
+    vertical-align: middle;
+    white-space: normal;
+    border-radius: 36px;
+    transition: all var(--transition-time-main);
+}
+.key-info > #close-info {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    filter: invert(100%);
+}
+.key-info .inner-scroll {
+    height: 100%;
+    overflow: auto;
+}
+.key-info h2 {
+    margin-bottom: 5px;
+    color: var(--player-global-color-emphase);
+    font-family: 'Garet';
+    font-weight: bolder;
+    background: rgba(var(--player-color-emphase), 0.1);
+}
+.key-info section {
+    display: table;
+    margin-bottom: 5px;
+    width: 100%;
+    background-color: rgba(var(--player-color-emphase), 0.1);
+    text-transform: none;
+    transition: background-color var(--transition-time-main);
+}
+.key-info section:last-of-type {
+    margin-bottom: 0;
+}
+.key-info .assigned-keys {
+    display: table-cell;
+    width: var(--assigned-keys-width);
+    min-width: var(--assigned-keys-width);
+    background-color: rgba(var(--player-color-emphase), 0.3);
+    font-size: 22pt;
+    text-align: center;
+    vertical-align: middle;
+    transition: background-color var(--transition-time-main);
+}
+.key-info .assigned-keys img {
+    height: 40px;
+    vertical-align: middle;
+}
+.key-info .assigned-keys img[alt="Key Space"] {
+    width: 112px;
+}
+.key-info figure {
+    display: inline-block;
+    font-size: 8pt;
+    text-transform: uppercase;
+    vertical-align: 5px;
+}
+.key-info .relevant-functions {
+    display: table-cell;
+}
+.key-info .row {
+    display: table;
+    min-height: 60px;
+    border-bottom: 2px solid rgba(var(--player-color-emphase), 0.1);
+}
+.key-info .row:last-child {
+    border-bottom: none;
+}
+.key-info .icon {
+    display: table-cell;
+    min-width: 80px;
+    font-size: 20pt;
+    text-align: center;
+    vertical-align: middle;
+}
+.key-info .icon-background {
+    display: inline-block;
+    padding: 3px;
+    background: var(--player-color-invert);
+    color: var(--player-color-main);
+}
+.key-info .icon-background > i,
+.key-info .icon-background > div {
+    cursor: default;
+    pointer-events: none;
+}
+.key-info .description {
+    display: table-cell;
+    width: 100%;
+    font-size: 14pt;
+    text-align: justify;
+    vertical-align: middle;
+    padding-right: 12px;
+}
+.key-info .description > p {
+    margin: 7px 0;
+}
+.key-info .text-emphase-1 {
+    color: var(--player-global-color-emphase);
+}
+.key-info .text-emphase-2 {
+    color: rgb(var(--player-color-emphase));
+    background: rgba(254, 255, 173, 0.85);
+}
+.key-info .text-emphase-3 {
+    text-decoration: underline 1px solid rgb(var(--player-color-emphase));
+    text-shadow: 1px 1px 2px rgba(var(--player-color-emphase), 0.3);
+}
+.key-info .text-emphase-4 {
+    text-decoration: underline 1px solid rgb(255, 0, 0);
+    text-shadow: 1px 1px 2px rgba(255, 0, 0, 0.3);
+}
+
+#player i:not(.icon-fast-forward, .icon-fast-backward):active,
+#player .btn-img-wrapper:active,
+.key-pressed {
+    outline: 1px solid currentColor;
+}
+
+#tooltip {
+    position: fixed;
+    left: 300px;
+    margin-top: 5px;
+    padding: 2px 5px;
+    background: var(--player-background-hover2);
+    color: var(--player-color-main);
+    font-size: 10pt;
+    text-transform: none;
+    border: 1px rgb(var(--player-color-emphase));
+    border-radius: 4px;
+    z-index: 100;
+    opacity: 0;
+    transition: opacity var(--transition-time-main), margin-top var(--transition-time-main);
+    pointer-events: none;
+}
+
+.track-menu {
+    position: absolute;
+    padding: 6px 4px;
+    background-color: var(--track-menu-color);
+    color: var(--player-color-invert);
+    text-transform: none;
+    white-space: nowrap;
+    z-index: 3;
+    border-radius: 8px;
+    border-top-left-radius: 0;
+}
+.track-menu > div {
+    padding: 2px 4px;
+    border-radius: 5px;
+    border-top-left-radius: 0;
+    cursor: pointer;
+}
+.track-menu > div:hover {
+    background: var(--player-background-hover2);
+    color: var(--player-color-main);
+    opacity: 0.75;
+}
+
+.button-close {
+    color: var(--player-color-main);
+    font-size: 20pt;
+    opacity: 0.5;
+    background: none;
+    border-radius: 50%;
+    border: none;
+    transition: all var(--transition-time-main);
+}
+.button-close:hover {
+    opacity: 1;
+    text-shadow: var(--player-shadow-hover);
+}
+
+footer {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    height: var(--page-footer-height);
+    text-align: center;
+    font-size: 10pt;
+    line-height: 1.5em;
+    user-select: none;
+}
+
+@keyframes scaling {
+    0%, 100% {
+        background-color: var(--player-color-main);
+        transform: scale(1);
+    }
+    50% {
+        background-color: var(--player-background-color);
+        transform: scale(0)
+    }
+}
+
+@keyframes rotate-config-button {
+    0% {
+        transform: rotate(0);
+    }
+    100% {
+        transform: rotate(1turn);
+    }
+}
+
+@media screen and (orientation: portrait) {
+    h2 {
+        font-size: 20pt;
+    }
+    .key-info .description {
+        font-size: 11pt;
+    }
+}
