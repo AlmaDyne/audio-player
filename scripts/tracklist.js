@@ -106,13 +106,13 @@ export const tracklist = {
     }
 };
 
-/*for (let i = 1; i <= 1000; i++) {
+for (let i = 1; i <= 1000; i++) {
     tracklist['track' + i] = {
         artist: 'Artist ',
         title: 'Title ',
         src: '#'
     };
-}*/
+}
 
 for (let track in tracklist) {
     let artist = tracklist[track]['artist'];
