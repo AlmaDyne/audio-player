@@ -106,7 +106,7 @@ export const tracklist = {
     }
 };
 
-for (let i = 1; i <= 1000; i++) {
+for (let i = 22; i <= 1000; i++) {
     tracklist['track' + i] = {
         artist: 'Artist ',
         title: 'Title ',

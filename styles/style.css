@@ -72,6 +72,7 @@ main {
     --player-shadow-hover: var(--site-shadow-hover);
     --playlist-color-static: #ccc;
     --track-menu-color: #bbb;
+    --scroll-arrow-box-color: #333;
     --player-img-filter: none;
 }
 #player.color-white {
@@ -87,6 +88,7 @@ main {
     --player-shadow-hover: 0 0 12px rgba(15, 15, 15, 0.5);
     --playlist-color-static: #333;
     --track-menu-color: #444;
+    --scroll-arrow-box-color: #ccc;
     --player-img-filter: invert(0.95);
 }
 
@@ -295,19 +297,15 @@ player-controls #volume-bar.active {
 
 #playlist-container {
     --scroll-arrow-height: 12px;
-    --scroll-arrow-half-width: 72px;
-    --scroll-arrow-vertical-padding: 12px;
     --scroll-elem-color: rgb(var(--player-color-emphase));
     --scroll-elem-shadow: rgb(var(--player-color-emphase));
 }
 #playlist-container .scroll-arrow-box {
     position: sticky;
-    width: calc(var(--player-width) + 2*var(--player-padding-left-right));
+    width: var(--player-width);
     height: var(--scroll-arrow-height);
-    margin-left: calc(-1 * var(--player-padding-left-right));
-    padding: var(--scroll-arrow-vertical-padding) 0;
+    padding: 12px 0;
     z-index: 1;
-    /*outline: 1px solid;*/
 }
 #playlist-container .scroll-arrow-box.arrow-up {
     top: 0;
@@ -315,20 +313,11 @@ player-controls #volume-bar.active {
 #playlist-container .scroll-arrow-box.arrow-down {
     bottom: 0;
 }
-#playlist-container .scroll-arrow-box.sticky-position {
-    background: linear-gradient(
-        to right,
-        transparent 0%,
-        var(--player-background-color-even) 3%,
-        var(--player-background-color-even) 97%,
-        transparent 100%
-    );
-}
 #playlist-container .scroll-arrow {
     width: 0;
     margin: 0 auto;
-    border-left: var(--scroll-arrow-half-width) solid transparent;
-    border-right: var(--scroll-arrow-half-width) solid transparent;
+    border-left: 72px solid transparent;
+    border-right: 72px solid transparent;
     filter: drop-shadow(0 0 6px var(--scroll-elem-shadow));
     opacity: 0;
     transition: opacity var(--transition-time-main), border var(--transition-time-main);
@@ -351,18 +340,6 @@ player-controls #volume-bar.active {
     height: calc(var(--track-height) * var(--visible-tracks));
     overflow: hidden;
     touch-action: none;
-}
-#playlist-limiter.outside-window-boundaries {
-    --limiter-visible-top: 0%;
-    --limiter-visible-bottom: 0%;
-    position: sticky;
-    top: 0;
-    clip-path: polygon(
-        0 var(--limiter-visible-top),
-        100% var(--limiter-visible-top),
-        100% calc(100% - var(--limiter-visible-bottom)),
-        0 calc(100% - var(--limiter-visible-bottom))
-    );
 }
 
 #visible-playlist-area {
@@ -430,22 +407,19 @@ player-controls #volume-bar.active {
     transition: font-size var(--transition-time-main);
 }
 #playlist.smooth > .track > .screen-limiter {
-    background: linear-gradient(to right, currentColor 90%, transparent 100%);
-    -webkit-text-fill-color: transparent;
-    -webkit-background-clip: text;
-    background-clip: text;
+    mask-image: linear-gradient(to right, currentColor 90%, transparent 100%);
 }
 #playlist.strict > .track > .screen-limiter {
     text-overflow: ellipsis;
 }
 #playlist > .track > .screen-limiter.selected {
     color: var(--player-color-main);
+    font-weight: bold;
 }
 #playlist.smooth > .track > .screen-limiter.selected {
     margin: 0 -5%;
     padding: 5px 0;
     font-size: 14pt;
-    font-weight: bold;
     line-height: 29px;
 }
 #playlist > .track > .screen-limiter.loading,
@@ -453,11 +427,8 @@ player-controls #volume-bar.active {
     color: var(--player-color-inactive);
 }
 #playlist > .track > .screen-limiter.hover { /* Срабатывает, когда указатель над дочерним эл-том .track-title */
+    mask-image: none;
     overflow: visible;
-    background: none;
-    -webkit-text-fill-color: currentColor;
-    -webkit-background-clip: border-box;
-    background-clip: border-box;
 }
 #playlist > .track > .screen-limiter > .track-title {
     padding: 3px 5px;

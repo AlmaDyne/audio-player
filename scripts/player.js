@@ -29,7 +29,6 @@ const playlistContainer = document.getElementById('playlist-container');
 const playlistLim = document.getElementById('playlist-limiter');
 const visPlaylistArea = document.getElementById('visible-playlist-area');
 const playlist = document.getElementById('playlist');
-const titleHeight = parseInt(getComputedStyle(playlistLim).getPropertyValue('--track-height'));
 const scrollArrowUp = document.getElementById('scroll-arrow-up');
 const scrollArrowDown = document.getElementById('scroll-arrow-down');
 const configBtn = document.getElementById('configuration');
@@ -42,7 +41,9 @@ const curPlaylist = document.getElementById('current-playlist');
 const defaultSetBtn = document.getElementById('default-settings');
 const closeSetBtn = document.getElementById('close-settings');
 const modalArea = document.getElementById('modal-area');
-const TIMELINE_MARGIN = Math.abs(parseInt(getComputedStyle(timeline).marginLeft));   
+const TIMELINE_MARGIN = Math.abs(parseInt(getComputedStyle(timeline).marginLeft));  
+const titleHeight = parseInt(getComputedStyle(playlistLim).getPropertyValue('--track-height'));
+const SCROLL_ARROW_BOX_HEIGHT = player.querySelector('.scroll-arrow-box').offsetHeight;
 const TIMELINE_POSITION_CHANGE_STEP = 0.5;
 const TIMELINE_UPDATE_INTERVAL = 200;
 const LAG = 16.7;
@@ -99,8 +100,6 @@ let timeRangeHoverIntent = {};
 let volumeRangeHoverIntent = {};
 let endWindowScrolling = new CustomEvent('endWinScroll');
 let selectedAudio;
-
-let scrollArrowBoxHeight = player.querySelector('.scroll-arrow-box').offsetHeight;
 
 const accelerationData = {
     'fast-forward': {
@@ -417,7 +416,6 @@ const visibleTracksInput = document.getElementById('visible-tracks');
 const visibleTracksCheckbox = document.getElementById('visible-tracks-checkbox');
 let checkedVisibleTracksBox = localStorage.getItem('checked-visible-tracks-box') || 'false';
 let numOfVisTracks = localStorage.getItem('number_of_visible_tracks');
-let inputTicking = false;
 
 changeNumberOfVisibleTracks(numOfVisTracks);
 changeNumberOfVisibleTracks.initialRun = true;
@@ -436,6 +434,7 @@ visibleTracksCheckbox.onchange = (event) => {
     changeNumberOfVisibleTracks(value);
 };
 
+// Turn on/off by pressing the Enter key
 visibleTracksCheckbox.addEventListener('keydown', (event) => {
     if (event.key == 'Enter') {
         event.target.checked = !event.target.checked;
@@ -444,23 +443,21 @@ visibleTracksCheckbox.addEventListener('keydown', (event) => {
 });
 
 visibleTracksInput.oninput = () => {
-    // Optimization for keyrepeat (ArrowUp, ArrowDown)
-    if (!inputTicking) {
-        let value = +visibleTracksInput.value;
-        changeNumberOfVisibleTracks(value);
-
-        inputTicking = true;
-        setTimeout(() => inputTicking = false);
-    }
+    let value = +visibleTracksInput.value;
+    changeNumberOfVisibleTracks(value);
 };
 
-// Correction of inaccuracy due to keyrepeat optimization
-visibleTracksInput.addEventListener('keyup', (event) => {
-    let key = setNumberInputKeys(event);
+// Optimization for keyrepeat (ArrowUp, ArrowDown)
+let inputTicking = false;
 
-    if (key) {
-        let value = +visibleTracksInput.value;
-        if (value != numOfVisTracks) changeNumberOfVisibleTracks(value);
+visibleTracksInput.addEventListener('keydown', (event) => {
+    if ((event.code == 'ArrowUp' || event.code == 'ArrowDown') && event.repeat) {
+        if (!inputTicking) {
+            inputTicking = true;
+            setTimeout(() => inputTicking = false, 50);
+        } else {
+            event.preventDefault();
+        }
     }
 });
 
@@ -487,13 +484,7 @@ function changeNumberOfVisibleTracks(value) {
     localStorage.setItem('checked-visible-tracks-box', checkedVisibleTracksBox);
 
     compensateScrollbarWidth();
-
-    if (playlistLim.scrollHeight > playlistLim.clientHeight) {
-        checkScrollElemsPosition();
-    } else {
-        scrollArrowUp.parentElement.classList.remove('sticky-position');
-        scrollArrowDown.parentElement.classList.remove('sticky-position');
-    }
+    if (playlistLim.scrollHeight > playlistLim.clientHeight) checkScrollElemsPosition();
 
     if (accelerateScrolling) {
         let isDocScrollbar = checkDocHeight();
@@ -2543,11 +2534,10 @@ function keepSelectedTitleVisible(audio) {
     // Window scroll alignment
     let visPlaylistAreaRect = visPlaylistArea.getBoundingClientRect();
     let winHeight = document.documentElement.clientHeight;
-    let scrollArrowBoxHeight = player.querySelector('.scroll-arrow-box').offsetHeight;
 
     if (
-        visPlaylistAreaRect.top < scrollArrowBoxHeight ||
-        visPlaylistAreaRect.bottom > winHeight - scrollArrowBoxHeight
+        visPlaylistAreaRect.top < SCROLL_ARROW_BOX_HEIGHT ||
+        visPlaylistAreaRect.bottom > winHeight - SCROLL_ARROW_BOX_HEIGHT
     ) {
         clearTimeout(timerWindowScrollDelay);
         timerWindowScrollDelay = null;
@@ -2558,11 +2548,11 @@ function keepSelectedTitleVisible(audio) {
             let scrolledHeight = window.pageYOffset;
             let y;
     
-            if (selTrackDocumentTop < scrollArrowBoxHeight) {
-                y = selTrackDocumentTop - scrollArrowBoxHeight + scrolledHeight;
+            if (selTrackDocumentTop < SCROLL_ARROW_BOX_HEIGHT) {
+                y = selTrackDocumentTop - SCROLL_ARROW_BOX_HEIGHT + scrolledHeight;
                 y = Math.floor(y); // For removing arrow box
-            } else if (selTrackDocumentBottom > winHeight - scrollArrowBoxHeight) {
-                y = selTrackDocumentBottom - winHeight + scrollArrowBoxHeight + scrolledHeight;
+            } else if (selTrackDocumentBottom > winHeight - SCROLL_ARROW_BOX_HEIGHT) {
+                y = selTrackDocumentBottom - winHeight + SCROLL_ARROW_BOX_HEIGHT + scrolledHeight;
                 y = Math.ceil(y); // For removing arrow box
             }
     
@@ -2913,61 +2903,29 @@ function hideScrollElements() {
     scrollArrowUp.hidden = true;
     scrollArrowDown.hidden = true;
 }
-
-function checkScrollElemsPosition() {
-    let winHeight = isTouchDevice ? window.innerHeight : document.documentElement.clientHeight;
-
-    if (playlistContainer.getBoundingClientRect().top < 0) {
-        scrollArrowUp.parentElement.classList.add('sticky-position');
-    } else {
-        scrollArrowUp.parentElement.classList.remove('sticky-position');
-    }
-
-    if (playlistContainer.getBoundingClientRect().bottom > winHeight) {
-        scrollArrowDown.parentElement.classList.add('sticky-position');
-    } else {
-        scrollArrowDown.parentElement.classList.remove('sticky-position');
-    }
-}
   
-/*function checkScrollElemsPosition() {
+function checkScrollElemsPosition() {
+    let playlistContainerRect = playlistContainer.getBoundingClientRect();
+    let playlistLimRect = playlistLim.getBoundingClientRect();
     let winHeight = isTouchDevice ? window.innerHeight : document.documentElement.clientHeight;
-    let playlistLimVisibleTop, playlistLimVisibleBottom;
-    let topSticky = false;
-    let bottomSticky = false;
+    let playlistLimVisibleTop = 0;
+    let playlistLimVisibleBottom = 0;
 
-    if (playlistContainer.getBoundingClientRect().top < 0) {
-        playlistLim.classList.add('outside-window-boundaries');
-
-        playlistLimVisibleTop = -playlistLim.getBoundingClientRect().top + scrollArrowBoxHeight;
-        playlistLim.style.setProperty('--limiter-visible-top', playlistLimVisibleTop + 'px');
-
-        topSticky = true;
-    } else {
-        scrollArrowUp.parentElement.classList.remove('sticky-position');
-
-        playlistLimVisibleTop = -playlistLim.getBoundingClientRect().top;
-        playlistLim.style.setProperty('--limiter-visible-top', playlistLimVisibleTop + 'px');
-
-        topSticky = false;
+    if (playlistContainerRect.top < 0) {
+        playlistLimVisibleTop = -playlistLimRect.top + SCROLL_ARROW_BOX_HEIGHT;
     }
 
-    if (playlistContainer.getBoundingClientRect().bottom > winHeight) {
-        playlistLim.classList.add('outside-window-boundaries');
-
-        playlistLimVisibleBottom = playlistLim.getBoundingClientRect().bottom - winHeight + scrollArrowBoxHeight;
-        playlistLim.style.setProperty('--limiter-visible-bottom', playlistLimVisibleBottom + 'px');
-
-        bottomSticky = true;
-    } else {
-        playlistLimVisibleBottom = playlistLim.getBoundingClientRect().bottom - winHeight;
-        playlistLim.style.setProperty('--limiter-visible-bottom', playlistLimVisibleBottom + 'px');
-
-        bottomSticky = false;
+    if (playlistContainerRect.bottom > winHeight) {
+        playlistLimVisibleBottom = playlistLimRect.bottom - winHeight + SCROLL_ARROW_BOX_HEIGHT;
     }
 
-    if (!topSticky && !bottomSticky) playlistLim.classList.remove('outside-window-boundaries');
-}*/
+    playlistLim.style.maskImage = `linear-gradient(
+        transparent ${playlistLimVisibleTop}px,
+        var(--player-color-main) ${playlistLimVisibleTop}px,
+        var(--player-color-main) calc(100% - ${playlistLimVisibleBottom}px),
+        transparent calc(100% - ${playlistLimVisibleBottom}px)
+    )`;
+}
 
 //////////////////
 // Track titles //
@@ -3472,7 +3430,7 @@ function removePressedButtons() {
     }
 }
 
-// Fixing the elements to a window when scrolling the document
+// Scroll event
 let scrollTicking = false;
 
 document.addEventListener('scroll', function () {
@@ -3488,8 +3446,21 @@ document.addEventListener('scroll', function () {
     scrollTicking = true;
 });
 
-// Compensating the width of a window's vertical scrollbar
-window.addEventListener('resize', compensateScrollbarWidth);
+// Resize event
+let resizeTick = false;
+
+window.addEventListener('resize', () => {
+    if (!resizeTick) {
+        requestAnimationFrame(function () {
+            compensateScrollbarWidth();
+            if (playlistLim.scrollHeight > playlistLim.clientHeight) checkScrollElemsPosition();
+
+            resizeTick = false;
+        });
+    }
+    
+    resizeTick = true;
+});
 
 function compensateScrollbarWidth() {
     let winWidth = window.innerWidth;
@@ -3505,13 +3476,6 @@ function compensateScrollbarWidth() {
 
     //console.log(getComputedStyle(cssRoot).getPropertyValue('--scrollbar-width'));
 }
-
-// Temporary handler
-document.addEventListener('keydown', (event) => {
-    if (event.code == 'KeyG') {
-        console.log(document.activeElement);
-    }
-});
 
 //////////////////
 // Key handlers //
@@ -3638,5 +3602,12 @@ document.addEventListener('keyup', (event) =>  {
         event.code == 'Home' || event.code == 'End'
     ) {
         upKeyScrollAction(event);
+    }
+});
+
+// Temporary handler
+document.addEventListener('keydown', (event) => {
+    if (event.code == 'KeyG') {
+        console.log(document.activeElement);
     }
 });
