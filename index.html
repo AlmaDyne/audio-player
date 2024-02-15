@@ -62,7 +62,7 @@
                             <img src="img/icons/repeat_playlist.png" alt="Repeat Playlist">
                         </div>
                     </div>
-                    <div slot="volume" class="volume-wrapper">
+                    <div slot="volume" class="volume-container">
                         <i id="volume" class="icon-volume" data-tooltip="Volume on/off"></i>
                         <div id="volume-range" data-tooltip="">
                             <div class="inactive-range"></div>
@@ -72,11 +72,15 @@
                     </div>
                 </player-controls>
 
-                <div class="playlist-container">
-                    <div id="scroll-arrow-up" class="scroll-arrow"></div>
-
+                <div id="playlist-container">
+                    <div class="scroll-arrow-box arrow-up">
+                        <div id="scroll-arrow-up" class="scroll-arrow" hidden></div>
+                    </div>
+                    
                     <div id="playlist-limiter">
-                        <div id="playlist" tabindex="0">
+                        <div id="visible-playlist-area" tabindex="0"></div>
+
+                        <div id="playlist">
                             <!-- Example track tree
                             <div class="track">
                                 <audio></audio>
@@ -94,7 +98,9 @@
                         </div>
                     </div>
 
-                    <div id="scroll-arrow-down" class="scroll-arrow"></div>
+                    <div class="scroll-arrow-box arrow-down">
+                        <div id="scroll-arrow-down" class="scroll-arrow" hidden></div>
+                    </div>
                 </div>
 
                 <div class="player-footer">
@@ -106,7 +112,7 @@
                         <i id="playlist-style" class="icon-align-center" data-tooltip="Playlist style"></i>
                     </div>
                     <div class="center-col">
-                        <span class="version">v0.99.9.9.9</span>
+                        <span class="version">v0.99.999.9999 (Build 99999) (Update 999999) Pre-Release-Bleatь!</span>
                     </div>
                     <div class="right-col">
                         <i id="settings" class="icon-cog-circled" data-tooltip="Settings"></i>
@@ -119,8 +125,8 @@
                 <div id="settings-area" hidden>
                     <textarea id="current-playlist" cols="50" readonly></textarea>
                     <section class="setting-block">
-                        <label for="visible-tracks-checkbox">Set own number of visible tracks (0-999)</label>
-                        <input id="visible-tracks-checkbox" type="checkbox">
+                        <input id="visible-tracks-checkbox" type="checkbox"
+                        ><label for="visible-tracks">Set own number of visible tracks (0-999)</label>
                         <input id="visible-tracks" type="number" min="0" max="999" disabled>
                     </section>
                     <section class="setting-block">

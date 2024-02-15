@@ -1,4 +1,4 @@
-.mouse-scroll-mode * {
+.pointer-scroll-mode * {
     cursor: url("../img/icons/scrolling-cursor-center.png") 16 16, row-resize !important;
 }
 .scroll-up * {

@@ -4,7 +4,7 @@ export class PlayerButtonsHoverIntent {
         interval = 100,
         executeTaskDelay = 500,
         elem,
-        repeatTask,
+        repeatTask = false,
         executeTask,
         dismissTask
     }) {
@@ -16,45 +16,56 @@ export class PlayerButtonsHoverIntent {
         this.executeTask = executeTask;
         this.dismissTask = dismissTask;
 
-        this.onMouseEnter = this.onMouseEnter.bind(this);
-        this.onMouseMove = this.onMouseMove.bind(this);
-        this.onMouseDown = this.onMouseDown.bind(this);
+        this.onPointerEnter = this.onPointerEnter.bind(this);
+        this.onPointerMove = this.onPointerMove.bind(this);
+        this.onPointerDown = this.onPointerDown.bind(this);
+        this.onPointerUp = this.onPointerUp.bind(this);
+        this.onKeyDown = this.onKeyDown.bind(this);
         this.finishAndClear = this.finishAndClear.bind(this);
         this.calcSpeed = this.calcSpeed.bind(this);
         this.calcFinishingRadius = this.calcFinishingRadius.bind(this);
 
-        elem.addEventListener('mouseenter', this.onMouseEnter);
+        elem.addEventListener('pointerenter', this.onPointerEnter);
     }
     
-    onMouseEnter(event) {
-        if (this.calcTimer) return;
+    onPointerEnter(event) {
+        if (this.timerCalcSpeed) return;
 
-        this.elem.addEventListener('mousemove', this.onMouseMove);
-        this.elem.addEventListener('mousedown', this.onMouseDown);
-        this.elem.addEventListener('mouseleave', this.finishAndClear);
+        this.elem.addEventListener('pointermove', this.onPointerMove);
+        this.elem.addEventListener('pointerdown', this.onPointerDown);
+        this.elem.addEventListener('pointerup', this.onPointerUp);
+        this.elem.addEventListener('pointerleave', this.finishAndClear);
+        document.addEventListener('keydown', this.onKeyDown);
 
         this.elemRect = this.elem.getBoundingClientRect();
         this.x1 = event.clientX - this.elemRect.left;
         this.y1 = event.clientY - this.elemRect.top;
 
-        this.calcTimer = setTimeout(this.calcSpeed, this.interval);
+        this.timerCalcSpeed = setTimeout(this.calcSpeed, this.interval);
     }
 
-    onMouseMove(event) {
+    onPointerMove(event) {
+        if (!event.isTrusted) return;
+
+        if (this.ignoringMoveAfterUp) {
+            delete this.ignoringMoveAfterUp;
+            return;
+        }
+        
         this.x2 = event.clientX - this.elemRect.left;
         this.y2 = event.clientY - this.elemRect.top;
 
-        if (this.executeTaskTimer) {
-            clearTimeout(this.executeTaskTimer);
-            this.executeTaskTimer = null;
+        if (this.timerExecuteTask) {
+            clearTimeout(this.timerExecuteTask);
+            this.timerExecuteTask = null;
 
             this.x1 = this.x2;
             this.y1 = this.y2;
 
-            this.calcTimer = setTimeout(this.calcSpeed, this.interval);
+            this.timerCalcSpeed = setTimeout(this.calcSpeed, this.interval);
         }
 
-        if (!this.calcTimer) {
+        if (!this.timerCalcSpeed) {
             if (this.repeatTask) {
                 this.dismissTask();
                 this.taskDone = false;
@@ -62,7 +73,7 @@ export class PlayerButtonsHoverIntent {
                 this.x1 = this.x2;
                 this.y1 = this.y2;
 
-                this.calcTimer = setTimeout(this.calcSpeed, this.interval);
+                this.timerCalcSpeed = setTimeout(this.calcSpeed, this.interval);
             } else {
                 this.calcFinishingRadius();
             }
@@ -77,16 +88,16 @@ export class PlayerButtonsHoverIntent {
         this.y1 = this.y2;
 
         if (speed < this.sensitivity) {
-            this.calcTimer = null;
+            this.timerCalcSpeed = null;
 
-            this.executeTaskTimer = setTimeout(() => {
-                this.executeTaskTimer = null;
+            this.timerExecuteTask = setTimeout(() => {
+                this.timerExecuteTask = null;
 
                 this.executeTask();
                 this.taskDone = true;
             }, this.executeTaskDelay);
         } else {
-            this.calcTimer = setTimeout(this.calcSpeed, this.interval);
+            this.timerCalcSpeed = setTimeout(this.calcSpeed, this.interval);
         }
     }
 
@@ -95,16 +106,16 @@ export class PlayerButtonsHoverIntent {
         if (radius > 5) this.finishAndClear();
     }
 
-    onMouseDown() {
+    onPointerDown() {
         if (this.repeatTask) {
-            clearTimeout(this.calcTimer);
-            this.calcTimer = null;
-            clearTimeout(this.executeTaskTimer);
+            clearTimeout(this.timerCalcSpeed);
+            this.timerCalcSpeed = null;
+            clearTimeout(this.timerExecuteTask);
 
             let actionInterval = (this.taskDone) ? 0 : this.executeTaskDelay;
 
-            this.executeTaskTimer = setTimeout(() => {
-                this.executeTaskTimer = null;
+            this.timerExecuteTask = setTimeout(() => {
+                this.timerExecuteTask = null;
 
                 this.executeTask();
                 this.taskDone = true;
@@ -114,19 +125,29 @@ export class PlayerButtonsHoverIntent {
         }
     }
 
+    onPointerUp() {
+        this.ignoringMoveAfterUp = true;
+    }
+
+    onKeyDown() {
+        if (!this.repeatTask) this.finishAndClear();
+    }
+
     finishAndClear() {
-        clearTimeout(this.calcTimer);
-        clearTimeout(this.executeTaskTimer);
+        clearTimeout(this.timerCalcSpeed);
+        clearTimeout(this.timerExecuteTask);
 
         this.dismissTask();
 
-        this.elem.removeEventListener('mousemove', this.onMouseMove);
-        this.elem.removeEventListener('mousedown', this.onMouseDown);
-        this.elem.removeEventListener('mouseleave', this.finishAndClear);
+        this.elem.removeEventListener('pointermove', this.onPointerMove);
+        this.elem.removeEventListener('pointerdown', this.onPointerDown);
+        this.elem.removeEventListener('pointerup', this.onPointerUp);
+        this.elem.removeEventListener('pointerleave', this.finishAndClear);
+        document.removeEventListener('keydown', this.onKeyDown);
 
         delete this.elemRect;
-        delete this.calcTimer;
-        delete this.executeTaskTimer;
+        delete this.timerCalcSpeed;
+        delete this.timerExecuteTask;
         delete this.taskDone;
         delete this.x1;
         delete this.y1;
