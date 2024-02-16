@@ -29,8 +29,10 @@ const playlistContainer = document.getElementById('playlist-container');
 const playlistLim = document.getElementById('playlist-limiter');
 const visPlaylistArea = document.getElementById('visible-playlist-area');
 const playlist = document.getElementById('playlist');
-const scrollArrowUp = document.getElementById('scroll-arrow-up');
-const scrollArrowDown = document.getElementById('scroll-arrow-down');
+const playlistScrollArrowUp = playlistContainer.querySelector('.scroll-arrows-box.up > .playlist-scroll-arrow');
+const playlistScrollArrowDown = playlistContainer.querySelector('.scroll-arrows-box.down > .playlist-scroll-arrow');
+const outerScrollArrowsUp = playlistContainer.querySelectorAll('.scroll-arrows-box.up > .outer-scroll-arrow');
+const outerScrollArrowsDown = playlistContainer.querySelectorAll('.scroll-arrows-box.down > .outer-scroll-arrow');
 const configBtn = document.getElementById('configuration');
 const colorBtn = document.getElementById('coloring');
 const playlistStyleBtn = document.getElementById('playlist-style');
@@ -43,7 +45,7 @@ const closeSetBtn = document.getElementById('close-settings');
 const modalArea = document.getElementById('modal-area');
 const TIMELINE_MARGIN = Math.abs(parseInt(getComputedStyle(timeline).marginLeft));  
 const titleHeight = parseInt(getComputedStyle(playlistLim).getPropertyValue('--track-height'));
-const SCROLL_ARROW_BOX_HEIGHT = player.querySelector('.scroll-arrow-box').offsetHeight;
+const SCROLL_ARROW_BOX_HEIGHT = playlistContainer.querySelector('.scroll-arrows-box').offsetHeight;
 const TIMELINE_POSITION_CHANGE_STEP = 0.5;
 const TIMELINE_UPDATE_INTERVAL = 200;
 const LAG = 16.7;
@@ -447,20 +449,6 @@ visibleTracksInput.oninput = () => {
     changeNumberOfVisibleTracks(value);
 };
 
-// Optimization for keyrepeat (ArrowUp, ArrowDown)
-let inputTicking = false;
-
-visibleTracksInput.addEventListener('keydown', (event) => {
-    if ((event.code == 'ArrowUp' || event.code == 'ArrowDown') && event.repeat) {
-        if (!inputTicking) {
-            inputTicking = true;
-            setTimeout(() => inputTicking = false, 50);
-        } else {
-            event.preventDefault();
-        }
-    }
-});
-
 function changeNumberOfVisibleTracks(value) {
     if (value == null || checkedVisibleTracksBox === 'false') {
         visibleTracksCheckbox.checked = false;
@@ -483,8 +471,8 @@ function changeNumberOfVisibleTracks(value) {
     localStorage.setItem('number_of_visible_tracks', numOfVisTracks);
     localStorage.setItem('checked-visible-tracks-box', checkedVisibleTracksBox);
 
+    checkScrollElemsPosition();
     compensateScrollbarWidth();
-    if (playlistLim.scrollHeight > playlistLim.clientHeight) checkScrollElemsPosition();
 
     if (accelerateScrolling) {
         let isDocScrollbar = checkDocHeight();
@@ -529,9 +517,11 @@ function changeScrollElementsOpacity(value) {
     if (scrollElemsOpacityInput.value !== scrollElemsOpacity) scrollElemsOpacityInput.value = scrollElemsOpacity;
     localStorage.setItem('scroll_elements_opacity', scrollElemsOpacity);
 
-    scrollArrowUp.style.opacity = scrollElemsOpacity / 100;
-    scrollArrowDown.style.opacity = scrollElemsOpacity / 100;
-    visPlaylistArea.style.opacity = scrollElemsOpacity / 100;
+    //playlistScrollArrowUp.style.opacity = scrollElemsOpacity / 100;
+    //playlistScrollArrowDown.style.opacity = scrollElemsOpacity / 100;
+    //outerScrollArrowsUp
+    playlistContainer.style.setProperty('--scroll-elems-opacity', scrollElemsOpacity / 100);
+
 }
 
 ///////////////////////////////
@@ -2178,7 +2168,7 @@ playlist.oncontextmenu = function(event) {
 // Playlist scrolling //
 ////////////////////////
 
-playlistLim.onpointerenter = () => {
+playlistContainer.onpointerenter = () => {
     if (playlistLim.scrollHeight <= playlistLim.clientHeight) return;
 
     cursorOverPlaylist = true;
@@ -2186,15 +2176,15 @@ playlistLim.onpointerenter = () => {
     clearTimeout(timerHideScrollElements);
 
     if (playlistLim.scrollTop) {
-        scrollArrowUp.classList.remove('inactive');
+        playlistScrollArrowUp.classList.remove('inactive');
     } else {
-        scrollArrowUp.classList.add('inactive');
+        playlistScrollArrowUp.classList.add('inactive');
     }
 
     if (playlistLim.scrollHeight - playlistLim.scrollTop > playlistLim.clientHeight) {
-        scrollArrowDown.classList.remove('inactive');
+        playlistScrollArrowDown.classList.remove('inactive');
     } else {
-        scrollArrowDown.classList.add('inactive');
+        playlistScrollArrowDown.classList.add('inactive');
     }
 
     showScrollElements();
@@ -2213,7 +2203,7 @@ playlistLim.onpointerenter = () => {
     startScrolling(key);
 };
 
-playlistLim.onpointerleave = () => {
+playlistContainer.onpointerleave = () => {
     if (playlistLim.scrollHeight <= playlistLim.clientHeight) return;
 
     cursorOverPlaylist = false;
@@ -2317,8 +2307,6 @@ playlistLim.onwheel = (event) => {
         wheel: true
     });
 };
-
-//playlistLim.ontouchstart = () => false;
 
 playlistLim.onpointerdown = function(event) {
     if (this.scrollHeight <= this.clientHeight) return;
@@ -2532,12 +2520,12 @@ function keepSelectedTitleVisible(audio) {
     }
 
     // Window scroll alignment
-    let visPlaylistAreaRect = visPlaylistArea.getBoundingClientRect();
+    let playlistLimRect = playlistLim.getBoundingClientRect();
     let winHeight = document.documentElement.clientHeight;
 
     if (
-        visPlaylistAreaRect.top < SCROLL_ARROW_BOX_HEIGHT ||
-        visPlaylistAreaRect.bottom > winHeight - SCROLL_ARROW_BOX_HEIGHT
+        playlistLimRect.top < SCROLL_ARROW_BOX_HEIGHT ||
+        playlistLimRect.bottom > winHeight - SCROLL_ARROW_BOX_HEIGHT
     ) {
         clearTimeout(timerWindowScrollDelay);
         timerWindowScrollDelay = null;
@@ -2873,58 +2861,33 @@ function checkDocHeight() {
 
 function checkReachingPlaylistLimits(direction) {
     if (direction == 'up' && playlistLim.scrollTop == 0) {
-        scrollArrowUp.classList.add('inactive');
+        playlistScrollArrowUp.classList.add('inactive');
         return true;
     }
     if (direction == 'down' && playlistLim.scrollHeight - playlistLim.scrollTop == playlistLim.clientHeight) {
-        scrollArrowDown.classList.add('inactive');
+        playlistScrollArrowDown.classList.add('inactive');
         return true;
     }
     return false;
 }
 
 function activateScrollArrows() {
-    scrollArrowUp.classList.remove('inactive');
-    scrollArrowDown.classList.remove('inactive');
+    playlistScrollArrowUp.classList.remove('inactive');
+    playlistScrollArrowDown.classList.remove('inactive');
 }
 
 function showScrollElements() {
     scrollElemsDisplaying = true;
 
-    scrollArrowUp.hidden = false;
-    scrollArrowDown.hidden = false;
-    
-    checkScrollElemsPosition();
+    playlistScrollArrowUp.hidden = false;
+    playlistScrollArrowDown.hidden = false;
 }
 
 function hideScrollElements() {
     scrollElemsDisplaying = false;
 
-    scrollArrowUp.hidden = true;
-    scrollArrowDown.hidden = true;
-}
-  
-function checkScrollElemsPosition() {
-    let playlistContainerRect = playlistContainer.getBoundingClientRect();
-    let playlistLimRect = playlistLim.getBoundingClientRect();
-    let winHeight = isTouchDevice ? window.innerHeight : document.documentElement.clientHeight;
-    let playlistLimVisibleTop = 0;
-    let playlistLimVisibleBottom = 0;
-
-    if (playlistContainerRect.top < 0) {
-        playlistLimVisibleTop = -playlistLimRect.top + SCROLL_ARROW_BOX_HEIGHT;
-    }
-
-    if (playlistContainerRect.bottom > winHeight) {
-        playlistLimVisibleBottom = playlistLimRect.bottom - winHeight + SCROLL_ARROW_BOX_HEIGHT;
-    }
-
-    playlistLim.style.maskImage = `linear-gradient(
-        transparent ${playlistLimVisibleTop}px,
-        var(--player-color-main) ${playlistLimVisibleTop}px,
-        var(--player-color-main) calc(100% - ${playlistLimVisibleBottom}px),
-        transparent calc(100% - ${playlistLimVisibleBottom}px)
-    )`;
+    playlistScrollArrowUp.hidden = true;
+    playlistScrollArrowDown.hidden = true;
 }
 
 //////////////////
@@ -3159,19 +3122,32 @@ document.addEventListener('click', (event) => {
     highlightSelected(selectedAudio);
 });
 
-// Filtering number input element keys
-for (let input of document.querySelectorAll('input[type="number"]')) {
-    input.onkeydown = setNumberInputKeys;
-}
+// Number input elements
+let inputTicking = false;
 
-function setNumberInputKeys(event) {
-    return (event.key >= '0' && event.key <= '9') ||
-        event.code == 'ArrowUp' || event.code == 'ArrowDown' ||
-        event.code == 'ArrowLeft' || event.code == 'ArrowRight' ||
-        event.code == 'Delete' || event.code == 'Backspace' ||
-        event.code == 'Tab' || event.key == 'Enter' ||
-        (event.ctrlKey && (event.code == 'KeyX' || event.code == 'KeyC' || event.code == 'KeyV'))
-    ;
+for (let input of document.querySelectorAll('input[type="number"]')) {
+    //Filtering keys
+    input.onkeydown = (event) => {
+        return (event.key >= '0' && event.key <= '9') ||
+            event.code == 'ArrowUp' || event.code == 'ArrowDown' ||
+            event.code == 'ArrowLeft' || event.code == 'ArrowRight' ||
+            event.code == 'Delete' || event.code == 'Backspace' ||
+            event.code == 'Tab' || event.key == 'Enter' ||
+            (event.ctrlKey && (event.code == 'KeyX' || event.code == 'KeyC' || event.code == 'KeyV'))
+        ;
+    };
+
+    // Optimization for keyrepeat (ArrowUp, ArrowDown)
+    input.addEventListener('keydown', (event) => {
+        if ((event.code == 'ArrowUp' || event.code == 'ArrowDown') && event.repeat) {
+            if (!inputTicking) {
+                inputTicking = true;
+                setTimeout(() => inputTicking = false, 50);
+            } else {
+                event.preventDefault();
+            }
+        }
+    });
 }
 
 // Focus changing
@@ -3436,7 +3412,7 @@ let scrollTicking = false;
 document.addEventListener('scroll', function () {
     if (!scrollTicking) {
         requestAnimationFrame(function () {
-            if (playlistLim.scrollHeight > playlistLim.clientHeight) checkScrollElemsPosition();
+            checkScrollElemsPosition();
             if (!settingsArea.hidden) checkSettingsAreaPosition();
 
             scrollTicking = false;
@@ -3452,8 +3428,8 @@ let resizeTick = false;
 window.addEventListener('resize', () => {
     if (!resizeTick) {
         requestAnimationFrame(function () {
+            checkScrollElemsPosition();
             compensateScrollbarWidth();
-            if (playlistLim.scrollHeight > playlistLim.clientHeight) checkScrollElemsPosition();
 
             resizeTick = false;
         });
@@ -3461,6 +3437,43 @@ window.addEventListener('resize', () => {
     
     resizeTick = true;
 });
+  
+function checkScrollElemsPosition() {
+    let playlistContainerRect = playlistContainer.getBoundingClientRect();
+    let playlistLimRect = playlistLim.getBoundingClientRect();
+    let winHeight = isTouchDevice ? window.innerHeight : document.documentElement.clientHeight;
+    let playlistLimVisibleTop = 0;
+    let playlistLimVisibleBottom = 0;
+
+    if (playlistContainerRect.top < 0) {
+        if (playlistLim.scrollHeight > playlistLim.clientHeight) {
+            playlistLimVisibleTop = -playlistLimRect.top + SCROLL_ARROW_BOX_HEIGHT;
+        }
+        
+        outerScrollArrowsUp.forEach(arrow => arrow.hidden = false);
+    } else {
+        outerScrollArrowsUp.forEach(arrow => arrow.hidden = true);
+    }
+
+    if (playlistContainerRect.bottom > winHeight) {
+        if (playlistLim.scrollHeight > playlistLim.clientHeight) {
+            playlistLimVisibleBottom = playlistLimRect.bottom - winHeight + SCROLL_ARROW_BOX_HEIGHT;
+        }
+        
+        outerScrollArrowsDown.forEach(arrow => arrow.hidden = false);
+    } else {
+        outerScrollArrowsDown.forEach(arrow => arrow.hidden = true);
+    }
+
+    playlistLim.style.maskImage = (!playlistLimVisibleTop && !playlistLimVisibleBottom) ?
+        'none' :
+        `linear-gradient(           
+            transparent ${playlistLimVisibleTop}px,
+            var(--player-color-main) ${playlistLimVisibleTop}px,
+            var(--player-color-main) calc(100% - ${playlistLimVisibleBottom}px),
+            transparent calc(100% - ${playlistLimVisibleBottom}px)
+        )`; 
+}
 
 function compensateScrollbarWidth() {
     let winWidth = window.innerWidth;
@@ -3476,6 +3489,62 @@ function compensateScrollbarWidth() {
 
     //console.log(getComputedStyle(cssRoot).getPropertyValue('--scrollbar-width'));
 }
+
+// Playlist scroll arrows handlers
+playlistScrollArrowUp.onclick = () => {
+    if (playlistScrollArrowUp.classList.contains('inactive')) return;
+
+    playlistScrollArrowDown.classList.remove('inactive');
+
+    playlistLim.scrollTo({
+        left: 0,
+        top: 0,
+        behavior: 'smooth'
+    });
+
+    playlistLim.addEventListener('scrollend', () => {
+        checkReachingPlaylistLimits('up');
+    }, {once: true});
+};
+
+playlistScrollArrowDown.onclick = () => {
+    if (playlistScrollArrowDown.classList.contains('inactive')) return;
+
+    playlistScrollArrowUp.classList.remove('inactive');
+
+    playlistLim.scrollTo({
+        left: 0,
+        top: playlistLim.scrollHeight,
+        behavior: 'smooth'
+    });
+
+    playlistLim.addEventListener('scrollend', () => {
+        checkReachingPlaylistLimits('down');
+    }, {once: true});
+};
+
+// Outer scroll arrows handlers
+outerScrollArrowsUp.forEach(arrow => arrow.addEventListener('click', () => {
+    window.scrollTo({
+        left: 0,
+        top: 0,
+        behavior: 'smooth'
+    });
+}));
+
+outerScrollArrowsDown.forEach(arrow => arrow.addEventListener('click', () => {
+    let scrollHeight = Math.max(
+        document.body.scrollHeight, document.documentElement.scrollHeight,
+        document.body.offsetHeight, document.documentElement.offsetHeight,
+        document.body.clientHeight, document.documentElement.clientHeight
+    );
+
+    window.scrollTo({
+        left: 0,
+        top: scrollHeight,
+        behavior: 'smooth'
+    });
+}));
 
 //////////////////
 // Key handlers //
