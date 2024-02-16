@@ -517,9 +517,6 @@ function changeScrollElementsOpacity(value) {
     if (scrollElemsOpacityInput.value !== scrollElemsOpacity) scrollElemsOpacityInput.value = scrollElemsOpacity;
     localStorage.setItem('scroll_elements_opacity', scrollElemsOpacity);
 
-    //playlistScrollArrowUp.style.opacity = scrollElemsOpacity / 100;
-    //playlistScrollArrowDown.style.opacity = scrollElemsOpacity / 100;
-    //outerScrollArrowsUp
     playlistContainer.style.setProperty('--scroll-elems-opacity', scrollElemsOpacity / 100);
 
 }
