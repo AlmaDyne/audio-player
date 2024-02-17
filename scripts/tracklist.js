@@ -2,17 +2,17 @@ export const tracklist = {
     track1: {
         artist: 'Zmicier M. (feat. ATD)',
         title: 'Cold Lights (Metal Mix)',
-        src: 'https://almadyne.github.io/audio-player/music/1.mp3'
+        src: 'music/1.mp3'
     },
     track2: {
         artist: 'Zmicier M. (feat. ATD)',
         title: 'Silent Minds',
-        src: 'https://almadyne.github.io/audio-player/music/2.mp3'
+        src: 'music/2.mp3'
     },
     track3: {
         artist: 'Zmicier M. (feat. ATD)',
         title: 'Classical TechnoDub',
-        src: 'https://almadyne.github.io/audio-player/music/3.mp3'
+        src: 'music/3.mp3'
     },
     track4: {
         artist: 'Zmicier M. (feat. ATD)',
