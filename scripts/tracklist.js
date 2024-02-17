@@ -30,13 +30,13 @@ export const tracklist = {
         src: 'music/6.mp3'
     },
     track7: {
-        artist: 'Dmitry Miroshkin & Anthony Driverson',
-        title: 'Raindrops (Guitar Mix)',
+        artist: 'Zmicier M. (feat. ATD)',
+        title: 'Thousand Miles (of Drinking)',
         src: 'music/7.mp3'
     },
     track8: {
-        artist: 'Zmicier M. (feat. ATD)',
-        title: 'Thousand Miles (of Drinking)',
+        artist: 'Dmitry Miroshkin & Anthony Driverson',
+        title: 'Raindrops (Guitar Mix)',
         src: 'music/8.mp3'
     }
 };
