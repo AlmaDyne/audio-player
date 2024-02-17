@@ -1900,7 +1900,7 @@ function calcVolumeTooltip() {
 // Playlist //
 //////////////
 
-playlist.onpointerover = (event) => {
+visPlaylistArea.onpointerover = (event) => {
     if (event.target.tagName != 'SPAN') return;
 
     let trackTitle = event.target;
@@ -1931,7 +1931,7 @@ playlist.onpointerover = (event) => {
 };
 
 // Prohibiting text selection on the touchscreen
-playlist.onpointerdown = (event) => {
+visPlaylistArea.addEventListener('pointerdown', (event) => {
     if (
         (event.pointerType == 'touch' || event.pointerType == 'pen') &&
         event.isPrimary &&
@@ -1946,9 +1946,9 @@ playlist.onpointerdown = (event) => {
             document.onpointerup = () => false;
         };
     }
-};
+});
 
-playlist.onclick = (event) => {
+visPlaylistArea.onclick = (event) => {
     if (document.getSelection().toString().length) return;
     
     let trackTitle = event.target;
@@ -1988,7 +1988,7 @@ playlist.onclick = (event) => {
     playAudio(selectedAudio);
 };
 
-playlist.oncontextmenu = function(event) {
+visPlaylistArea.oncontextmenu = function(event) {
     if (event.target.tagName != 'SPAN') return;
 
     event.preventDefault();
@@ -2226,55 +2226,6 @@ playlistContainer.onpointerleave = () => {
     }
 };
 
-// Set pseudo focus on pointer down
-playlist.addEventListener('pointerdown', (event) => {
-    if (event.button != 1 && event.target.tagName == 'SPAN') return;
-
-    // Set real focus to scroll detection (will be automatically cancelled immediately)
-    visPlaylistArea.focus({preventScroll: true});
-
-    document.getSelection().empty();
-    visPlaylistArea.classList.add('focused');
-
-    // Remove pseudo focus on selection > 0 signs
-    document.onselectionchange = () => {
-        if (document.getSelection().toString().length) {
-            visPlaylistArea.classList.remove('focused');
-            visPlaylistArea.blur();
-        } else {
-            visPlaylistArea.classList.add('focused');
-        }
-    };
-    
-    // Remove pseudo/set real focus and stop scrolling playlist on pointer up
-    document.addEventListener('pointerup', function removePlaylistPointerUp(event) {
-        visPlaylistArea.classList.remove('focused');
-
-        if (event.target.closest('#playlist-limiter') && !document.getSelection().toString().length) {
-            // Set stable real focus on pointer up
-            visPlaylistArea.focus({preventScroll: true});
-        } else {
-            // Useful when exiting pointerModeScrolling
-            visPlaylistArea.blur();
-        }
-
-        let isDocScrollbar = checkDocHeight();
-
-        if (
-            playlistLim.scrollHeight > playlistLim.clientHeight &&
-            accelerateScrolling &&
-            isDocScrollbar &&
-            !cursorOverPlaylist &&
-            !pointerModeScrolling
-        ) {
-            stopScrolling();
-        }
-
-        document.onselectionchange = () => false;
-        document.removeEventListener('pointerup', removePlaylistPointerUp);
-    });
-});
-
 // Useful if document.activeElement = document.body
 visPlaylistArea.addEventListener('blur', () => {
     if (playlistLim.scrollHeight <= playlistLim.clientHeight) return;
@@ -2294,7 +2245,7 @@ visPlaylistArea.addEventListener('blur', () => {
     });
 });
 
-playlistLim.onwheel = (event) => {
+visPlaylistArea.onwheel = (event) => {
     if (playlistLim.scrollHeight <= playlistLim.clientHeight) return;
     event.preventDefault();
     
@@ -2305,15 +2256,26 @@ playlistLim.onwheel = (event) => {
     });
 };
 
-playlistLim.onpointerdown = function(event) {
-    if (this.scrollHeight <= this.clientHeight) return;
+visPlaylistArea.addEventListener('pointerdown', function (event) {
+    if (event.target.tagName != 'SPAN' || event.button == 1) {
+        this.focus({preventScroll: true});
+    } else if (document.activeElement != visPlaylistArea) {
+        this.removeAttribute('tabindex');
+
+        document.addEventListener('pointerup', () => this.setAttribute('tabindex', 0), {once: true});
+    }
+});
+
+// Pointer Mode Scrolling
+visPlaylistArea.onpointerdown = function(event) {
+    if (playlistLim.scrollHeight <= playlistLim.clientHeight) return;
     if (event.pointerType == 'mouse' && event.button != 1) return;
     if ((event.pointerType == 'touch' || event.pointerType == 'pen') && !event.isPrimary) return;
     event.preventDefault();
     if (pointerModeScrolling) return;
 
     document.getSelection().empty();
-    
+
     this.setPointerCapture(event.pointerId);
 
     if (event.pointerType == 'mouse') {
@@ -2337,7 +2299,11 @@ playlistLim.onpointerdown = function(event) {
         let sensingDistance = 30;
         let direction, deltaHeight;
     
-        playlistLim.onpointermove = () => false; // For event.pointerType == 'touch' || 'pen'
+        if (event.pointerType == 'touch' || event.pointerType == 'pen') {
+            this.onpointermove = () => false; // For event.pointerType == 'touch' || 'pen'
+        }
+
+        pointerMoveInPointerModeScrolling = pointerMoveInPointerModeScrolling.bind(this);
         document.addEventListener('pointermove', pointerMoveInPointerModeScrolling);
         
         function pointerMoveInPointerModeScrolling(event) {
@@ -2421,10 +2387,12 @@ playlistLim.onpointerdown = function(event) {
         }
     
         // Cancellation pointerModeScrolling
+        cancelPointerModeScrolling = cancelPointerModeScrolling.bind(this);
+
         if (event.pointerType == 'mouse') {
             setTimeout(() => document.addEventListener('pointerdown', cancelPointerModeScrolling, {once: true}));
         } else if (event.pointerType == 'touch' || event.pointerType == 'pen') {
-            playlistLim.onpointerup = cancelPointerModeScrolling;
+            this.onpointerup = cancelPointerModeScrolling;
         }
         
         function cancelPointerModeScrolling(event) {
@@ -2433,7 +2401,7 @@ playlistLim.onpointerdown = function(event) {
             console.log('pointer mode scrolling off');
     
             // Before pointerModeScrolling == false to prevent additional alignment
-            if (!event.target.closest('#playlist-limiter')) {
+            if (!event.target.closest('#visible-playlist-area')) {
                 visPlaylistArea.blur();
             }
     
@@ -2459,7 +2427,7 @@ playlistLim.onpointerdown = function(event) {
             }
         
             document.removeEventListener('pointermove', pointerMoveInPointerModeScrolling);
-            playlistLim.onpointerup = () => false;
+            this.onpointerup = () => false;
     
             function alignPlaylist() {
                 let duration = activeScrollingInPointerMode ? (400 / deltaHeight) : 0;
@@ -3110,7 +3078,7 @@ document.addEventListener('click', (event) => {
     }
 
     if (event.target.closest('#settings-area')) return;
-    if (event.target.closest('#playlist-limiter')) return;
+    if (event.target.closest('#visible-playlist-area')) return;
     if (event.target.closest('#modal-area')) return;
     if (event.target.tagName == 'I') return;
     if (event.target.closest('.btn-img-wrapper')) return;
@@ -3200,11 +3168,6 @@ for (let elem of document.querySelectorAll('input, button, textarea, #visible-pl
                 clearTimeout(timerFocusDelay);
                 highlightActiveElem = null;
             }
-        }
-
-        if (this != visPlaylistArea && visPlaylistArea.classList.contains('focused')) {
-            visPlaylistArea.classList.remove('focused');
-            document.onselectionchange = () => false;
         }
 
         if (pointerModeScrolling) document.dispatchEvent(new Event('pointermove'));

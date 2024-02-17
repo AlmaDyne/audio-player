@@ -370,12 +370,10 @@ player-controls #volume-bar.active {
     touch-action: none;
 }
 
-#visible-playlist-area:focus,
-#visible-playlist-area.focused {
-    outline: none;
+#visible-playlist-area:focus {
     outline: 1px solid rgba(var(--player-color-emphase), var(--scroll-elems-opacity));
-    border-radius: 6px;
     box-shadow: 0 0 6px 2px rgba(var(--player-color-emphase), calc(var(--scroll-elems-opacity) * 75%));
+    border-radius: 6px;
 }
 
 #playlist {
