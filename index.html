@@ -18,6 +18,20 @@
         </script>
         <header></header>
         <main>
+            <div id="tracklist-selection">
+                Choose the tracklist:
+                <div data-tracklist="Experiments and Parodies. Part 1">
+                    Experiments and Parodies. Part 1
+                    <button>Add tracklist</button>
+                    <button data-clear-playlist>Clear playlist and add tracklist</button>
+                </div>
+                <div data-tracklist="Experiments and Parodies. Part 2">
+                    Experiments and Parodies. Part 2
+                    <button>Add tracklist</button>
+                    <button data-clear-playlist>Clear playlist and add tracklist</button>
+                </div>
+                <button>Clear playlist</button>
+            </div>
             <div id="player" class="loading">
                 <div class="selected-track">
                     <div id="display-info" hidden></div>
@@ -116,7 +130,7 @@
                         <i id="playlist-style" class="icon-align-center" data-tooltip="Playlist style"></i>
                     </div>
                     <div class="center-col">
-                        <span class="version">v1.0.1</span>
+                        <span class="version">v1.0.2</span>
                     </div>
                     <div class="right-col">
                         <i id="settings" class="icon-cog-circled" data-tooltip="Settings"></i>

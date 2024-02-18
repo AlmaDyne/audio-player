@@ -42,7 +42,11 @@ i {
 }
 
 main {
-    padding: 50px 0 calc(50px + var(--page-footer-height));
+    padding: 0px 0 calc(50px + var(--page-footer-height));
+}
+
+#tracklist-selection {
+    text-align: center;
 }
 
 #player {

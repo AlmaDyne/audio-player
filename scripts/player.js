@@ -1,4 +1,4 @@
-import { tracklist } from '../scripts/tracklist.js';
+import { tracklistsData } from '../scripts/tracklists.js';
 import { configClassic } from '../scripts/controls-config-classic.js';
 import { configStylish } from '../scripts/controls-config-stylish.js';
 import { PlayerButtonsHoverIntent } from '../scripts/player-buttons-hover-intent.js';
@@ -55,15 +55,8 @@ const PLAYLIST_FINISH_DELAY = 500;
 const DEFAULT_SCROLL_DURATION = 150;
 const KEY_SCROLL_DURATION = 120;
 const HIGHLIGHT_SELECTED_FOCUS_DELAY = 350;
-const DEFAULT_VALUES_DATA = {
-    'visible-tracks---classic-config': 7,
-    'visible-tracks---stylish-config': 5,
-    'player_volume': 0.75,
-    'scroll-elements-opacity': 70,
-    'wheel-scroll-step': 2
-};
-let defaultPlaylist = [];
-let orderedPlaylist = [];
+let originOrderedAudios = [];
+let curOrderedAudios = [];
 let orderedDownloads = [];
 let fixedPlaylistStrings = new Map();
 let highlightedBtns = new Map();
@@ -102,6 +95,15 @@ let timeRangeHoverIntent = {};
 let volumeRangeHoverIntent = {};
 let endWindowScrolling = new CustomEvent('endWinScroll');
 let selectedAudio;
+
+const DEFAULTS_DATA = {
+    'tracklist': tracklistsData['Experiments and Parodies. Part 1'],
+    'visible-tracks---classic-config': 70,
+    'visible-tracks---stylish-config': 5,
+    'player_volume': 0.75,
+    'scroll-elements-opacity': 70,
+    'wheel-scroll-step': 2
+};
 
 const accelerationData = {
     'fast-forward': {
@@ -191,54 +193,6 @@ const scrollingKeysData = {
     }
 };
 
-///////////////////////
-// Playlist creation //
-///////////////////////
-
-try {
-    for (let track in tracklist) {
-        let trackElem = document.createElement('div');
-        trackElem.className = 'track';
-        playlist.appendChild(trackElem);
-    
-        let audioElem = document.createElement('audio');
-        audioElem.setAttribute('data-artist', tracklist[track]['artist']);
-        audioElem.setAttribute('data-title', tracklist[track]['title']);
-        let src = tracklist[track]['src'];
-        src += '?nocache=' + Math.random(); // Тестовая очистка кэша
-        audioElem.setAttribute('data-source', src);
-        if (tracklist[track]['dub']) audioElem.setAttribute('data-dub', tracklist[track]['dub']);
-        audioElem.setAttribute('type', 'audio/mpeg');
-        audioElem.setAttribute('preload', 'auto');
-        trackElem.appendChild(audioElem);
-
-        let loadElem = document.createElement('div');
-        loadElem.className = 'loading-figure';
-        loadElem.hidden = true;
-        trackElem.appendChild(loadElem);
-    
-        let limiterElem = document.createElement('div');
-        limiterElem.className = 'screen-limiter';
-        trackElem.appendChild(limiterElem);
-    
-        let trackTitleElem = document.createElement('span');
-        trackTitleElem.className = 'track-title';
-        trackTitleElem.textContent = tracklist[track]['artist'] + ' \u2013 ' + tracklist[track]['title'];
-        if (tracklist[track]['dub']) trackTitleElem.textContent += ' (' + tracklist[track]['dub'] + ')';
-        limiterElem.appendChild(trackTitleElem);
-
-        defaultPlaylist.push(audioElem);
-    }
-} catch(error) {
-    console.error(error.name + ': ' + error.message);
-    console.log('Object "tracklist" in "tracklist.js" is not founded!');
-}
-
-setDefaultPlaylist(defaultPlaylist);
-
-console.log(localStorage);
-//localStorage.clear();
-
 //////////////////////////
 // Initial touch device //
 //////////////////////////
@@ -257,6 +211,98 @@ function isTouchDeviceCheck() {
     let query = ['(', prefixes.join('touch-enabled),('), 'heartz', ')'].join('');
 
     return window.matchMedia(query).matches;
+}
+
+console.log(localStorage);
+localStorage.clear();
+
+///////////////////////
+// Playlist creation //
+///////////////////////
+
+let curTracklist = JSON.parse(localStorage.getItem('current_tracklist')) || [];
+
+createPlaylist(curTracklist, true);
+
+function createPlaylist(addedTracklist, clearPlaylist) {
+    addedTracklist = JSON.parse(JSON.stringify(addedTracklist));
+
+    if (clearPlaylist) {
+        playlist.innerHTML = '';
+        originOrderedAudios.length = 0;
+        curTracklist = addedTracklist;
+    } else {
+        for (let track of curTracklist) {
+            delete track['dub'];
+        }
+        curTracklist = curTracklist.concat(addedTracklist);
+    }
+
+    console.log(curTracklist);
+
+    localStorage.setItem('current_tracklist', JSON.stringify(curTracklist));
+
+    for (let i = 0; i < curTracklist.length; i++) {
+        let artist = curTracklist[i]['artist'];
+        let title = curTracklist[i]['title'];
+        let dub = curTracklist[i]['dub'];
+
+        if (!dub) {
+            let k = 1;
+    
+            for (let j = i + 1; j < curTracklist.length; j++) {
+                let comparedArtist = curTracklist[j]['artist'];
+                let comparedTitle = curTracklist[j]['title'];
+        
+                if (comparedArtist === artist && comparedTitle === title) {
+                    k++;
+                    if (k > 1) curTracklist[j]['dub'] = k;
+                }
+            }
+        }
+    }
+    
+    for (let i = 0; i < addedTracklist.length; i++) {
+        let artist = addedTracklist[i]['artist'];
+        let title = addedTracklist[i]['title'];
+        let src = addedTracklist[i]['src'];
+        let dub = addedTracklist[i]['dub'];
+
+        let trackElem = document.createElement('div');
+        trackElem.className = 'track';
+        playlist.appendChild(trackElem);
+    
+        let audioElem = document.createElement('audio');
+        audioElem.setAttribute('data-artist', artist);
+        audioElem.setAttribute('data-title', title);
+        src += '?nocache=' + Math.random(); // Тестовая очистка кэша
+        audioElem.setAttribute('data-source', src);
+        if (dub) audioElem.setAttribute('data-dub', dub);
+        audioElem.setAttribute('type', 'audio/mpeg');
+        audioElem.setAttribute('preload', 'auto');
+        trackElem.appendChild(audioElem);
+
+        let loadElem = document.createElement('div');
+        loadElem.className = 'loading-figure';
+        loadElem.hidden = true;
+        trackElem.appendChild(loadElem);
+    
+        let limiterElem = document.createElement('div');
+        limiterElem.className = 'screen-limiter';
+        trackElem.appendChild(limiterElem);
+    
+        let trackTitleElem = document.createElement('span');
+        trackTitleElem.className = 'track-title';
+        trackTitleElem.textContent = artist + ' \u2013 ' + title;
+        if (dub) trackTitleElem.textContent += ' (' + dub + ')';
+        limiterElem.appendChild(trackTitleElem);
+
+        originOrderedAudios.push(audioElem);
+    }
+
+    console.log(originOrderedAudios);
+    
+    setOriginPlaylistOrder(originOrderedAudios);
 }
 
 ///////////////////////////////////
@@ -387,10 +433,10 @@ let savedVolume;
 changeVolume(settedVolume);
 
 function changeVolume(value) {
-    if (value == null) value = DEFAULT_VALUES_DATA['player_volume'];
+    if (value == null) value = DEFAULTS_DATA['player_volume'];
 
     settedVolume = +value;
-    savedVolume = settedVolume ? settedVolume : DEFAULT_VALUES_DATA['player_volume'];
+    savedVolume = settedVolume ? settedVolume : DEFAULTS_DATA['player_volume'];
 
     localStorage.setItem('player_volume', settedVolume);
     
@@ -455,7 +501,7 @@ function changeNumberOfVisibleTracks(value) {
         visibleTracksInput.disabled = true;
         checkedVisibleTracksBox = 'false';
 
-        value = DEFAULT_VALUES_DATA[`visible-tracks---${config}-config`];
+        value = DEFAULTS_DATA[`visible-tracks---${config}-config`];
     } else {
         visibleTracksCheckbox.checked = true;
         visibleTracksInput.disabled = false;
@@ -506,7 +552,7 @@ scrollElemsOpacityInput.oninput = () => {
 
 function changeScrollElementsOpacity(value) {
     if (value == null) {
-        value = DEFAULT_VALUES_DATA['scroll-elements-opacity'];
+        value = DEFAULTS_DATA['scroll-elements-opacity'];
     } else {
         let minValue = +scrollElemsOpacityInput.min;
         let maxValue = +scrollElemsOpacityInput.max;
@@ -537,7 +583,7 @@ wheelScrollStepInput.oninput = () => {
 
 function changeWheelScrollStep(value) {
     if (value == null) {
-        value = DEFAULT_VALUES_DATA['wheel-scroll-step'];
+        value = DEFAULTS_DATA['wheel-scroll-step'];
     } else {
         let minValue = +wheelScrollStepInput.min;
         let maxValue = +wheelScrollStepInput.max;
@@ -984,7 +1030,7 @@ function runAcceleration() {
 
 function rewindAction() {
     if (!selectedAudio) {
-        selectedAudio = orderedPlaylist[orderedPlaylist.length - 1];
+        selectedAudio = curOrderedAudios[curOrderedAudios.length - 1];
         if (!selectedAudio) return;
 
         console.log('step-rewind track selecting | ' + selectedAudio.dataset.title);
@@ -1005,11 +1051,11 @@ function rewindAction() {
         (selectedAudio.duration && selectedAudio.currentTime <= 3) ||
         (!selectedAudio.duration && !timelinePos)
     ) { 
-        let idx = orderedPlaylist.findIndex(aud => aud === selectedAudio);
-        let prevAudio = orderedPlaylist[--idx];
+        let idx = curOrderedAudios.findIndex(aud => aud === selectedAudio);
+        let prevAudio = curOrderedAudios[--idx];
         
         removeSelected(selectedAudio);
-        selectedAudio = (prevAudio) ? prevAudio : orderedPlaylist[orderedPlaylist.length - 1];
+        selectedAudio = (prevAudio) ? prevAudio : curOrderedAudios[curOrderedAudios.length - 1];
         setSelected(selectedAudio);
 
         console.log('step-rewind track selecting | ' + selectedAudio.dataset.title);
@@ -1032,7 +1078,7 @@ function rewindAction() {
 
 function forwardAction() {
     if (!selectedAudio) {
-        selectedAudio = orderedPlaylist[0];
+        selectedAudio = curOrderedAudios[0];
         if (!selectedAudio) return;
 
         console.log('step-forward track selecting | ' + selectedAudio.dataset.title);
@@ -1049,11 +1095,11 @@ function forwardAction() {
 
     if (playOn) pauseAudio(selectedAudio);
     
-    let idx = orderedPlaylist.findIndex(aud => aud === selectedAudio);
-    let nextAudio = orderedPlaylist[++idx];
+    let idx = curOrderedAudios.findIndex(aud => aud === selectedAudio);
+    let nextAudio = curOrderedAudios[++idx];
 
     removeSelected(selectedAudio);
-    selectedAudio = (nextAudio) ? nextAudio : orderedPlaylist[0];
+    selectedAudio = (nextAudio) ? nextAudio : curOrderedAudios[0];
     setSelected(selectedAudio);
 
     console.log('step-forward track selecting | ' + selectedAudio.dataset.title);
@@ -1164,7 +1210,7 @@ playPauseBtn.onclick = playPauseAction;
 
 function playPauseAction() {
     if (!selectedAudio) {
-        selectedAudio = orderedPlaylist[0];
+        selectedAudio = curOrderedAudios[0];
         if (!selectedAudio) return;
 
         setSelected(selectedAudio);
@@ -1429,16 +1475,16 @@ function finishTrack(audio) {
     if (repeatBtn.dataset.repeat === 'track') {
         playFollowingAudio(audio);
     } else {
-        let idx = orderedPlaylist.findIndex(aud => aud === audio);
+        let idx = curOrderedAudios.findIndex(aud => aud === audio);
         let followingAudio = (acceleration && accelerationType === 'fast-rewind') ?
-            orderedPlaylist[--idx] :
-            orderedPlaylist[++idx];
+            curOrderedAudios[--idx] :
+            curOrderedAudios[++idx];
 
         if (followingAudio) {
             playFollowingAudio(followingAudio);
         } else {
             if (acceleration && accelerationType === 'fast-rewind') {
-                followingAudio = orderedPlaylist[orderedPlaylist.length - 1];
+                followingAudio = curOrderedAudios[curOrderedAudios.length - 1];
                 playFollowingAudio(followingAudio);
             } else {
                 let shuffleInfo = shuffleBtn.classList.contains('active') ? 'shuffle ' : '';
@@ -1446,7 +1492,7 @@ function finishTrack(audio) {
                 if (repeatBtn.dataset.repeat === 'playlist') {
                     console.log(`repeat ${shuffleInfo}playlist`);
 
-                    followingAudio = orderedPlaylist[0];
+                    followingAudio = curOrderedAudios[0];
                     playFollowingAudio(followingAudio);
                 } else {
                     console.log(`${shuffleInfo}playlist ended`);
@@ -1514,7 +1560,7 @@ function finishPlaying() {
         }
 
         timelinePos = 0;
-        defaultPlaylist.forEach(aud => aud.currentTime = 0);
+        originOrderedAudios.forEach(aud => aud.currentTime = 0);
         
         if (showTrackInfo.audio.paused) selectedAudio.onplaying = () => false;
         selectedAudio.onended = () => false;
@@ -1638,11 +1684,11 @@ function shuffleAction() {
     if (shuffleBtn.classList.contains('active')) {
         console.log('create random playlist');
 
-        randomizePlaylist(orderedPlaylist);
+        randomizePlaylist(curOrderedAudios);
     } else {
         console.log('set default playlist');
 
-        setDefaultPlaylist(defaultPlaylist);
+        setOriginPlaylistOrder(originOrderedAudios);
     }
 
     if (selectedAudio) {
@@ -1683,13 +1729,13 @@ function repeatAction() {
     highlightSelected(selectedAudio);
 }
 
-function setDefaultPlaylist(audios) {
-    orderedPlaylist.length = 0;
+function setOriginPlaylistOrder(audios) {
+    curOrderedAudios.length = 0;
 
-    let playlistText = 'Current playlist (default):\n\n';
+    let playlistText = 'Current playlist (origin order):\n\n';
 
     audios.forEach((audio, idx, array) => {
-        orderedPlaylist.push(audio);
+        curOrderedAudios.push(audio);
         playlistText += (idx + 1) + '. ' + audio.dataset.artist + ' \u2013 ' + audio.dataset.title;
         if (audio.dataset.dub) playlistText += ' (' + audio.dataset.dub + ')';
         if (array[array.length - 1] != audio) playlistText += '\n';
@@ -2449,7 +2495,7 @@ function keepSelectedTitleVisible(audio) {
     if (playlistLim.scrollHeight > playlistLim.clientHeight) {
         let initScrolled = playlistLim.scrollTop;
         let visibleHeight = playlistLim.clientHeight;
-        let selTrackPlaylistTop = defaultPlaylist.indexOf(audio) * titleHeight;
+        let selTrackPlaylistTop = originOrderedAudios.indexOf(audio) * titleHeight;
         let direction, deltaHeight;
 
         if (selTrackPlaylistTop + titleHeight > initScrolled + visibleHeight) {
@@ -3049,6 +3095,30 @@ modalArea.onclick = (event) => {
     if (event.target.closest('.key-info') && !event.target.closest('#close-info')) return;
 
     hideModalArea();
+};
+
+/////////////////////////
+// Tracklist selection //
+/////////////////////////
+
+const tracklistSelection = document.getElementById('tracklist-selection');
+
+tracklistSelection.onclick = (event) => {
+    if (event.target.tagName != 'BUTTON') return;
+
+    let btn = event.target;
+
+    if (btn.parentElement.hasAttribute('data-tracklist')) {
+        let tracklistTitle = btn.parentElement.dataset.tracklist;
+        let tracklist = tracklistsData[tracklistTitle];
+        let clearPlaylist = btn.hasAttribute('data-clear-playlist') ? true : false;
+    
+        createPlaylist(tracklist, clearPlaylist);
+    } else {
+        playlist.innerHTML = '';
+        originOrderedAudios.length = 0;
+        curTracklist.length = 0;
+    }
 };
 
 /////////////////////
