@@ -3,6 +3,8 @@ import { configClassic } from '../scripts/controls-config-classic.js';
 import { configStylish } from '../scripts/controls-config-stylish.js';
 import { PlayerButtonsHoverIntent } from '../scripts/player-buttons-hover-intent.js';
 
+const playerContainer = document.getElementById('player-container');
+const tracklistSelection = document.getElementById('tracklist-selection');
 const player = document.getElementById('player');
 const tooltip = document.getElementById('tooltip');
 const displayInfo = document.getElementById('display-info');
@@ -98,8 +100,8 @@ let selectedAudio;
 
 const DEFAULTS_DATA = {
     'tracklist': tracklistsData['Experiments and Parodies. Part 1'],
-    'visible-tracks---classic-config': 70,
-    'visible-tracks---stylish-config': 5,
+    'visible-tracks__classic-config': 70,
+    'visible-tracks__stylish-config': 5,
     'player_volume': 0.75,
     'scroll-elements-opacity': 70,
     'wheel-scroll-step': 2
@@ -380,10 +382,10 @@ changePlayerColor( playerColorsBank.indexOf(playerColor) );
 function changePlayerColor(idx) {
     highlightSelected(selectedAudio);
 
-    player.classList.remove('color-' + playerColor);
+    playerContainer.classList.remove('color-' + playerColor);
     playerColor = playerColorsBank[idx] || playerColorsBank[0];
     localStorage.setItem('player_color', playerColor);
-    player.classList.add('color-' + playerColor);
+    playerContainer.classList.add('color-' + playerColor);
 
     console.log('player color = ' + playerColor);
 
@@ -501,7 +503,7 @@ function changeNumberOfVisibleTracks(value) {
         visibleTracksInput.disabled = true;
         checkedVisibleTracksBox = 'false';
 
-        value = DEFAULTS_DATA[`visible-tracks---${config}-config`];
+        value = DEFAULTS_DATA[`visible-tracks__${config}-config`];
     } else {
         visibleTracksCheckbox.checked = true;
         visibleTracksInput.disabled = false;
@@ -775,14 +777,14 @@ function showTrackInfo(audio) {
 
         function moveTitles(...titles) {
             for (let title of titles) {
-                let containerWidth = player.querySelector('.selected-track').offsetWidth;
+                let boxWidth = player.querySelector('.selected-track').offsetWidth;
                 let titleWidth = title.offsetWidth;
-                if (titleWidth <= containerWidth) return;
+                if (titleWidth <= boxWidth) return;
 
                 title.style.left = 0;
         
                 let timerTitleMove = setTimeout(() => {
-                    let diffWidth = containerWidth - titleWidth;
+                    let diffWidth = boxWidth - titleWidth;
                     let pos = 0;
         
                     timerTitleMove = requestAnimationFrame(function shiftTitle() {
@@ -1653,20 +1655,20 @@ function clearFinPlayTimer() {
 // Shuffle / Repeat //
 //////////////////////
 
-for (let btnContainer of playerControls.querySelectorAll('.btn-img-wrapper')) {
-    let button = btnContainer.firstElementChild;
+for (let btnWrapper of playerControls.querySelectorAll('.btn-img-wrapper')) {
+    let button = btnWrapper.firstElementChild;
 
-    btnContainer.onpointerover = () => {
+    btnWrapper.onpointerover = () => {
         button.classList.add('hover');
 
-        btnContainer.onpointerout = () => {
+        btnWrapper.onpointerout = () => {
             button.classList.remove('hover');
 
-            btnContainer.onpointerout = () => false;
+            btnWrapper.onpointerout = () => false;
         };
     };
 
-    btnContainer.onclick = () => {
+    btnWrapper.onclick = () => {
         switch (button.id) {
             case 'shuffle':
                 shuffleAction();
@@ -2949,6 +2951,41 @@ settingsBtn.onclick = settingsAction;
 
 keyInfoBtn.onclick = showModalArea;
 
+/////////////////////////
+// Tracklist selection //
+/////////////////////////
+
+tracklistSelection.onclick = (event) => {
+    if (event.target.closest('i')) {
+        let btn = event.target;
+
+        if (btn.closest('.tracklist-section')) {
+            let tracklistTitle = btn.closest('.tracklist-section').querySelector('.tracklist-title').textContent;
+            let tracklist = tracklistsData[tracklistTitle];
+            let clearPlaylist = btn.hasAttribute('data-clear') ? true : false;
+        
+            createPlaylist(tracklist, clearPlaylist);
+        }
+    
+        if (btn.closest('.clear-playlist')) {
+            playlist.innerHTML = '';
+            originOrderedAudios.length = 0;
+            curTracklist.length = 0;
+        }
+    }
+
+    if (event.target.tagName == 'H4') {
+
+    }
+};
+
+function checkTracklistSelectionPosition() {
+    let shiftSpace = player.offsetTop;
+    let scrolled = window.pageYOffset;
+
+    tracklistSelection.style.top = (scrolled > shiftSpace) ? (scrolled - shiftSpace + 'px') : '';
+}
+
 ///////////////////
 // Settings area //
 ///////////////////
@@ -2995,6 +3032,7 @@ function checkSettingsAreaPosition() {
 
     settingsArea.style.top = (scrolled > shiftSpace) ? (scrolled - shiftSpace + 'px') : '';
 }
+
 
 function highlightSelected(audio) {
     if (!audio) return;
@@ -3097,30 +3135,6 @@ modalArea.onclick = (event) => {
     hideModalArea();
 };
 
-/////////////////////////
-// Tracklist selection //
-/////////////////////////
-
-const tracklistSelection = document.getElementById('tracklist-selection');
-
-tracklistSelection.onclick = (event) => {
-    if (event.target.tagName != 'BUTTON') return;
-
-    let btn = event.target;
-
-    if (btn.parentElement.hasAttribute('data-tracklist')) {
-        let tracklistTitle = btn.parentElement.dataset.tracklist;
-        let tracklist = tracklistsData[tracklistTitle];
-        let clearPlaylist = btn.hasAttribute('data-clear-playlist') ? true : false;
-    
-        createPlaylist(tracklist, clearPlaylist);
-    } else {
-        playlist.innerHTML = '';
-        originOrderedAudios.length = 0;
-        curTracklist.length = 0;
-    }
-};
-
 /////////////////////
 // Global handlers //
 /////////////////////
@@ -3132,7 +3146,7 @@ window.addEventListener('load', () => {
 });
 
 function hidePreload() {
-    player.classList.remove('loading');
+    playerContainer.classList.remove('loading');
 }
 
 // Highlighting selected track in current playlist
@@ -3150,8 +3164,7 @@ document.addEventListener('click', (event) => {
     if (event.target.closest('#settings-area')) return;
     if (event.target.closest('#visible-playlist-area')) return;
     if (event.target.closest('#modal-area')) return;
-    if (event.target.tagName == 'I') return;
-    if (event.target.closest('.btn-img-wrapper')) return;
+    if (event.target.closest('i')) return;
     if (!selectedAudio) return;
 
     highlightSelected(selectedAudio);
@@ -3250,7 +3263,7 @@ document.oncontextmenu = () => {
 };
 
 // Creating tooltips
-let tButtons = player.querySelectorAll('[data-tooltip]');
+let tButtons = playerContainer.querySelectorAll('[data-tooltip]');
 
 for (let elem of tButtons) {
     let hoverIntent = new PlayerButtonsHoverIntent({
@@ -3443,6 +3456,7 @@ document.addEventListener('scroll', function () {
     if (!scrollTicking) {
         requestAnimationFrame(function () {
             checkScrollElemsPosition();
+            if (!tracklistSelection.hidden) checkTracklistSelectionPosition();
             if (!settingsArea.hidden) checkSettingsAreaPosition();
 
             scrollTicking = false;
@@ -3467,6 +3481,8 @@ window.addEventListener('resize', () => {
     
     resizeTick = true;
 });
+
+
   
 function checkScrollElemsPosition() {
     let playlistContainerRect = playlistContainer.getBoundingClientRect();

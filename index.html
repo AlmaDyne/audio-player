@@ -17,22 +17,34 @@
             };
         </script>
         <header></header>
-        <main>
-            <div id="tracklist-selection">
-                Choose the tracklist:
-                <div data-tracklist="Experiments and Parodies. Part 1">
-                    Experiments and Parodies. Part 1
-                    <button>Add tracklist</button>
-                    <button data-clear-playlist>Clear playlist and add tracklist</button>
-                </div>
-                <div data-tracklist="Experiments and Parodies. Part 2">
-                    Experiments and Parodies. Part 2
-                    <button>Add tracklist</button>
-                    <button data-clear-playlist>Clear playlist and add tracklist</button>
-                </div>
-                <button>Clear playlist</button>
-            </div>
-            <div id="player" class="loading">
+        <main id="player-container" class="loading">
+            <aside id="tracklist-selection">
+                <h3>Choose the tracklist:</h3>
+                <section class="tracklist-section">
+                    <div class="title-box">
+                        <h4><span class="tracklist-title">Experiments and Parodies. Part 1</span></h4>
+                    </div>
+                    <div class="buttons-box">
+                        <i class="icon-list" data-tooltip="Replace playlist" data-clear></i>
+                        <i class="icon-list-add" data-tooltip="Add to playlist"></i>
+                    </div>
+                    <div class="tracklist-details"></div>
+                </section>
+                <section class="tracklist-section">
+                    <div class="title-box">
+                        <h4><span class="tracklist-title">Experiments and Parodies. Part 2</span></h4>
+                    </div>
+                    <div class="buttons-box">
+                        <i class="icon-list" data-tooltip="Replace playlist" data-clear></i>
+                        <i class="icon-list-add" data-tooltip="Add to playlist"></i>
+                    </div>
+                </section>
+                <i class="clear-playlist" data-tooltip="Clear playlist">
+                    <img src="img/icons/clear.png" alt="clear">
+                </i>
+            </aside>
+
+            <div id="player">
                 <div class="selected-track">
                     <div id="display-info" hidden></div>
                     <div><span id="display-title" class="display"></span></div>
@@ -66,16 +78,16 @@
                     <i slot="rewind" id="rewind" class="icon-to-start" data-tooltip="Step back/fast-rewind"></i>
                     <i slot="forward" id="forward" class="icon-to-end" data-tooltip="Step forward/fast-forward"></i>
                     <div slot="indicator" id="indicator"></div>
-                    <div slot="shuffle" class="btn-img-wrapper" data-tooltip="Shuffle playlist">
+                    <i slot="shuffle" class="btn-img-wrapper" data-tooltip="Shuffle playlist">
                         <div id="shuffle" class="circle-background">
                             <img src="img/icons/shuffle_playlist.png" alt="Shuffle Playlist">
                         </div>
-                    </div>
-                    <div slot="repeat" class="btn-img-wrapper" data-tooltip="Repeat playlist/track">
+                    </i>
+                    <i slot="repeat" class="btn-img-wrapper" data-tooltip="Repeat playlist/track">
                         <div id="repeat" class="circle-background" data-repeat="none">
                             <img src="img/icons/repeat_playlist.png" alt="Repeat Playlist">
                         </div>
-                    </div>
+                    </i>
                     <div slot="volume" class="volume-container">
                         <i id="volume" class="icon-volume" data-tooltip="Volume on/off"></i>
                         <div id="volume-range" data-tooltip="">
@@ -130,7 +142,7 @@
                         <i id="playlist-style" class="icon-align-center" data-tooltip="Playlist style"></i>
                     </div>
                     <div class="center-col">
-                        <span class="version">v1.0.2</span>
+                        <span class="version">v1.0.3</span>
                     </div>
                     <div class="right-col">
                         <i id="settings" class="icon-cog-circled" data-tooltip="Settings"></i>
@@ -597,8 +609,8 @@
                         </div>
                     </article>
                 </div>
-                <script src="scripts/player.js" type="module"></script>
             </div>
+            <script src="scripts/player.js" type="module"></script>
         </main>
         <footer>
             <p>All rights reserved<br>&#169; <time><script>document.write(new Date().getFullYear());</script></time></p>

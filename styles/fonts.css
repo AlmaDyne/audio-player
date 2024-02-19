@@ -52,8 +52,8 @@
 .icon-cancel-circled:before { content: '\e811'; } /* '' */
 .icon-cancel:before { content: '\e812'; } /* '' */
 .icon-wrench:before { content: '\e813'; } /* '' */
-.icon-up-fat:before { content: '\e814'; } /* '' */
-.icon-down-fat:before { content: '\e815'; } /* '' */
+.icon-list-add:before { content: '\e814'; } /* '' */
+.icon-list:before { content: '\e815'; } /* '' */
 .icon-up-circled:before { content: '\e816'; } /* '' */
 .icon-down-circled:before { content: '\e817'; } /* '' */
 .icon-brush:before { content: '\f1fc'; } /* '' */
