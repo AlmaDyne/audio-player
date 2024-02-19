@@ -216,7 +216,7 @@ function isTouchDeviceCheck() {
 }
 
 console.log(localStorage);
-localStorage.clear();
+//localStorage.clear();
 
 ///////////////////////
 // Playlist creation //
