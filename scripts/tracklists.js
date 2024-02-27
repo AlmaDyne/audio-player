@@ -1,42 +1,38 @@
 export let tracklistsData = {
-    'Experiments and Parodies. Part 1': new Array(
+    'Experiments and Parodies': new Array(
         {
-            artist: 'Zmicier M. (feat. ATD)',
-            title: 'Cold Lights (Metal Mix)',
+            artist: 'Zmicier M.',
+            title: 'Cold Lights (Metal Mix by ATD)',
             src: 'music/Experiments and Parodies/1.mp3'
         },
         {
-            artist: 'Zmicier M. (feat. ATD)',
-            title: 'Silent Minds',
+            artist: 'Zmicier M.',
+            title: 'Silent Minds (feat. ATD)',
             src: 'music/Experiments and Parodies/2.mp3'
         },
         {
-            artist: 'Zmicier M. (feat. ATD)',
-            title: 'Classical TechnoDub',
+            artist: 'Zmicier M.',
+            title: 'Classical TechnoDub (feat. ATD)',
             src: 'music/Experiments and Parodies/3.mp3'
         },
         {
-            artist: 'Zmicier M. (feat. ATD)',
-            title: 'First Snow',
+            artist: 'Zmicier M.',
+            title: 'First Snow (feat. ATD)',
             src: 'music/Experiments and Parodies/4.mp3'
         },
-        
-    ),
-    
-    'Experiments and Parodies. Part 2': new Array(
         {
-            artist: 'Zmicier M. (feat. ATD) Extra-MEGA Internet Band Collaboration',
-            title: 'New Year 2020 Experiment (Super Apocalyptic Remix and Extremely Cool Job)',
+            artist: 'Extra-MEGA Internet Band Collaboration',
+            title: 'New Year 2020 Experiment (Super Apocalyptic Remix and Extremely Cool Job by ATD)',
             src: 'music/Experiments and Parodies/5.mp3'
         },
         {
-            artist: 'Zmicier M. (feat. ATD)',
-            title: 'Harpsichords Attack!',
+            artist: 'Zmicier M.',
+            title: 'Harpsichords Attack! (feat. ATD)',
             src: 'music/Experiments and Parodies/6.mp3'
         },
         {
-            artist: 'Zmicier M. (feat. ATD)',
-            title: 'Thousand Miles (of Drinking)',
+            artist: 'Zmicier M.',
+            title: 'Thousand Miles (of Drinking) (feat. ATD)',
             src: 'music/Experiments and Parodies/7.mp3'
         },
         {
@@ -44,6 +40,19 @@ export let tracklistsData = {
             title: 'Raindrops (Guitar Mix)',
             src: 'music/Experiments and Parodies/8.mp3'
         }
+    ),
+    
+    'Dmitry Miroshkin - Favourite Opuses': new Array(
+        {
+            artist: 'Dmitry Miroshkin',
+            title: 'Astronaut',
+            src: 'music/Dmitry Miroshkin - Favourite Opuses/Dmitry Miroshkin - Astronaut.mp3'
+        },
+        {
+            artist: '',
+            title: '',
+            src: 'music/Dmitry Miroshkin - Favourite Opuses/***.mp3'
+        },
     ),
 
     

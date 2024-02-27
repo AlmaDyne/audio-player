@@ -2,7 +2,7 @@ export const configStylish = `
 <template id="tmpl-stylish">
     <style>
         .row1 {
-            height: 12px;
+            height: 10px;
             text-align: center;
         }
         .row2 {
