@@ -1,7 +1,10 @@
-import { tracklistsData } from '../scripts/tracklists.js';
-import { configClassic } from '../scripts/controls-config-classic.js';
-import { configStylish } from '../scripts/controls-config-stylish.js';
-import { PlayerButtonsHoverIntent } from '../scripts/player-buttons-hover-intent.js';
+import { tracklistsData } from './tracklists.js';
+import { configClassic } from './controls-config-classic.js';
+import { configStylish } from './controls-config-stylish.js';
+import { PlayerHoverIntent } from './player-hover-intent.js';
+
+console.log(localStorage);
+//localStorage.clear();
 
 const cssRoot = document.querySelector(':root');
 const playerContainer = document.getElementById('player-container');
@@ -36,6 +39,7 @@ const playlistScrollArrowUp = playlistContainer.querySelector('.scroll-arrows-bo
 const playlistScrollArrowDown = playlistContainer.querySelector('.scroll-arrows-box.down > .playlist-scroll-arrow');
 const outerScrollArrowsUp = playlistContainer.querySelectorAll('.scroll-arrows-box.up > .outer-scroll-arrow');
 const outerScrollArrowsDown = playlistContainer.querySelectorAll('.scroll-arrows-box.down > .outer-scroll-arrow');
+const tempTrackBox = document.getElementById('temporary-track-box');
 const configBtn = document.getElementById('configuration');
 const colorBtn = document.getElementById('coloring');
 const playlistStyleBtn = document.getElementById('playlist-style');
@@ -45,7 +49,7 @@ const settingsArea = document.getElementById('settings-area');
 const curPlaylist = document.getElementById('current-playlist');
 const defaultSetBtn = document.getElementById('default-settings');
 const closeSetBtn = document.getElementById('close-settings');
-const modalArea = document.getElementById('modal-area');
+const keysInfoArea = document.getElementById('keys-info-area');
 const TIMELINE_MARGIN = Math.abs(parseInt(getComputedStyle(timeline).marginLeft));  
 const titleHeight = parseInt(getComputedStyle(playlistLim).getPropertyValue('--track-height'));
 const SCROLL_ARROW_BOX_HEIGHT = playlistContainer.querySelector('.scroll-arrows-box').offsetHeight;
@@ -98,29 +102,27 @@ let timeRangeHoverIntent = {};
 let volumeRangeHoverIntent = {};
 let endWindowScrolling = new CustomEvent('endWinScroll');
 
-function defineProperty(propertyName, value) {
+defineProperty('selectedAudio', undefined);
+
+function defineProperty(propertyName, audio) {
     Object.defineProperty(window, propertyName, {
         get() {
-            return value;
+            return audio;
         },
-        set(audio) {
+        set(newAudio) {
             if (propertyName != 'selectedAudio') return;
 
-            let prevAudio = value;
-
-            if (prevAudio && prevAudio.hasAttribute('data-invisible') && prevAudio != audio) {
-                prevAudio.parentElement.remove();
+            if (audio && audio.hasAttribute('data-relocated') && audio != newAudio) {
+                audio.parentElement.remove();
             }
 
-            value = audio;
+            audio = newAudio;
         }
     });
 }
 
-defineProperty('selectedAudio', undefined);
-
 const DEFAULTS_DATA = {
-    'tracklist': tracklistsData['Experiments and Parodies. Part 1'],
+    'first-tracklist': tracklistsData[Object.keys(tracklistsData)[0]],
     'visible-tracks__classic-config': 7,
     'visible-tracks__stylish-config': 5,
     'player_volume': 0.75,
@@ -828,7 +830,7 @@ function playAudio(audio) { // playOn = true
     indicator.classList.remove('active');
 
     if (!audio.src) {
-        audio.src = audio.dataset.source;
+        audio.src = audio.dataset.src;
 
         if (acceleration) runUpdTimers(audio);
 
@@ -1263,9 +1265,9 @@ function shuffleAction() {
     shuffleBtn.classList.toggle('active');
 
     if (shuffleBtn.classList.contains('active')) {
-        randomizePlaylist(curOrderedAudios);
+        randomizePlaylist();
     } else {
-        setOriginPlaylist(originOrderedAudios);
+        setOriginPlaylist();
     }
 
     if (selectedAudio) {
@@ -1275,73 +1277,42 @@ function shuffleAction() {
     }
 };
 
-function repeatAction() {
-    const repeatImg = repeatBtn.firstElementChild;
-    const repeatStates = ['none', 'playlist', 'track'];
-    let idx = repeatStates.indexOf(repeatBtn.dataset.repeat);
-    let repeat = repeatStates[idx + 1] || repeatStates[0];
-
-    repeatBtn.setAttribute('data-repeat', repeat);
-
-    console.log('repeat: ' + repeatBtn.dataset.repeat);
-
-    switch (repeat) {
-        case 'none':
-            repeatBtn.classList.remove('active');
-            repeatImg.src = 'img/icons/repeat_playlist.png';
-            repeatImg.alt = 'Repeat Playlist';
-            break;
-        case 'playlist':
-            repeatBtn.classList.add('active');
-            repeatImg.src = 'img/icons/repeat_playlist.png';
-            repeatImg.alt = 'Repeat Playlist';
-            break;
-        case 'track':
-            repeatBtn.classList.add('active');
-            repeatImg.src = 'img/icons/repeat_track.png';
-            repeatImg.alt = 'Repeat Track';
-            break;
-    }
-
-    highlightSelected(selectedAudio);
-}
-
-function setOriginPlaylist(audios) {
+function setOriginPlaylist() {
     console.log('set origin playlist');
 
     curOrderedAudios.length = 0;
 
     let playlistText = 'Current playlist (origin order):\n\n';
 
-    audios.forEach((audio, idx, array) => {
+    originOrderedAudios.forEach((audio, idx, array) => {
         curOrderedAudios.push(audio);
         playlistText += (idx + 1) + '. ' + audio.dataset.artist + ' \u2013 ' + audio.dataset.title;
         if (audio.dataset.dub) playlistText += ' (' + audio.dataset.dub + ')';
-        if (array[array.length - 1] != audio) playlistText += '\n';
+        if (array[idx + 1]) playlistText += '\n';
     });
 
     breakLine(playlistText);
 }
 
-function randomizePlaylist(audios) {
+function randomizePlaylist() {
     console.log('create random playlist');
 
-    shuffle(audios);
+    shuffle(curOrderedAudios);
 
     if (selectedAudio) {
-        audios.map((aud, idx) => {
+        curOrderedAudios.map((aud, idx, array) => {
             if (aud === selectedAudio) {
-                [audios[0], audios[idx]] = [audios[idx], audios[0]];
+                [array[0], array[idx]] = [array[idx], array[0]];
             }
         });
     }
 
     let playlistText = 'Current playlist (random order):\n\n';
 
-    audios.forEach((audio, idx, array) => {
+    curOrderedAudios.forEach((audio, idx, array) => {
         playlistText += (idx + 1) + '. ' + audio.dataset.artist + ' \u2013 ' + audio.dataset.title;
         if (audio.dataset.dub) playlistText += ' (' + audio.dataset.dub + ')';
-        if (array[array.length - 1] != audio) playlistText += '\n';
+        if (array[idx + 1]) playlistText += '\n';
     });
 
     breakLine(playlistText);
@@ -1399,6 +1370,37 @@ function breakLine(playlistText) {
     for (let str of fixedPlaylistStrings.keys()) {
         curPlaylist.value += fixedPlaylistStrings.get(str);
     }
+}
+
+function repeatAction() {
+    const repeatImg = repeatBtn.firstElementChild;
+    const repeatStates = ['none', 'playlist', 'track'];
+    let idx = repeatStates.indexOf(repeatBtn.dataset.repeat);
+    let repeat = repeatStates[idx + 1] || repeatStates[0];
+
+    repeatBtn.setAttribute('data-repeat', repeat);
+
+    console.log('repeat: ' + repeatBtn.dataset.repeat);
+
+    switch (repeat) {
+        case 'none':
+            repeatBtn.classList.remove('active');
+            repeatImg.src = 'img/icons/repeat_playlist.png';
+            repeatImg.alt = 'Repeat Playlist';
+            break;
+        case 'playlist':
+            repeatBtn.classList.add('active');
+            repeatImg.src = 'img/icons/repeat_playlist.png';
+            repeatImg.alt = 'Repeat Playlist';
+            break;
+        case 'track':
+            repeatBtn.classList.add('active');
+            repeatImg.src = 'img/icons/repeat_track.png';
+            repeatImg.alt = 'Repeat Track';
+            break;
+    }
+
+    highlightSelected(selectedAudio);
 }
 
 ////////////
@@ -1528,26 +1530,11 @@ function calcVolumeTooltip() {
 //////////////
 
 visPlaylistArea.onpointerover = (event) => {
-    if (event.target.tagName != 'SPAN') return;
+    if (!event.target.matches('.track-title')) return;
 
     let trackTitle = event.target;
-    let titleWidth = trackTitle.offsetWidth;
-    let titleLeft = trackTitle.getBoundingClientRect().left + window.scrollX;
-    let playlistLimLeft = playlistLim.getBoundingClientRect().left + window.scrollX;
-    let docWidth = Math.max(
-        document.body.scrollWidth, document.documentElement.scrollWidth,
-        document.body.offsetWidth, document.documentElement.offsetWidth,
-        document.body.clientWidth, document.documentElement.clientWidth
-    );
-    let shift = isTouchDevice ? 1 : 0; // Bug on some mobile devices
-
-    if (titleLeft - playlistLimLeft + titleWidth > playlistLim.offsetWidth) {
-        playlistLim.style.width = titleLeft - playlistLimLeft + titleWidth + 'px';
-    }
-    if (titleLeft + titleWidth > docWidth) {
-        playlistLim.style.width = docWidth - playlistLimLeft - shift + 'px';
-    }
-
+    
+    adjustPlaylistLimiterWidth(trackTitle, false);
     trackTitle.parentElement.classList.add('hover');
     
     trackTitle.onpointerleave = () => {
@@ -1558,12 +1545,48 @@ visPlaylistArea.onpointerover = (event) => {
     };
 };
 
+function adjustPlaylistLimiterWidth(trackTitle, isTransitionChange) {
+    let docWidth = Math.max(
+        document.body.scrollWidth, document.documentElement.scrollWidth,
+        document.body.offsetWidth, document.documentElement.offsetWidth,
+        document.body.clientWidth, document.documentElement.clientWidth
+    );
+    let playlistLimLeft = playlistLim.getBoundingClientRect().left + window.scrollX;
+    let shift = isTouchDevice ? 1 : 0; // Bug on some mobile devices
+
+    if (isTransitionChange) {
+        let screenLim = trackTitle.parentElement;
+
+        playlistLim.style.width = docWidth - playlistLimLeft - shift + 'px';
+
+        screenLim.ontransitionend = () => {
+            extendWidth();
+
+            screenLim.ontransitionend = () => false;
+        };
+    } else {
+        extendWidth();
+    }
+
+    function extendWidth() {
+        let titleWidth = trackTitle.offsetWidth;
+        let titleLeft = trackTitle.getBoundingClientRect().left + window.scrollX;
+    
+        if (titleLeft - playlistLimLeft + titleWidth > playlist.offsetWidth) {
+            playlistLim.style.width = titleLeft - playlistLimLeft + titleWidth + 'px';
+        }
+        if (titleLeft + titleWidth > docWidth) {
+            playlistLim.style.width = docWidth - playlistLimLeft - shift + 'px';
+        }
+    }
+}
+
 // Prohibiting text selection on the touchscreen
 visPlaylistArea.addEventListener('pointerdown', (event) => {
     if (
         (event.pointerType == 'touch' || event.pointerType == 'pen') &&
         event.isPrimary &&
-        event.target.tagName == 'SPAN'
+        event.target.matches('.track-title')
     ) {
         let trackTitle = event.target;
         trackTitle.style.userSelect = 'none';
@@ -1577,59 +1600,128 @@ visPlaylistArea.addEventListener('pointerdown', (event) => {
 });
 
 visPlaylistArea.onclick = (event) => {
-    if (document.getSelection().toString().length) return;
+    let target;
+
+    if (target = event.target.closest('.track-title')) {
+        if (document.getSelection().toString().length) return;
+
+        let newAudio = target.closest('.track').querySelector('audio');
+
+        console.log('playlist track selecting | ' + newAudio.dataset.title);
     
-    let trackTitle = event.target;
-    if (trackTitle.tagName != 'SPAN') return;
-
-    let newAudio = trackTitle.closest('.track').querySelector('audio');
-    if (!newAudio || newAudio.tagName != 'AUDIO') return;
-
-    console.log('playlist track selecting | ' + newAudio.dataset.title);
-
-    setPlayState();
+        setPlayState();
+        
+        if (!selectedAudio) {
+            selectedAudio = newAudio;
     
-    if (!selectedAudio) {
-        selectedAudio = newAudio;
-
-        setSelected(selectedAudio);
-        showTrackInfo(selectedAudio);
+            setSelected(selectedAudio);
+            showTrackInfo(selectedAudio);
+            playAudio(selectedAudio);
+            return;
+        }
+    
+        clearFinPlayTimer();
+    
+        if (newAudio != selectedAudio) {
+            clearUpdTimers();
+        
+            if (playOn) pauseAudio(selectedAudio);
+        
+            let prevSelectedAudio = selectedAudio;
+    
+            removeSelected(selectedAudio);
+            selectedAudio = newAudio;
+            setSelected(selectedAudio);
+    
+            prevSelectedAudio.currentTime = 0;
+            selectedAudio.currentTime = 0;
+            timelinePos = 0;
+        
+            showTrackInfo(selectedAudio, prevSelectedAudio);
+        } else {
+            selectedAudio.currentTime = 0;
+            timelinePos = 0;
+    
+            keepSelectedTitleVisible(selectedAudio);
+            updateTime(selectedAudio);
+            updateTimeline(selectedAudio);
+        }
+    
         playAudio(selectedAudio);
-        return;
     }
 
-    clearFinPlayTimer();
+    if (target = event.target.closest('.button-delete')) {
+        let track = target.closest('.track');
+        let audio = track.querySelector('audio');
 
-    if (newAudio != selectedAudio) {
-        clearUpdTimers();
-    
-        if (playOn) pauseAudio(selectedAudio);
-    
-        let prevSelectedAudio = selectedAudio;
+        console.log('delete track from playlist | ' + audio.dataset.title);
 
-        removeSelected(selectedAudio);
-        selectedAudio = newAudio;
-        setSelected(selectedAudio);
+        // Cutting audio from arrays
+        let originAudioIdx = originOrderedAudios.indexOf(audio);
+        originOrderedAudios.splice(originAudioIdx, 1);
+        curTracklist.splice(originAudioIdx, 1);
 
-        prevSelectedAudio.currentTime = 0;
-        selectedAudio.currentTime = 0;
-        timelinePos = 0;
-    
-        showTrackInfo(selectedAudio, prevSelectedAudio);
-    } else {
-        selectedAudio.currentTime = 0;
-        timelinePos = 0;
+        let curAudioIdx = curOrderedAudios.indexOf(audio);
+        curOrderedAudios.splice(curAudioIdx, 1);
 
-        keepSelectedTitleVisible(selectedAudio);
-        updateTime(selectedAudio);
-        updateTimeline(selectedAudio);
+        // Removing track element from playlist
+        if (audio == selectedAudio) {
+            audio.setAttribute('data-relocated', '');
+            tempTrackBox.append(track);
+        } else {
+            track.remove();
+        }
+
+        // Recounting duplicates
+        let artist = audio.dataset.artist;
+        let title = audio.dataset.title;
+
+        for (let i = originAudioIdx; i < curTracklist.length; i++) {
+            let comparedArtist = curTracklist[i].artist;
+            let comparedTitle = curTracklist[i].title;
+
+            if (comparedArtist == artist && comparedTitle == title) {
+                let dub = --curTracklist[i].dub;
+
+                if (dub > 1) {
+                    curTracklist[i].dub = dub;
+                    originOrderedAudios[i].dataset.dub = dub; // curOrderedAudios will be updated
+                } else {
+                    dub = null;
+                    delete curTracklist[i].dub;
+                    delete originOrderedAudios[i].dataset.dub; // curOrderedAudios will be updated
+                }
+
+                let playlistTrackTitle = playlist.children[i].querySelector('.track-title');
+                playlistTrackTitle.textContent = artist + ' \u2013 ' + title;
+                if (dub) playlistTrackTitle.textContent += ' (' + dub + ')';
+            }
+        }
+
+        localStorage.setItem('current_tracklist', JSON.stringify(curTracklist));
+
+        // Cutting string from curPlaylist textarea
+        let textMark = '\n\n';
+        let startNewTextIdx = curPlaylist.value.indexOf(textMark) + textMark.length;
+        let playlistText = curPlaylist.value.slice(0, startNewTextIdx);
+
+        curOrderedAudios.forEach((audio, idx, array) => {
+            playlistText += (idx + 1) + '. ' + audio.dataset.artist + ' \u2013 ' + audio.dataset.title;
+            if (audio.dataset.dub) playlistText += ' (' + audio.dataset.dub + ')';
+            if (array[idx + 1]) playlistText += '\n';
+        });
+
+        breakLine(playlistText);
+
+        // Additional functions
+        checkPlaylistScrollability();
+        checkVisibilityScrollElements();
+        highlightSelected(selectedAudio);
     }
-
-    playAudio(selectedAudio);
 };
 
 visPlaylistArea.oncontextmenu = function(event) {
-    if (event.target.tagName != 'SPAN') return;
+    if (!event.target.matches('.track-title')) return;
 
     event.preventDefault();
 
@@ -1702,7 +1794,7 @@ visPlaylistArea.oncontextmenu = function(event) {
         displayProgressElem.innerHTML = '0%';
         loadInfoElem.appendChild(displayProgressElem);
 
-        let url = audio.dataset.source;
+        let url = audio.dataset.src;
         let response = await fetch(url);
     
         if (response.ok) {
@@ -1904,8 +1996,9 @@ visPlaylistArea.onwheel = (event) => {
     });
 };
 
+// Enable playlist focus
 visPlaylistArea.addEventListener('pointerdown', function (event) {
-    if (event.target.tagName != 'SPAN' || event.button == 1) {
+    if (!event.target.matches('.track-title') || event.button == 1) {
         this.focus({preventScroll: true});
     } else if (document.activeElement != visPlaylistArea) {
         this.removeAttribute('tabindex');
@@ -2518,24 +2611,36 @@ function checkPlaylistScrollability() {
 // Track titles //
 //////////////////
 
-function hideLoading(audio) {
-    audio.closest('.track').querySelector('.loading-figure').hidden = true;
-    audio.closest('.track').querySelector('.screen-limiter').classList.remove('loading');
-}
 function showLoading(audio) {
-    audio.closest('.track').querySelector('.loading-figure').hidden = false;
-    audio.closest('.track').querySelector('.screen-limiter').classList.add('loading');
-
+    let track = audio.closest('.track');
+    track.classList.add('loading');
     indicator.classList.remove('active');
+}
+function hideLoading(audio) {
+    let track = audio.closest('.track');
+    track.classList.remove('loading');
 }
 
 function setSelected(audio) {
-    audio.closest('.track').querySelector('.screen-limiter').classList.add('selected');
-    audio.closest('.track').querySelector('.track-title').classList.add('selected');
+    let track = audio.closest('.track');
+    let trackTitle = track.querySelector('.track-title');
+
+    if (playlistStyle === 'smooth' &&
+        trackTitle.matches(':hover')) {
+        adjustPlaylistLimiterWidth(trackTitle, true);
+    }
+
+    track.classList.add('selected');
 }
 function removeSelected(audio) {
-    audio.closest('.track').querySelector('.screen-limiter').classList.remove('selected');
-    audio.closest('.track').querySelector('.track-title').classList.remove('selected');
+    let track = audio.closest('.track');
+    let trackTitle = track.querySelector('.track-title');
+
+    if (playlistStyle === 'smooth' && trackTitle.matches(':hover')) {
+        adjustPlaylistLimiterWidth(trackTitle, true);
+    }
+
+    track.classList.remove('selected');
 }
 
 ///////////////////////////
@@ -2560,7 +2665,7 @@ playlistStyleBtn.onclick = () => {
 
 settingsBtn.onclick = settingsAction;
 
-keyInfoBtn.onclick = showModalArea;
+keyInfoBtn.onclick = showKeysInfoArea;
 
 ///////////////////
 // Settings area //
@@ -2613,28 +2718,19 @@ closeSetBtn.onclick = hideSettings;
 
 function highlightSelected(audio) {
     if (!audio) return;
-    if (audio.hasAttribute('data-invisible')) return;
+    if (audio.hasAttribute('data-relocated')) return;
     if (!settingsArea.classList.contains('active')) return;
-    if (modalArea.classList.contains('active')) return;
+    if (keysInfoArea.classList.contains('active')) return;
 
     // Searching
-    let artist = audio.dataset.artist.replace(/\p{P}/gu, '\\$&');
-    let title = audio.dataset.title.replace(/\p{P}/gu, '\\$&');
-    let dub = (audio.dataset.dub) ? ` \\(${audio.dataset.dub}\\)` : '';
-    let regexp = new RegExp(`^\\d+\\.\\s${artist}\\s\u2013\\s${title}${dub}$`);
-    let fixedStr;
-
-    for (let str of fixedPlaylistStrings.keys()) {
-        if (str.match(regexp)) {
-            fixedStr = fixedPlaylistStrings.get(str);
-            break;
-        }
-    }
+    let fixedStr = searchFixedPlaylistString(audio);
+    if (!curPlaylist.value.includes(fixedStr)) return;
 
     // Highlighting
-    let strLength = fixedStr.length;
     let startPos = curPlaylist.value.indexOf(fixedStr);
-    let endPos = (fixedStr.at(-1) == '\n') ? startPos + strLength - 1 : startPos + strLength;
+    let strLength = fixedStr.length;
+    let lineBreak = (fixedStr.at(-1) == '\n') ? 1 : 0;
+    let endPos = startPos + strLength - lineBreak;
 
     rememberAndReturnFocus(HIGHLIGHT_SELECTED_FOCUS_DELAY);
 
@@ -2661,6 +2757,21 @@ function highlightSelected(audio) {
     }
 
     curPlaylist.scrollTop = (rows - Math.ceil((visibleRows - selectedRows) / 2)) * rowHeight;
+}
+
+function searchFixedPlaylistString(audio) {
+    let artist = audio.dataset.artist.replace(/\p{P}/gu, '\\$&');
+    let title = audio.dataset.title.replace(/\p{P}/gu, '\\$&');
+    let dub = (audio.dataset.dub) ? ` \\(${audio.dataset.dub}\\)` : '';
+    let regexp = new RegExp(`^\\d+\\.\\s${artist}\\s\u2013\\s${title}${dub}$`);
+
+    for (let str of fixedPlaylistStrings.keys()) {
+        if (str.match(regexp)) {
+            return fixedPlaylistStrings.get(str);
+        }
+    }
+
+    return null;
 }
 
 // Returning focus to the last active element after highlighting the selected audio
@@ -2717,35 +2828,35 @@ defaultSetBtn.onclick = () => {
 ////////////////
 
 function keyInfoAction(eventType) {
-    if (!modalArea.classList.contains('active')) {
-        showModalArea(eventType);
+    if (!keysInfoArea.classList.contains('active')) {
+        showKeysInfoArea(eventType);
     } else {
-        hideModalArea();
+        hideKeysInfoArea();
     }
 }
 
-function showModalArea(eventType) {
-    let activeTime = (eventType == 'keydown' && modalArea.hidden) ? LAG : 0;
+function showKeysInfoArea(eventType) {
+    let activeTime = (eventType == 'keydown' && keysInfoArea.hidden) ? LAG : 0;
 
-    modalArea.hidden = false;
+    keysInfoArea.hidden = false;
 
-    setTimeout(() => modalArea.classList.add('active'), activeTime);
+    setTimeout(() => keysInfoArea.classList.add('active'), activeTime);
 }
 
-function hideModalArea() {
-    modalArea.classList.remove('active');
+function hideKeysInfoArea() {
+    keysInfoArea.classList.remove('active');
     highlightSelected(selectedAudio);
 
-    let transTime = parseFloat(getComputedStyle(modalArea).transitionDuration) * 1000;
-    promiseChange(keyInfoBtn, 'KeyT', transTime, () => modalArea.hidden = true);
+    let transTime = parseFloat(getComputedStyle(keysInfoArea).transitionDuration) * 1000;
+    promiseChange(keyInfoBtn, 'KeyT', transTime, () => keysInfoArea.hidden = true);
 }
 
 // Closing key info by clicking
-modalArea.onclick = (event) => {
+keysInfoArea.onclick = (event) => {
     if (event.target == keyInfoBtn) return;
-    if (event.target.closest('.key-info') && !event.target.closest('#close-info')) return;
+    if (event.target.closest('.keys-info') && !event.target.closest('#close-info')) return;
 
-    hideModalArea();
+    hideKeysInfoArea();
 };
 
 /////////////////////
@@ -2766,7 +2877,7 @@ document.addEventListener('click', (event) => {
     if (event.target.closest('#settings-area')) return;
     if (event.target.closest('#visible-playlist-area')) return;
     if (event.target.closest('#tracklist-selection label')) return;
-    if (event.target.closest('#modal-area')) return;
+    if (event.target.closest('#keys-info-area')) return;
     if (event.target.closest('i')) return;
     if (!selectedAudio) return;
 
@@ -2881,72 +2992,74 @@ document.oncontextmenu = () => {
 };
 
 // Creating tooltips
-let tButtons = playerContainer.querySelectorAll('[data-tooltip]');
+function connectTooltipHoverIntents() {
+    let tButtons = playerContainer.querySelectorAll('[data-tooltip]');
 
-for (let elem of tButtons) {
-    let hoverIntent = new PlayerButtonsHoverIntent({
-        elem,
-
-        repeatTask: (elem == timeRange || elem == volumeRange) ? true : false,
-
-        executeTask() {
-            if (!this.elemRect) return;
-
-            if (this.elem == timeRange) {
-                let calculatedTime = calcTimeRangeTooltip(this.x1);
-
-                if (calculatedTime) {
-                    this.elem.dataset.tooltip = calculatedTime;
+    for (let elem of tButtons) {
+        let hoverIntent = new PlayerHoverIntent({
+            elem,
+    
+            repeatTask: (elem == timeRange || elem == volumeRange) ? true : false,
+    
+            executeTask() {
+                if (!this.elemRect) return;
+    
+                if (this.elem == timeRange) {
+                    let calculatedTime = calcTimeRangeTooltip(this.x1);
+    
+                    if (calculatedTime) {
+                        this.elem.dataset.tooltip = calculatedTime;
+                    } else {
+                        return;
+                    }
+                }
+    
+                if (this.elem == volumeRange) {
+                    this.elem.dataset.tooltip = calcVolumeTooltip();
+                }
+    
+                tooltip.innerHTML = this.elem.dataset.tooltip;
+    
+                let x;
+                if (this.elem == timeRange) {
+                    x = this.elemRect.left + this.x1 - tooltip.offsetWidth / 2;
+                } else if (this.elem == volumeRange) {
+                    x = volumeBar.getBoundingClientRect().left + volumeBar.offsetWidth / 2 - tooltip.offsetWidth / 2;
                 } else {
-                    return;
+                    x = this.elemRect.left + this.elem.offsetWidth / 2 - tooltip.offsetWidth / 2;
+                }
+    
+                if (x < 0) x = 0;
+                if (x > document.documentElement.clientWidth - tooltip.offsetWidth) {
+                    x = document.documentElement.clientWidth - tooltip.offsetWidth;
+                }
+    
+                let y = this.elemRect.top - tooltip.offsetHeight;
+                if (this.elem == timeRange) y -= 6;
+                if (this.elem == volumeRange) y -= 10;
+    
+                if (y < 0) y = this.elemRect.top + this.y1 + 24;
+    
+                tooltip.style.left = x + 'px';
+                tooltip.style.top = y + 'px';
+                
+                tooltip.style.opacity = 1;
+                tooltip.style.marginTop = 0;
+            },
+    
+            dismissTask() {
+                tooltip.style.opacity = '';
+                tooltip.style.marginTop = '';
+    
+                if (this.elem == timeRange || this.elem == volumeRange) {
+                    this.elem.dataset.tooltip = '';
                 }
             }
-
-            if (this.elem == volumeRange) {
-                this.elem.dataset.tooltip = calcVolumeTooltip();
-            }
-
-            tooltip.innerHTML = this.elem.dataset.tooltip;
-
-            let x;
-            if (this.elem == timeRange) {
-                x = this.elemRect.left + this.x1 - tooltip.offsetWidth / 2;
-            } else if (this.elem == volumeRange) {
-                x = volumeBar.getBoundingClientRect().left + volumeBar.offsetWidth / 2 - tooltip.offsetWidth / 2;
-            } else {
-                x = this.elemRect.left + this.elem.offsetWidth / 2 - tooltip.offsetWidth / 2;
-            }
-
-            if (x < 0) x = 0;
-            if (x > document.documentElement.clientWidth - tooltip.offsetWidth) {
-                x = document.documentElement.clientWidth - tooltip.offsetWidth;
-            }
-
-            let y = this.elemRect.top - tooltip.offsetHeight;
-            if (this.elem == timeRange) y -= 6;
-            if (this.elem == volumeRange) y -= 10;
-
-            if (y < 0) y = this.elemRect.top + this.y1 + 24;
-
-            tooltip.style.left = x + 'px';
-            tooltip.style.top = y + 'px';
-            
-            tooltip.style.opacity = 1;
-            tooltip.style.marginTop = 0;
-        },
-
-        dismissTask() {
-            tooltip.style.opacity = '';
-            tooltip.style.marginTop = '';
-
-            if (this.elem == timeRange || this.elem == volumeRange) {
-                this.elem.dataset.tooltip = '';
-            }
-        }
-    });
-
-    if (elem == timeRange) timeRangeHoverIntent = hoverIntent;
-    if (elem == volumeRange) volumeRangeHoverIntent = hoverIntent;
+        });
+    
+        if (elem == timeRange) timeRangeHoverIntent = hoverIntent;
+        if (elem == volumeRange) volumeRangeHoverIntent = hoverIntent;
+    }
 }
 
 // Promise change on pointer or key event
@@ -3034,7 +3147,7 @@ let scrollTicking = false;
 document.addEventListener('scroll', function () {
     if (!scrollTicking) {
         requestAnimationFrame(function () {
-            showHideScrollElements();
+            checkVisibilityScrollElements();
 
             scrollTicking = false;
         });
@@ -3049,7 +3162,7 @@ let resizeTick = false;
 window.addEventListener('resize', () => {
     if (!resizeTick) {
         requestAnimationFrame(function () {
-            showHideScrollElements();
+            checkVisibilityScrollElements();
             compensateScrollbarWidth();
 
             resizeTick = false;
@@ -3059,7 +3172,7 @@ window.addEventListener('resize', () => {
     resizeTick = true;
 });
   
-function showHideScrollElements() {
+function checkVisibilityScrollElements() {
     let playlistContainerRect = playlistContainer.getBoundingClientRect();
     let playlistLimRect = playlistLim.getBoundingClientRect();
     let winHeight = isTouchDevice ? window.innerHeight : document.documentElement.clientHeight;
@@ -3295,13 +3408,6 @@ document.addEventListener('keyup', (event) =>  {
     }
 });
 
-// Temporary handler
-document.addEventListener('keydown', (event) => {
-    if (event.code == 'KeyG') {
-        console.log(highlightActiveElem);
-    }
-});
-
 //////////////////////////
 // Initial touch device //
 //////////////////////////
@@ -3321,13 +3427,6 @@ function isTouchDeviceCheck() {
 
     return window.matchMedia(query).matches;
 }
-
-////////////////////////////
-// Local storage cleaning //
-////////////////////////////
-
-console.log(localStorage);
-//localStorage.clear();
 
 ///////////////////////////////////
 // Initial buttons configuration //
@@ -3384,8 +3483,6 @@ customElements.define('player-controls', class extends HTMLElement {
 function changeConfig(idx) {
     config = configsBank[idx] || configsBank[0];
     playerControls.setAttribute('config', config);
-    
-    changeNumberOfVisibleTracks(numOfVisTracks);
 }
 
 /////////////////////////////
@@ -3479,7 +3576,8 @@ const visibleTracksCheckbox = document.getElementById('visible-tracks-checkbox')
 let numOfVisTracks = localStorage.getItem('number_of_visible_tracks');
 
 function initVisibleTracksCheckbox() {
-    visibleTracksCheckbox.checked = localStorage.getItem('visible_tracks_checkbox_checked') === 'true';
+    let isChecked = localStorage.getItem('visible_tracks_checkbox_checked');
+    visibleTracksCheckbox.checked = isChecked === 'true';
 }
 
 visibleTracksCheckbox.onchange = function() {
@@ -3518,7 +3616,7 @@ function changeNumberOfVisibleTracks(value) {
     localStorage.setItem('visible_tracks_checkbox_checked', visibleTracksCheckbox.checked);
 
     checkPlaylistScrollability();
-    showHideScrollElements();
+    checkVisibilityScrollElements();
     compensateScrollbarWidth();
 
     if (accelerateScrolling) {
@@ -3599,7 +3697,8 @@ function changeWheelScrollStep(value) {
 const addOptionsCheckbox = document.getElementById('additional-options-checkbox');
 
 function initAddOptionsCheckbox() {
-    addOptionsCheckbox.checked = localStorage.getItem('add_options_checkbox_checked') === 'true';
+    let isChecked = localStorage.getItem('add_options_checkbox_checked');
+    addOptionsCheckbox.checked = isChecked === 'true';
 }
 
 addOptionsCheckbox.onchange = function() {
@@ -3652,17 +3751,34 @@ tracklistSelection.onclick = (event) => {
         let clearPlaylist = true;
 
         if (target.matches('[class^="icon-list"]')) {
-            let tracklistSection = target.closest('.tracklist-section');
-            tracklist = processSelectedTracklist(tracklistSection);
+            let list = target.closest('.tracklist-section').querySelector('.list');
+            tracklist = processSelectedTracklist(list);
             clearPlaylist = target.hasAttribute('data-clear') ? true : false;
+
+            function processSelectedTracklist(list) {
+                let tracklist = [];
+            
+                for (let track of list.children) {
+                    let isChecked = track.firstElementChild.checked;
+                    if (!isChecked) continue;
+            
+                    let artist = track.querySelector('.track-artist').textContent;
+                    let title = track.querySelector('.track-title').textContent;
+                    let src = track.dataset.src;
+            
+                    tracklist.push({artist, title, src});
+                }
+            
+                return tracklist.length ? tracklist : null;
+            }
         }
 
         createPlaylist(tracklist, clearPlaylist);
         checkPlaylistScrollability();
-        showHideScrollElements();
+        checkVisibilityScrollElements();
 
         if (tracklist) {
-            if (shuffleBtn.classList.contains('active')) randomizePlaylist(curOrderedAudios);
+            if (shuffleBtn.classList.contains('active')) randomizePlaylist();
             highlightSelected(selectedAudio);
         }
     }
@@ -3672,7 +3788,7 @@ tracklistSelection.onclick = (event) => {
 
         if (!tracklistDetails.style.height) tracklistDetails.style.height = 0;
 
-        allowDenyCheckboxLabelFocus(tracklistDetails);
+        connectCheckboxLabelFocus(tracklistDetails);
         setCheckboxHandlers(tracklistDetails);
 
         if (tracklistDetails.style.height === '0px') {
@@ -3689,7 +3805,7 @@ tracklistSelection.onclick = (event) => {
             }
         };
 
-        function allowDenyCheckboxLabelFocus(tracklistDetails) {
+        function connectCheckboxLabelFocus(tracklistDetails) {
             let checkboxLabels = tracklistDetails.querySelectorAll('label.designed-checkbox');
             checkboxLabels.forEach(label => label.tabIndex = (tracklistDetails.style.height == '0px') ? 0 : -1);
         }
@@ -3727,55 +3843,24 @@ tracklistSelection.onclick = (event) => {
     }
 };
 
-///////////////////////////////////
-// Selected tracklist processing //
-///////////////////////////////////
-
-function processSelectedTracklist(tracklistSection) {
-    let list = tracklistSection.querySelector('.list');
-    let tracklist = [];
-
-    for (let track of list.children) {
-        let isChecked = track.firstElementChild.checked;
-        if (!isChecked) continue;
-
-        let artist = track.querySelector('.track-artist').textContent;
-        let title = track.querySelector('.track-title').textContent;
-        let src = track.dataset.src;
-
-        tracklist.push({artist, title, src});
-    }
-
-    return tracklist.length ? tracklist : null;
-}
-
 ///////////////////////
 // Playlist creation //
 ///////////////////////
 
-let curTracklist = JSON.parse(localStorage.getItem('current_tracklist')) || [];
+let curTracklist = JSON.parse(localStorage.getItem('current_tracklist')) ||
+    DEFAULTS_DATA['first-tracklist'] ||
+    [];
 
 function createPlaylist(addedTracklist, clearPlaylist) {
     if (addedTracklist) addedTracklist = JSON.parse(JSON.stringify(addedTracklist));
 
     if (clearPlaylist) {
         if (selectedAudio) {
-            let k = 0;
-            
-            while (playlist.children[k]) {
-                if (playlist.children[k].firstElementChild != selectedAudio) {
-                    playlist.children[k].remove();
-                } else {
-                    k = 1;
-                }
-            }
-
-            selectedAudio.parentElement.hidden = true;
-            selectedAudio.setAttribute('data-invisible', '');
-        } else {
-            playlist.innerHTML = '';
+            selectedAudio.setAttribute('data-relocated', '');
+            tempTrackBox.append(selectedAudio.parentElement);
         }
 
+        playlist.innerHTML = '';
         originOrderedAudios.length = 0;
 
         if (addedTracklist) { // Replace playlist
@@ -3786,42 +3871,21 @@ function createPlaylist(addedTracklist, clearPlaylist) {
             curPlaylist.value = 'Playlist cleared';
         }
     } else { // Add to playlist
-        for (let track of curTracklist) {
-            delete track['dub'];
-        }
-
         curTracklist = addedTracklist ? curTracklist.concat(addedTracklist) : [];
     }
+
+    markDuplicates(curTracklist);
 
     localStorage.setItem('current_tracklist', JSON.stringify(curTracklist));
 
     if (!addedTracklist) return;
-
-    for (let i = 0; i < curTracklist.length; i++) {
-        let artist = curTracklist[i]['artist'];
-        let title = curTracklist[i]['title'];
-        let dub = curTracklist[i]['dub'];
-
-        if (!dub) {
-            let k = 1;
     
-            for (let j = i + 1; j < curTracklist.length; j++) {
-                let comparedArtist = curTracklist[j]['artist'];
-                let comparedTitle = curTracklist[j]['title'];
-        
-                if (comparedArtist === artist && comparedTitle === title) {
-                    k++;
-                    if (k > 1) curTracklist[j]['dub'] = k;
-                }
-            }
-        }
-    }
-    
-    for (let i = 0; i < addedTracklist.length; i++) {
-        let artist = addedTracklist[i]['artist'];
-        let title = addedTracklist[i]['title'];
-        let src = addedTracklist[i]['src'];
-        let dub = addedTracklist[i]['dub'];
+    // Creation HTML elements
+    for (let track of addedTracklist) {
+        let artist = track['artist'];
+        let title = track['title'];
+        let src = track['src'];
+        let dub = track['dub'];
 
         let trackElem = document.createElement('div');
         trackElem.className = 'track';
@@ -3831,16 +3895,25 @@ function createPlaylist(addedTracklist, clearPlaylist) {
         audioElem.setAttribute('data-artist', artist);
         audioElem.setAttribute('data-title', title);
         src += '?nocache=' + Math.random(); // Тестовая очистка кэша
-        audioElem.setAttribute('data-source', src);
+        audioElem.setAttribute('data-src', src);
         if (dub) audioElem.setAttribute('data-dub', dub);
         audioElem.setAttribute('type', 'audio/mpeg');
         audioElem.setAttribute('preload', 'auto');
         trackElem.appendChild(audioElem);
 
+        let additionalsElem = document.createElement('div');
+        additionalsElem.className = 'additionals';
+        trackElem.appendChild(additionalsElem);
+
+        let deleteElem = document.createElement('button');
+        deleteElem.className = 'button-delete';
+        deleteElem.setAttribute('data-tooltip', 'Remove track');
+        deleteElem.innerHTML =  '<i class="icon-cancel"></i>';
+        additionalsElem.appendChild(deleteElem);
+
         let loadElem = document.createElement('div');
         loadElem.className = 'loading-figure';
-        loadElem.hidden = true;
-        trackElem.appendChild(loadElem);
+        additionalsElem.appendChild(loadElem);
     
         let limiterElem = document.createElement('div');
         limiterElem.className = 'screen-limiter';
@@ -3855,7 +3928,32 @@ function createPlaylist(addedTracklist, clearPlaylist) {
         originOrderedAudios.push(audioElem);
     }
     
-    setOriginPlaylist(originOrderedAudios);
+    setOriginPlaylist();
+}
+
+function markDuplicates(tracklist) {
+    for (let track of tracklist) {
+        delete track['dub'];
+    }
+
+    for (let i = 0; i < tracklist.length; i++) {
+        let artist = tracklist[i]['artist'];
+        let title = tracklist[i]['title'];
+        let dub = tracklist[i]['dub'];
+
+        if (!dub) {
+            let k = 1;
+    
+            for (let j = i + 1; j < tracklist.length; j++) {
+                let comparedArtist = tracklist[j]['artist'];
+                let comparedTitle = tracklist[j]['title'];
+        
+                if (comparedArtist === artist && comparedTitle === title) {
+                    if (++k > 1) tracklist[j]['dub'] = k;
+                }
+            }
+        }
+    }
 }
 
 //////////////////////////////////
@@ -3936,17 +4034,26 @@ runInitials();
 function runInitials() {
     initVisibleTracksCheckbox();
     initAddOptionsCheckbox();
-    changeConfig( configsBank.indexOf(config) );
-    changePlayerColor( playerColorsBank.indexOf(playerColor) );
-    changePlaylistStyle( playlistStylesBank.indexOf(playlistStyle) );
+    changeConfig(configsBank.indexOf(config));
+    changePlayerColor(playerColorsBank.indexOf(playerColor) );
+    changePlaylistStyle(playlistStylesBank.indexOf(playlistStyle));
     changeVolume(settedVolume);
     changeScrollElementsOpacity(scrollElemsOpacity);
     changeWheelScrollStep(wheelScrollStep);
     createPlaylist(curTracklist, true);
+    changeNumberOfVisibleTracks(numOfVisTracks);
+    connectTooltipHoverIntents();
 }
 
 window.addEventListener('load', () => {
     showHideAddOptions(addOptionsCheckbox.checked);
     hidePreload();
     showLastPlayedTrackInfo();
+});
+
+// Temporary check handler
+document.addEventListener('keydown', (event) => {
+    if (event.code == 'KeyG') {
+        console.log(curTracklist);
+    }
 });

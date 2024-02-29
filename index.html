@@ -24,7 +24,7 @@
                 <section class="tracklist-section">
                     <div class="tracklist-menu">
                         <div class="tracklist-title-box">
-                            <h4><span class="tracklist-title">Experiments and Parodies</span></h4>
+                            <h4><span class="tracklist-title" data-tooltip="Expand for details">Experiments and Parodies</span></h4>
                         </div>
                         <div class="buttons-box">
                             <i class="icon-list" data-tooltip="Replace playlist" data-clear></i>
@@ -36,7 +36,7 @@
                             <p>
                                 <input id="checkbox-tracklist[1]-all" type="checkbox" checked
                                 ><label for="checkbox-tracklist[1]-all" class="designed-checkbox"></label
-                                ><label for="checkbox-tracklist[1]-all"><span>Check all tracks</span></label>
+                                ><label for="checkbox-tracklist[1]-all"><span>Check/uncheck all tracks</span></label>
                             </p>
                         </header>
                         <main class="details-main">
@@ -44,7 +44,7 @@
                                 <img src="music/Experiments and Parodies/cover.png" alt="Experiments and Parodies Cover">
                             </div>
                             <ul class="list">
-                                <li data-src="music/Experiments and Parodies/1.mp3">
+                                <li data-src="https://almadyne.github.io/audio-player/music/Experiments and Parodies/1.mp3">
                                     <input id="checkbox-tracklist[1]-track[1]" type="checkbox" checked
                                     ><label for="checkbox-tracklist[1]-track[1]" class="designed-checkbox"></label
                                     ><label for="checkbox-tracklist[1]-track[1]"
@@ -54,7 +54,7 @@
                                         ><span class="track-title">Cold Lights (Metal Mix by ATD)</span>
                                     </label>
                                 </li>
-                                <li data-src="music/Experiments and Parodies/2.mp3">
+                                <li data-src="https://almadyne.github.io/audio-player/music/Experiments and Parodies/2.mp3">
                                     <input id="checkbox-tracklist[1]-track[2]" type="checkbox" checked
                                     ><label for="checkbox-tracklist[1]-track[2]" class="designed-checkbox"></label
                                     ><label for="checkbox-tracklist[1]-track[2]"
@@ -64,7 +64,7 @@
                                         ><span class="track-title">Silent Minds (feat. ATD)</span>
                                     </label>
                                 </li>
-                                <li data-src="music/Experiments and Parodies/3.mp3">
+                                <li data-src="https://almadyne.github.io/audio-player/music/Experiments and Parodies/3.mp3">
                                     <input id="checkbox-tracklist[1]-track[3]" type="checkbox" checked
                                     ><label for="checkbox-tracklist[1]-track[3]" class="designed-checkbox"></label
                                     ><label for="checkbox-tracklist[1]-track[3]"
@@ -132,7 +132,7 @@
                 <section class="tracklist-section">
                     <div class="tracklist-menu">
                         <div class="tracklist-title-box">
-                            <h4><span class="tracklist-title">Dmitry Miroshkin - Favourite Opuses</span></h4>
+                            <h4><span class="tracklist-title" data-tooltip="Expand for details">Dmitry Miroshkin - Favourite Opuses</span></h4>
                         </div>
                         <div class="buttons-box">
                             <i class="icon-list" data-tooltip="Replace playlist" data-clear></i>
@@ -144,7 +144,7 @@
                             <p>
                                 <input id="checkbox-tracklist[2]-all" type="checkbox" checked
                                 ><label for="checkbox-tracklist[2]-all" class="designed-checkbox"></label
-                                ><label for="checkbox-tracklist[2]-all"><span>Check all tracks</span></label>
+                                ><label for="checkbox-tracklist[2]-all"><span>Check/uncheck all tracks</span></label>
                             </p>
                         </header>
                         <main class="details-main">
@@ -239,7 +239,12 @@
                                 <!-- Example track tree
                                 <div class="track">
                                     <audio></audio>
-                                    <div class="loading-figure"></div>
+                                    <div class="additionals">
+                                        <div class="loading-figure"></div>
+                                        <button class="button-delete" data-tooltip="Remove track">
+                                            <i class="icon-cancel"></i>
+                                        </button>
+                                    </div>
                                     <div class="screen-limiter">
                                         <span class="track-title"></span>
                                     </div>
@@ -253,6 +258,8 @@
                             </div>
                         </div>
                     </div>
+                
+                    <div id="temporary-track-box" hidden></div>
 
                     <div class="scroll-arrows-box down">
                         <div class="playlist-scroll-arrow" hidden></div>
@@ -270,7 +277,7 @@
                         <i id="playlist-style" class="icon-align-center" data-tooltip="Playlist style"></i>
                     </div>
                     <div class="center-col">
-                        <span class="version">v1.0.7</span>
+                        <span class="version">v1.0.8</span>
                     </div>
                     <div class="right-col">
                         <i id="settings" class="icon-cog-circled" data-tooltip="Settings"></i>
@@ -306,8 +313,8 @@
                 <button id="close-settings" class="button-close"><i class="icon-cancel"></i></button>
             </div>
 
-            <div id="modal-area" hidden
-                ><article class="key-info">
+            <div id="keys-info-area" class="modal-container" hidden
+                ><article class="keys-info">
                     <button id="close-info" class="button-close"><i class="icon-cancel"></i></button>
                     <div class="inner-scroll">
                         <h2>Assigned Keys</h2>

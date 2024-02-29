@@ -40,7 +40,10 @@ h2 {
 i {
     border-radius: 50%;
     cursor: pointer;
-    transition: color var(--transition-time-main), text-shadow  var(--transition-time-main);
+    transition:
+        color var(--transition-time-main),
+        text-shadow var(--transition-time-main)
+    ;
 }
 
 #player-container {
@@ -197,7 +200,7 @@ i {
 .tracklist-details header input[type="checkbox"] + label {
     position: relative;
 }
-.tracklist-details header input[type="checkbox"].partial-list + label::before {
+.tracklist-details header input[type="checkbox"] + label::before {
     content: '';
     display: inline-block;
     width: 7px;
@@ -205,8 +208,10 @@ i {
     position: absolute;
     left: calc(50% - 7px/2);
     top: calc(50% - 7px/2);
-    background-color: var(--player-color-neutral);
     transition: background-color var(--transition-time-main);
+}
+.tracklist-details header input[type="checkbox"].partial-list + label::before {
+    background-color: var(--player-color-neutral);
 }
 .tracklist-details header label > span {
     padding-left: 4px;
@@ -427,12 +432,12 @@ player-controls #indicator.active {
     transition: background-color var(--transition-time-main);
 }
 player-controls .btn-img-wrapper,
-.key-info .btn-img-wrapper {
+.keys-info .btn-img-wrapper {
     display: inline-block;
     padding: 6px;
 }
 player-controls .circle-background,
-.key-info .circle-background {
+.keys-info .circle-background {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -446,14 +451,14 @@ player-controls .circle-background,
     ;
 }
 player-controls .circle-background.active,
-.key-info .circle-background.active {
+.keys-info .circle-background.active {
     background-color: var(--player-color-main);
 }
 player-controls .circle-background.hover {
     box-shadow: var(--player-shadow-hover);
 }
 player-controls .circle-background > img,
-.key-info .circle-background > img {
+.keys-info .circle-background > img {
     width: 13px; /* Чётность должна совпадать с чётностью соотв. свойства эл-та .circle-background */
     height: 13px; /* Чётность должна совпадать с чётностью соотв. свойства эл-та .circle-background */
     filter: invert(var(--player-img-invert-filter));
@@ -554,10 +559,7 @@ player-controls #volume-bar.active {
     transition: opacity var(--transition-time-main);
 }
 #player.changing-color .playlist-scroll-arrow {
-    transition:
-        opacity var(--transition-time-main),
-        border-color var(--transition-time-main)
-    ;
+    transition: border-color var(--transition-time-main);
 }
 #playlist-container .playlist-scroll-arrow.inactive {
     --playlist-scroll-arrow-color: var(--player-color-inactive);
@@ -580,6 +582,7 @@ player-controls #volume-bar.active {
     border-radius: 50%;
     cursor: pointer;
     opacity: var(--scroll-elems-opacity);
+    transition: background-color var(--transition-time-main);
 }
 #playlist-container .outer-scroll-arrow.left  {
     left: var(--x-shift);
@@ -641,20 +644,49 @@ player-controls #volume-bar.active {
     /*border: 1px solid;
     box-sizing: border-box;*/
 }
-#playlist > .track > .loading-figure {
+#playlist > .track > .additionals {
+    height: 100%;
     position: absolute;
-    width: 14px;
-    height: 14px;
-    top: 12px;
+    left: 0;
+    top: 0;
+}
+#playlist > .track > .additionals::before {
+    content: '';
+    display: inline-block;
+    height: 100%;
+    vertical-align: middle;
+}
+#playlist > .track > .additionals > .loading-figure {
+    display: inline-block;
+    vertical-align: middle;
+    width: 15px;
+    height: 15px;
     background-color: var(--player-color-main);
     border-radius: 50%;
     animation: scaling-load-fig 1.5s ease-in-out infinite;
+    visibility: hidden;
 }
-#playlist.smooth > .track > .loading-figure {
-    left: 0;
+#playlist > .track.loading > .additionals > .loading-figure {
+    visibility: visible;
 }
-#playlist.strict > .track > .loading-figure {
-    left: 12px;
+#playlist > .track > .additionals > .button-delete {
+    display: none;
+    margin: 0 1px;
+    vertical-align: middle;
+    color: rgb(196, 13, 43);
+    font-size: 12pt;
+    opacity: 0.7;
+    background: none;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+}
+#playlist > .track > .additionals > .button-delete:hover {
+    opacity: 1;
+    text-shadow: 0 0 12px rgba(196, 13, 43, 0.5);
+}
+#player-container.add-options-active #playlist > .track > .additionals > .button-delete {
+    display: inline-block;
 }
 #playlist > .track > .screen-limiter {
     padding: 6px 0;
@@ -675,23 +707,22 @@ player-controls #volume-bar.active {
     ;
 }
 #playlist.smooth > .track > .screen-limiter {
-    mask-image: linear-gradient(to right, currentColor 90%, transparent 100%);
+    mask-image: linear-gradient(to right, currentColor 92%, transparent 100%);
 }
 #playlist.strict > .track > .screen-limiter {
     text-overflow: ellipsis;
 }
-#playlist > .track > .screen-limiter.selected {
+#playlist > .track.selected > .screen-limiter {
     color: var(--player-color-main);
     font-weight: bold;
 }
-#playlist.smooth > .track > .screen-limiter.selected {
-    margin: 0 -5%;
+#playlist.smooth > .track.selected > .screen-limiter {
+    margin: 0 -2%;
     padding: 5px 0;
     font-size: 14pt;
     line-height: 29px;
 }
-#playlist > .track > .screen-limiter.loading,
-#playlist > .track > .screen-limiter.selected.loading {
+#playlist > .track.loading > .screen-limiter {
     color: var(--player-color-inactive);
 }
 #playlist > .track > .screen-limiter.hover { /* Срабатывает, когда указатель над дочерним эл-том .track-title */
@@ -705,7 +736,7 @@ player-controls #volume-bar.active {
     cursor: pointer;
     transition: text-shadow var(--transition-time-main);
 }
-#playlist.strict > .track > .screen-limiter > .track-title.selected {
+#playlist.strict > .track.selected > .screen-limiter > .track-title {
     padding-left: 4px;
     border: 1px solid var(--player-color-main);
     transition: border-color var(--transition-time-main);
@@ -870,8 +901,11 @@ player-controls #volume-bar.active {
     bottom: 2px;
     color: var(--site-color-main);
 }
+#settings-area > #close-settings:hover {
+    text-shadow: var(--site-shadow-hover);
+}
 
-#modal-area {
+.modal-container {
     position: fixed;
     left: 0;
     top: 0;
@@ -886,17 +920,17 @@ player-controls #volume-bar.active {
     opacity: 0;
     transition: opacity var(--transition-time-main);
 }
-#modal-area::before {
+.modal-container::before {
     content: '';
     display: inline-block;
     height: 100%;
     vertical-align: middle;
 }
-#modal-area.active {
+.modal-container.active {
     opacity: 1;
 }
 
-.key-info {
+.keys-info {
     --assigned-keys-width: 240px;
     --key-info-padding: 40px;
     display: inline-block;
@@ -919,26 +953,26 @@ player-controls #volume-bar.active {
     border-radius: 36px;
     transition: all var(--transition-time-main);
 }
-.key-info > #close-info {
+.keys-info > #close-info {
     position: absolute;
     top: 10px;
     right: 10px;
     color: var(--player-color-main);
     filter: invert(100%);
 }
-.key-info .inner-scroll {
+.keys-info .inner-scroll {
     height: 100%;
     text-align: center;
     overflow: auto;
 }
-.key-info h2 {
+.keys-info h2 {
     margin-bottom: 5px;
     color: var(--player-global-color-emphase);
     font-family: 'Garet';
     font-weight: bolder;
     background: rgba(var(--player-color-emphase), 0.1);
 }
-.key-info section {
+.keys-info section {
     display: table;
     margin-bottom: 5px;
     width: 100%;
@@ -946,10 +980,10 @@ player-controls #volume-bar.active {
     text-transform: none;
     transition: background-color var(--transition-time-main);
 }
-.key-info section:last-of-type {
+.keys-info section:last-of-type {
     margin-bottom: 0;
 }
-.key-info .assigned-keys {
+.keys-info .assigned-keys {
     display: table-cell;
     width: var(--assigned-keys-width);
     min-width: var(--assigned-keys-width);
@@ -959,49 +993,49 @@ player-controls #volume-bar.active {
     vertical-align: middle;
     transition: background-color var(--transition-time-main);
 }
-.key-info .assigned-keys img {
+.keys-info .assigned-keys img {
     height: 40px;
     vertical-align: middle;
 }
-.key-info .assigned-keys img[alt="Key Space"] {
+.keys-info .assigned-keys img[alt="Key Space"] {
     width: 112px;
 }
-.key-info figure {
+.keys-info figure {
     display: inline-block;
     font-size: 8pt;
     text-transform: uppercase;
     vertical-align: 5px;
 }
-.key-info .relevant-functions {
+.keys-info .relevant-functions {
     display: table-cell;
 }
-.key-info .row {
+.keys-info .row {
     display: table;
     min-height: 60px;
     border-bottom: 2px solid rgba(var(--player-color-emphase), 0.1);
 }
-.key-info .row:last-child {
+.keys-info .row:last-child {
     border-bottom: none;
 }
-.key-info .icon {
+.keys-info .icon {
     display: table-cell;
     min-width: 80px;
     font-size: 20pt;
     text-align: center;
     vertical-align: middle;
 }
-.key-info .icon-background {
+.keys-info .icon-background {
     display: inline-block;
     padding: 3px;
     background: var(--player-background-color-even);
     color: var(--player-color-main);
 }
-.key-info .icon-background > i,
-.key-info .icon-background > div {
+.keys-info .icon-background > i,
+.keys-info .icon-background > div {
     cursor: default;
     pointer-events: none;
 }
-.key-info .description {
+.keys-info .description {
     display: table-cell;
     width: 100%;
     font-size: 14pt;
@@ -1009,21 +1043,21 @@ player-controls #volume-bar.active {
     vertical-align: middle;
     padding-right: 12px;
 }
-.key-info .description > p {
+.keys-info .description > p {
     margin: 7px 0;
 }
-.key-info .text-emphase-1 {
+.keys-info .text-emphase-1 {
     color: var(--player-global-color-emphase);
 }
-.key-info .text-emphase-2 {
+.keys-info .text-emphase-2 {
     color: rgb(var(--player-color-emphase));
     background: rgba(254, 255, 173, 0.85);
 }
-.key-info .text-emphase-3 {
+.keys-info .text-emphase-3 {
     text-decoration: underline 1px solid rgb(var(--player-color-emphase));
     text-shadow: 1px 1px 2px rgba(var(--player-color-emphase), 0.3);
 }
-.key-info .text-emphase-4 {
+.keys-info .text-emphase-4 {
     text-decoration: underline 1px solid rgb(255, 0, 0);
     text-shadow: 1px 1px 2px rgba(255, 0, 0, 0.3);
 }
@@ -1044,6 +1078,7 @@ player-controls #volume-bar.active {
 
 #player-container i:not(.icon-fast-forward, .icon-fast-backward, .icon-cancel):active,
 .button-close:focus,
+.button-delete:focus,
 .key-pressed {
     outline: 1px solid currentColor;
 }
@@ -1134,7 +1169,7 @@ footer {
     h2 {
         font-size: 20pt;
     }
-    .key-info .description {
+    .keys-info .description {
         font-size: 11pt;
     }
 }
