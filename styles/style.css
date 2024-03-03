@@ -51,6 +51,7 @@ i {
     --player-side-padding: 20px;
     --player-side-margin: 6px;
     --player-global-color-emphase: #0ea109;
+    --player-global-color-warning: 196, 13, 43;
     display: flex;
     padding: 50px 0 calc(50px + var(--page-footer-height));
 }
@@ -85,21 +86,21 @@ i {
     --player-img-invert-filter: 0.95;
 }
 
-#tracklist-selection {
-    --tracklist-selection-width: 480px;
+#tracklist-database {
+    --tracklist-database-width: 480px;
     position: sticky;
     top: 0;
-    width: var(--tracklist-selection-width);
+    width: var(--tracklist-database-width);
     height: 100%;
     margin-left: calc(
-        50% - var(--tracklist-selection-width) - var(--player-side-margin) - var(--player-side-padding) -
+        50% - var(--tracklist-database-width) - var(--player-side-margin) - var(--player-side-padding) -
         var(--player-width)/2 + var(--scrollbar-width)*0.5
     );
     margin-right: var(--player-side-margin);
     color: var(--player-color-main);
     text-align: center;
 }
-#tracklist-selection h3 {
+#tracklist-database h3 {
     font-family: 'Garet';
     font-size: 18pt;
     text-transform: uppercase;
@@ -107,7 +108,7 @@ i {
     text-shadow: 0 0 10px var(--player-background-color-even);
     transition: color var(--transition-time-main), text-shadow var(--transition-time-main);
 }
-#tracklist-selection .tracklist-section {
+#tracklist-database .tracklist-section {
     --symmetrical-padding: 6px;
     margin: 50px 0;
     background: var(--player-background-color-gradient);
@@ -122,9 +123,9 @@ i {
 }
 .tracklist-menu .tracklist-title-box {
     display: table-cell;
-    min-width: 220px;
+    min-width: 200px;
     vertical-align: middle;
-    padding: 4px 14px 4px var(--symmetrical-padding);
+    padding: 4px var(--symmetrical-padding);
     text-align: right;
 }
 .tracklist-menu .tracklist-title {
@@ -137,19 +138,32 @@ i {
 }
 .tracklist-menu .buttons-box {
     display: table-cell;
-    width: 100px;
+    width: 0;
     vertical-align: middle;
-    text-align: right;
     white-space: nowrap;
     user-select: none;
 }
+.tracklist-menu .buttons-box.left {
+    padding-left: 1px;
+}
+.tracklist-menu .buttons-box.right {
+    padding-right: 1px;
+}
 .tracklist-menu .buttons-box > i {
-    margin-right: var(--symmetrical-padding);
     font-size: 28pt;
 }
+.tracklist-menu .buttons-box > i.delete-tracklist {
+    display: none;
+    color: rgb(var(--player-global-color-warning));
+    opacity: 0.7;
+}
 .tracklist-menu .tracklist-title:hover,
-.tracklist-menu .buttons-box > i:hover {
+.tracklist-menu .buttons-box > i:not(.delete-tracklist):hover {
     text-shadow: var(--player-shadow-hover);
+}
+.tracklist-menu .buttons-box > i.delete-tracklist:hover {
+    opacity: 1;
+    text-shadow: 0 0 12px rgba(var(--player-global-color-warning), 0.5);
 }
 
 .tracklist-details {
@@ -172,6 +186,8 @@ i {
 .tracklist-details header > p {
     display: none;
     padding: 3px 0;
+}
+.tracklist-details.is-cover header > p {
     margin-left: calc(var(--cover-width) + var(--symmetrical-padding));
 }
 .tracklist-details input[type="checkbox"] {
@@ -220,14 +236,19 @@ i {
     display: flex;
     padding: var(--symmetrical-padding);
 }
-.tracklist-details .cover {
+.tracklist-details .cover-box {
     flex: 0 0 var(--cover-width);
+    margin-right: var(--symmetrical-padding);
+    overflow: hidden;
+}
+.tracklist-details .cover-box > img {
+    width: var(--cover-width);
 }
 .tracklist-details .list {
     --list-text-indent: 0;
     --order-width: 0;
     flex: 0 1 auto;
-    margin-left: calc(var(--symmetrical-padding) + var(--list-text-indent));
+    margin-left: var(--list-text-indent);
     list-style-type: none;
     text-align: left;
     text-indent: calc(var(--list-text-indent)*(-1));
@@ -248,6 +269,9 @@ i {
     padding-right: 4px;
 }
 
+#player-container.add-options-active .tracklist-menu i.delete-tracklist {
+    display: inline;
+}
 #player-container.add-options-active .tracklist-details header > p {
     display: block;
 }
@@ -269,16 +293,17 @@ i {
     padding: 0 4px;
 }
 
-#tracklist-selection i.clear-playlist {
+#tracklist-database .clear-playlist {
     display: inline-block;
     padding: 9px;
     border-radius: 50%;
     background: var(--player-background-color-gradient);
+    border: none;
     cursor: pointer;
     transition: box-shadow var(--transition-time-main);
     user-select: none;
 }
-#tracklist-selection i.clear-playlist > img {
+#tracklist-database .clear-playlist > img {
     width: 32px;
     height: 32px;
     vertical-align: middle; /* Убрать нижний отступ */
@@ -289,7 +314,7 @@ i {
     transition: filter var(--transition-time-main);
     pointer-events: none;
 }
-#tracklist-selection i.clear-playlist:hover {
+#tracklist-database .clear-playlist:hover {
     box-shadow: var(--site-shadow-hover);
 }
 
@@ -305,7 +330,7 @@ i {
     color: var(--player-color-main);
     border-radius: 36px;
 }
-#tracklist-selection.active + #player {
+#tracklist-database.active + #player {
     margin-left: 0;
 }
 
@@ -669,11 +694,11 @@ player-controls #volume-bar.active {
 #playlist > .track.loading > .additionals > .loading-figure {
     visibility: visible;
 }
-#playlist > .track > .additionals > .button-delete {
+#playlist > .track > .additionals > .button-remove-track {
     display: none;
     margin: 0 1px;
     vertical-align: middle;
-    color: rgb(196, 13, 43);
+    color: rgb(var(--player-global-color-warning));
     font-size: 12pt;
     opacity: 0.7;
     background: none;
@@ -681,11 +706,11 @@ player-controls #volume-bar.active {
     border-radius: 50%;
     cursor: pointer;
 }
-#playlist > .track > .additionals > .button-delete:hover {
+#playlist > .track > .additionals > .button-remove-track:hover {
     opacity: 1;
-    text-shadow: 0 0 12px rgba(196, 13, 43, 0.5);
+    text-shadow: 0 0 12px rgba(var(--player-global-color-warning), 0.5);
 }
-#player-container.add-options-active #playlist > .track > .additionals > .button-delete {
+#player-container.add-options-active #playlist > .track > .additionals > .button-remove-track {
     display: inline-block;
 }
 #playlist > .track > .screen-limiter {
@@ -742,7 +767,7 @@ player-controls #volume-bar.active {
     transition: border-color var(--transition-time-main);
 }
 
-@media (hover: hover) { /* For desctop */
+@media (hover: hover) { /* For desktop */
     #playlist > .track > .screen-limiter > .track-title:hover {
         text-shadow: var(--player-shadow-hover);
         background-image: var(--player-background-hover1);
@@ -1068,7 +1093,6 @@ player-controls #volume-bar.active {
     background: none;
     border: none;
     border-radius: 50%;
-    transition: all var(--transition-time-main);
     cursor: pointer;
 }
 .button-close:hover {
@@ -1076,9 +1100,9 @@ player-controls #volume-bar.active {
     text-shadow: var(--player-shadow-hover);
 }
 
-#player-container i:not(.icon-fast-forward, .icon-fast-backward, .icon-cancel):active,
+#player-container i:not(.icon-fast-forward, .icon-fast-backward/*, .icon-cancel*/):active,
 .button-close:focus,
-.button-delete:focus,
+.button-remove-track:focus,
 .key-pressed {
     outline: 1px solid currentColor;
 }
@@ -1160,7 +1184,7 @@ footer {
 }
 
 @media (max-width: 1512px), screen and (orientation: portrait) {
-    #tracklist-selection {
+    #tracklist-database {
         margin-left: 0;
     }
 }

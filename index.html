@@ -18,15 +18,20 @@
         </script>
         <header></header>
         <main id="player-container" class="loading">
-            <aside id="tracklist-selection" class="active">
+            <aside id="tracklist-database" class="active">
                 <h3>Tracklists:</h3>
                 
-                <section class="tracklist-section">
+                <!-- Example tracklist-section tree
+
+                <section class="tracklist-section" tabindex="0">
                     <div class="tracklist-menu">
-                        <div class="tracklist-title-box">
-                            <h4><span class="tracklist-title" data-tooltip="Expand for details">Experiments and Parodies</span></h4>
+                        <div class="buttons-box left">
+                            <i class="icon-cancel delete-tracklist" data-tooltip="Delete tracks from the tracklist"></i>
                         </div>
-                        <div class="buttons-box">
+                        <div class="tracklist-title-box">
+                            <h4><span class="tracklist-title" data-tooltip="Expand for details">Tracklist Title</span></h4>
+                        </div>
+                        <div class="buttons-box right">
                             <i class="icon-list" data-tooltip="Replace playlist" data-clear></i>
                             <i class="icon-list-add" data-tooltip="Add to playlist"></i>
                         </div>
@@ -40,125 +45,17 @@
                             </p>
                         </header>
                         <main class="details-main">
-                            <div class="cover">
-                                <img src="music/Experiments and Parodies/cover.png" alt="Experiments and Parodies Cover">
+                            <div class="cover-box">
+                                <img src="" alt="Tracklist Title Cover">
                             </div>
                             <ul class="list">
-                                <li data-src="https://almadyne.github.io/audio-player/music/Experiments and Parodies/1.mp3">
+                                <li data-src="">
                                     <input id="checkbox-tracklist[1]-track[1]" type="checkbox" checked
                                     ><label for="checkbox-tracklist[1]-track[1]" class="designed-checkbox"></label
                                     ><label for="checkbox-tracklist[1]-track[1]"
                                         ><div class="order"><span>1.</span></div
-                                        ><span class="track-artist">Zmicier M.</span
-                                        ><span>&nbsp;&ndash;&nbsp;</span
-                                        ><span class="track-title">Cold Lights (Metal Mix by ATD)</span>
-                                    </label>
-                                </li>
-                                <li data-src="https://almadyne.github.io/audio-player/music/Experiments and Parodies/2.mp3">
-                                    <input id="checkbox-tracklist[1]-track[2]" type="checkbox" checked
-                                    ><label for="checkbox-tracklist[1]-track[2]" class="designed-checkbox"></label
-                                    ><label for="checkbox-tracklist[1]-track[2]"
-                                        ><div class="order"><span>2.</span></div
-                                        ><span class="track-artist">Zmicier M.</span
-                                        ><span>&nbsp;&ndash;&nbsp;</span
-                                        ><span class="track-title">Silent Minds (feat. ATD)</span>
-                                    </label>
-                                </li>
-                                <li data-src="https://almadyne.github.io/audio-player/music/Experiments and Parodies/3.mp3">
-                                    <input id="checkbox-tracklist[1]-track[3]" type="checkbox" checked
-                                    ><label for="checkbox-tracklist[1]-track[3]" class="designed-checkbox"></label
-                                    ><label for="checkbox-tracklist[1]-track[3]"
-                                        ><div class="order"><span>3.</span></div
-                                        ><span class="track-artist">Zmicier M.</span
-                                        ><span>&nbsp;&ndash;&nbsp;</span
-                                        ><span class="track-title">Classical TechnoDub (feat. ATD)</span>
-                                    </label>
-                                </li>
-                                <li data-src="music/Experiments and Parodies/4.mp3">
-                                    <input id="checkbox-tracklist[1]-track[4]" type="checkbox" checked
-                                    ><label for="checkbox-tracklist[1]-track[4]" class="designed-checkbox"></label
-                                    ><label for="checkbox-tracklist[1]-track[4]"
-                                        ><div class="order"><span>4.</span></div
-                                        ><span class="track-artist">Zmicier M.</span
-                                        ><span>&nbsp;&ndash;&nbsp;</span
-                                        ><span class="track-title">First Snow (feat. ATD)</span>
-                                    </label>
-                                </li>
-                                <li data-src="music/Experiments and Parodies/5.mp3">
-                                    <input id="checkbox-tracklist[1]-track[5]" type="checkbox" checked
-                                    ><label for="checkbox-tracklist[1]-track[5]" class="designed-checkbox"></label
-                                    ><label for="checkbox-tracklist[1]-track[5]"
-                                        ><div class="order"><span>5.</span></div
-                                        ><span class="track-artist">Extra-MEGA Internet Band Collaboration</span
-                                        ><span>&nbsp;&ndash;&nbsp;</span
-                                        ><span class="track-title">New Year 2020 Experiment (Super Apocalyptic Remix and Extremely Cool Job by ATD)</span>
-                                    </label>
-                                </li>
-                                <li data-src="music/Experiments and Parodies/6.mp3">
-                                    <input id="checkbox-tracklist[1]-track[6]" type="checkbox" checked
-                                    ><label for="checkbox-tracklist[1]-track[6]" class="designed-checkbox"></label
-                                    ><label for="checkbox-tracklist[1]-track[6]"
-                                        ><div class="order"><span>6.</span></div
-                                        ><span class="track-artist">Zmicier M.</span
-                                        ><span>&nbsp;&ndash;&nbsp;</span
-                                        ><span class="track-title">Harpsichords Attack! (feat. ATD)</span>
-                                    </label>
-                                </li>
-                                <li data-src="music/Experiments and Parodies/7.mp3">
-                                    <input id="checkbox-tracklist[1]-track[7]" type="checkbox" checked
-                                    ><label for="checkbox-tracklist[1]-track[7]" class="designed-checkbox"></label
-                                    ><label for="checkbox-tracklist[1]-track[7]"
-                                        ><div class="order"><span>7.</span></div
-                                        ><span class="track-artist">Zmicier M.</span
-                                        ><span>&nbsp;&ndash;&nbsp;</span
-                                        ><span class="track-title">Thousand Miles (of Drinking) (feat. ATD)</span>
-                                    </label>
-                                </li>
-                                <li data-src="music/Experiments and Parodies/8.mp3">
-                                    <input id="checkbox-tracklist[1]-track[8]" type="checkbox" checked
-                                    ><label for="checkbox-tracklist[1]-track[8]" class="designed-checkbox"></label
-                                    ><label for="checkbox-tracklist[1]-track[8]"
-                                        ><div class="order"><span>8.</span></div
-                                        ><span class="track-artist">Dmitry Miroshkin & Anthony Driverson</span
-                                        ><span>&nbsp;&ndash;&nbsp;</span
-                                        ><span class="track-title">Raindrops (Guitar Mix)</span>
-                                    </label>
-                                </li>
-                            </ul>
-                        </main>
-                    </div>
-                </section>
-
-                <section class="tracklist-section">
-                    <div class="tracklist-menu">
-                        <div class="tracklist-title-box">
-                            <h4><span class="tracklist-title" data-tooltip="Expand for details">Dmitry Miroshkin - Favourite Opuses</span></h4>
-                        </div>
-                        <div class="buttons-box">
-                            <i class="icon-list" data-tooltip="Replace playlist" data-clear></i>
-                            <i class="icon-list-add" data-tooltip="Add to playlist"></i>
-                        </div>
-                    </div>
-                    <div class="tracklist-details">
-                        <header>
-                            <p>
-                                <input id="checkbox-tracklist[2]-all" type="checkbox" checked
-                                ><label for="checkbox-tracklist[2]-all" class="designed-checkbox"></label
-                                ><label for="checkbox-tracklist[2]-all"><span>Check/uncheck all tracks</span></label>
-                            </p>
-                        </header>
-                        <main class="details-main">
-                            <div class="cover">
-                                <img src="" alt="Tracklist Cover">
-                            </div>
-                            <ul class="list">
-                                <li data-src="">
-                                    <input id="checkbox-tracklist[2]-track[1]" type="checkbox" checked
-                                    ><label for="checkbox-tracklist[2]-track[1]" class="designed-checkbox"></label
-                                    ><label for="checkbox-tracklist[2]-track[1]"
-                                        ><div class="order"><span>1.</span></div
                                         ><span class="track-artist">Artist</span
-                                        ><span>&nbsp;&ndash;&nbsp;</span
+                                        ><span> &ndash; </span
                                         ><span class="track-title">Track Title</span>
                                     </label>
                                 </li>
@@ -166,10 +63,11 @@
                         </main>
                     </div>
                 </section>
+                -->
 
-                <i class="clear-playlist" data-tooltip="Clear playlist">
-                    <img src="img/icons/clear.png" alt="clear">
-                </i>
+                <button class="clear-playlist" data-tooltip="Clear playlist">
+                    <img src="img/icons/clear.png" alt="Clear">
+                </button>
             </aside>
 
             <div id="player">
@@ -237,11 +135,12 @@
                         <div id="playlist-limiter">
                             <div id="playlist">
                                 <!-- Example track tree
+
                                 <div class="track">
                                     <audio></audio>
                                     <div class="additionals">
                                         <div class="loading-figure"></div>
-                                        <button class="button-delete" data-tooltip="Remove track">
+                                        <button class="button-remove-track" data-tooltip="Remove track">
                                             <i class="icon-cancel"></i>
                                         </button>
                                     </div>
@@ -254,7 +153,8 @@
                                         </div>
                                         <div class="display-progress"></div>
                                     </div>
-                                </div>-->
+                                </div>
+                                -->
                             </div>
                         </div>
                     </div>
@@ -277,7 +177,7 @@
                         <i id="playlist-style" class="icon-align-center" data-tooltip="Playlist style"></i>
                     </div>
                     <div class="center-col">
-                        <span class="version">v1.0.9</span>
+                        <span class="version">v1.0.10</span>
                     </div>
                     <div class="right-col">
                         <i id="settings" class="icon-cog-circled" data-tooltip="Settings"></i>
