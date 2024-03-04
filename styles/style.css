@@ -694,7 +694,7 @@ player-controls #volume-bar.active {
 #playlist > .track.loading > .additionals > .loading-figure {
     visibility: visible;
 }
-#playlist > .track > .additionals > .button-remove-track {
+#playlist > .track > .additionals > .remove-track {
     display: none;
     margin: 0 1px;
     vertical-align: middle;
@@ -706,11 +706,11 @@ player-controls #volume-bar.active {
     border-radius: 50%;
     cursor: pointer;
 }
-#playlist > .track > .additionals > .button-remove-track:hover {
+#playlist > .track > .additionals > .remove-track:hover {
     opacity: 1;
     text-shadow: 0 0 12px rgba(var(--player-global-color-warning), 0.5);
 }
-#player-container.add-options-active #playlist > .track > .additionals > .button-remove-track {
+#player-container.add-options-active #playlist > .track > .additionals > .remove-track {
     display: inline-block;
 }
 #playlist > .track > .screen-limiter {
@@ -1087,7 +1087,7 @@ player-controls #volume-bar.active {
     text-shadow: 1px 1px 2px rgba(255, 0, 0, 0.3);
 }
 
-.button-close {
+.close-block {
     font-size: 20pt;
     opacity: 0.5;
     background: none;
@@ -1095,14 +1095,15 @@ player-controls #volume-bar.active {
     border-radius: 50%;
     cursor: pointer;
 }
-.button-close:hover {
+.close-block:hover {
     opacity: 1;
     text-shadow: var(--player-shadow-hover);
 }
 
-#player-container i:not(.icon-fast-forward, .icon-fast-backward/*, .icon-cancel*/):active,
-.button-close:focus,
-.button-remove-track:focus,
+#player-container i:not(.icon-fast-forward, .icon-fast-backward, .icon-cancel):active,
+.close-block:focus,
+.remove-track:focus,
+.delete-tracklist:active,
 .key-pressed {
     outline: 1px solid currentColor;
 }
