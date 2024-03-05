@@ -81,6 +81,7 @@ let playOn = false;
 let roundTime = false;
 let timePosSeeking = false;
 let timeRangeEnter = false;
+let removeTrackBtnRepeat = false;
 let timelinePos = 0;
 let timerTimelineUpd = null;
 let timerAccelerateAudioDelay = null;
@@ -1602,129 +1603,157 @@ visPlaylistArea.onclick = (event) => {
 
     // Track title
     if (target = event.target.closest('.track-title')) {
-        if (document.getSelection().toString().length) return;
-
-        let newAudio = target.closest('.track').querySelector('audio');
-
-        console.log('playlist track selecting | ' + newAudio.dataset.title);
-    
-        setPlayState();
-        
-        if (!selectedAudio) {
-            selectedAudio = newAudio;
-    
-            setSelected(selectedAudio);
-            showTrackInfo(selectedAudio);
-            playAudio(selectedAudio);
-            return;
-        }
-    
-        clearFinPlayTimer();
-    
-        if (newAudio != selectedAudio) {
-            clearUpdTimers();
-        
-            if (playOn) pauseAudio(selectedAudio);
-        
-            let prevSelectedAudio = selectedAudio;
-    
-            removeSelected(prevSelectedAudio);
-            selectedAudio = newAudio;
-            setSelected(selectedAudio);
-    
-            prevSelectedAudio.currentTime = 0;
-            selectedAudio.currentTime = 0;
-            timelinePos = 0;
-        
-            showTrackInfo(selectedAudio, prevSelectedAudio);
-        } else {
-            selectedAudio.currentTime = 0;
-            timelinePos = 0;
-    
-            keepSelectedTitleVisible(selectedAudio);
-            updateTime(selectedAudio);
-            updateTimeline(selectedAudio);
-        }
-    
-        playAudio(selectedAudio);
+        let track = target.closest('.track');
+        selectTrackInPlaylist(track);
     }
 
     // Remove track button
     if (target = event.target.closest('.remove-track')) {
         let track = target.closest('.track');
-        let audio = track.querySelector('audio');
-
-        console.log('remove track from playlist | ' + audio.dataset.title);
-
-        // Set focus on next remove track button
-        // Enter counts as a click => event.pointerType == ""
-        if (!event.pointerType && track != playlist.lastElementChild) {
-            highlightActiveElem = track.nextElementSibling.querySelector('.remove-track');
-        }
-
-        // Cutting audio from arrays
-        let originAudioIdx = originOrderedAudios.indexOf(audio);
-        originOrderedAudios.splice(originAudioIdx, 1);
-        curTracklist.splice(originAudioIdx, 1);
-
-        let curAudioIdx = curOrderedAudios.indexOf(audio);
-        curOrderedAudios.splice(curAudioIdx, 1);
-
-        // Removing track element from playlist
-        if (audio == selectedAudio) {
-            audio.setAttribute('data-relocated', '');
-            tempTrackBox.append(track);
-        } else {
-            track.remove();
-        }
-
-        // Recounting duplicates
-        let artist = audio.dataset.artist;
-        let title = audio.dataset.title;
-
-        for (let i = originAudioIdx; i < curTracklist.length; i++) {
-            let comparedArtist = curTracklist[i].artist;
-            let comparedTitle = curTracklist[i].title;
-
-            if (comparedArtist == artist && comparedTitle == title) {
-                let dub = --curTracklist[i].dub;
-
-                if (dub > 1) {
-                    curTracklist[i].dub = dub;
-                    originOrderedAudios[i].dataset.dub = dub; // curOrderedAudios will be updated
-                } else {
-                    dub = null;
-                    delete curTracklist[i].dub;
-                    delete originOrderedAudios[i].dataset.dub; // curOrderedAudios will be updated
-                }
-
-                let playlistTrackTitle = playlist.children[i].querySelector('.track-title');
-                playlistTrackTitle.textContent = artist + ' \u2013 ' + title;
-                if (dub) playlistTrackTitle.textContent += ' (' + dub + ')';
-            }
-        }
-
-        localStorage.setItem('current_tracklist', JSON.stringify(curTracklist));
-
-        // Cutting string from curPlaylist textarea
-        let textMark = '\n\n';
-        let textMarkEndIdx = curPlaylist.value.indexOf(textMark) + textMark.length;
-        let curPlaylistText = curPlaylist.value.slice(0, textMarkEndIdx);
-
-        curOrderedAudios.forEach((audio, idx, array) => {
-            curPlaylistText += (idx + 1) + '. ' + audio.dataset.artist + ' \u2013 ' + audio.dataset.title;
-            if (audio.dataset.dub) curPlaylistText += ' (' + audio.dataset.dub + ')';
-            if (array[idx + 1]) curPlaylistText += '\n';
-        });
-
-        breakLine(curPlaylistText);
-
-        // Additional functions
-        checkPlaylistScrollability();
-        checkVisibilityScrollElems();
-        highlightSelected(selectedAudio);
+        removeTrackFromPlaylist(track, event.pointerType);
     }
 };
+
+function selectTrackInPlaylist(track) {
+    if (document.getSelection().toString().length) return;
+
+    let newAudio = track.querySelector('audio');
+
+    console.log('playlist track selecting | ' + newAudio.dataset.title);
+
+    setPlayState();
+    
+    if (!selectedAudio) {
+        selectedAudio = newAudio;
+
+        setSelected(selectedAudio);
+        showTrackInfo(selectedAudio);
+        playAudio(selectedAudio);
+        return;
+    }
+
+    clearFinPlayTimer();
+
+    if (newAudio != selectedAudio) {
+        clearUpdTimers();
+    
+        if (playOn) pauseAudio(selectedAudio);
+    
+        let prevSelectedAudio = selectedAudio;
+
+        removeSelected(prevSelectedAudio);
+        selectedAudio = newAudio;
+        setSelected(selectedAudio);
+
+        prevSelectedAudio.currentTime = 0;
+        selectedAudio.currentTime = 0;
+        timelinePos = 0;
+    
+        
+        showTrackInfo(selectedAudio, prevSelectedAudio);
+    } else {
+        selectedAudio.currentTime = 0;
+        timelinePos = 0;
+
+        keepSelectedTitleVisible(selectedAudio);
+        updateTime(selectedAudio);
+        updateTimeline(selectedAudio);
+    }
+
+    playAudio(selectedAudio);
+}
+
+function removeTrackFromPlaylist(track, pointerType) {
+    let audio = track.querySelector('audio');
+
+    console.log('remove track from playlist | ' + audio.dataset.title);
+
+    // Set focus on next remove track button
+    // Enter counts as a click => event.pointerType == ""
+    if (!pointerType) {
+        let nextTrack = track.nextElementSibling || track.previousElementSibling;
+        let nextFocusedElem = nextTrack ?
+            nextTrack.querySelector('.remove-track') :
+            tracklistDatabase.querySelector('.tracklist-section');
+
+        if (
+            !settingsArea.hidden &&
+            selectedAudio &&
+            audio != selectedAudio &&
+            !selectedAudio.hasAttribute('data-relocated') &&
+            !removeTrackBtnRepeat
+        ) {
+            highlightActiveElem = nextFocusedElem;
+        } else {
+            nextFocusedElem.focus();
+        }
+    }
+
+    // Cutting audio from arrays
+    let originAudioIdx = originOrderedAudios.indexOf(audio);
+    originOrderedAudios.splice(originAudioIdx, 1);
+    curTracklist.splice(originAudioIdx, 1);
+
+    let curAudioIdx = curOrderedAudios.indexOf(audio);
+    curOrderedAudios.splice(curAudioIdx, 1);
+
+    // Removing track element from playlist
+    if (audio == selectedAudio) {
+        audio.setAttribute('data-relocated', '');
+        tempTrackBox.append(track);
+    } else {
+        track.remove();
+    }
+
+    // Recounting duplicates
+    let artist = audio.dataset.artist;
+    let title = audio.dataset.title;
+
+    for (let i = originAudioIdx; i < curTracklist.length; i++) {
+        let comparedArtist = curTracklist[i].artist;
+        let comparedTitle = curTracklist[i].title;
+
+        if (comparedArtist == artist && comparedTitle == title) {
+            let dub = --curTracklist[i].dub;
+
+            if (dub > 1) {
+                curTracklist[i].dub = dub;
+                originOrderedAudios[i].dataset.dub = dub; // curOrderedAudios will be updated
+            } else {
+                dub = null;
+                delete curTracklist[i].dub;
+                delete originOrderedAudios[i].dataset.dub; // curOrderedAudios will be updated
+            }
+
+            let playlistTrackTitle = playlist.children[i].querySelector('.track-title');
+            playlistTrackTitle.textContent = artist + ' \u2013 ' + title;
+            if (dub) playlistTrackTitle.textContent += ' (' + dub + ')';
+        }
+    }
+
+    localStorage.setItem('current_tracklist', JSON.stringify(curTracklist));
+
+    // Cutting string from curPlaylist textarea
+    let textMark = '\n\n';
+    let textMarkEndIdx = curPlaylist.value.indexOf(textMark) + textMark.length;
+    let curPlaylistText = curPlaylist.value.slice(0, textMarkEndIdx);
+
+    curOrderedAudios.forEach((audio, idx, array) => {
+        curPlaylistText += (idx + 1) + '. ' + audio.dataset.artist + ' \u2013 ' + audio.dataset.title;
+        if (audio.dataset.dub) curPlaylistText += ' (' + audio.dataset.dub + ')';
+        if (array[idx + 1]) curPlaylistText += '\n';
+    });
+
+    breakLine(curPlaylistText);
+
+    // Additional functions
+    setTimeout(() => {
+        checkPlaylistScrollability();
+        checkVisibilityScrollElems();
+        if (!removeTrackBtnRepeat) highlightSelected(selectedAudio);
+    }, 0);
+    
+}
 
 visPlaylistArea.oncontextmenu = function(event) {
     if (!event.target.matches('.track-title')) return;
@@ -2203,6 +2232,8 @@ visPlaylistArea.onpointerdown = function(event) {
 };
 
 function keepSelectedTitleVisible(audio) {
+    if (audio.hasAttribute('data-relocated')) return;
+
     let winScrollDuration = LAG;
 
     // Playlist scroll alignment
@@ -3317,134 +3348,6 @@ outerScrollArrowsDown.forEach(arrow => arrow.addEventListener('click', () => {
     });
 }));
 
-//////////////////
-// Key handlers //
-//////////////////
-
-// Playing/pausing/stoping audio
-document.addEventListener('keydown', (event) =>  {
-    if (event.code == 'Space') event.preventDefault();
-    if (
-        ((event.code == 'KeyW' && !event.shiftKey) ||
-        event.code == 'Space') &&
-        !event.repeat
-    ) {
-        highlightButton(playPauseBtn, event.code, playPauseAction);
-    }
-    if (event.code == 'KeyS' && !event.shiftKey && !event.repeat) {
-        highlightButton(stopBtn, event.code, stopAction);
-    }
-});
-
-// Stepping/accelerating audio
-document.addEventListener('keydown', (event) => {
-    if (
-        (event.code == 'ArrowLeft' || event.code == 'ArrowRight' ||
-        event.code == 'KeyA' || event.code == 'KeyD') &&
-        !event.repeat
-    ) {
-        if (
-            (event.code == 'ArrowLeft' || event.code == 'ArrowRight') &&
-            document.activeElement.matches('input[type="number"]')
-        ) {
-            return;
-        }
-
-        let btn = stepKeysData[event.code].button;
-        highlightButton(btn, event.code, downKeyStepAccAction, event.code);
-    }
-});
-
-// Randomizing/repeating track/playlist
-document.addEventListener('keydown', (event) => {
-    if (event.code == 'KeyQ' && !event.repeat) {
-        let btn = shuffleBtn.closest('.btn-img-wrapper');
-        highlightButton(btn, event.code, shuffleAction);
-    }
-    if (event.code == 'KeyE' && !event.repeat) {
-        let btn = repeatBtn.closest('.btn-img-wrapper');
-        highlightButton(btn, event.code, repeatAction);
-    }
-});
-
-// Changing volume
-document.addEventListener('keydown', (event) => {
-    if (
-        (event.code == 'KeyM' || (event.code == 'KeyR' && !event.shiftKey)) &&
-        !event.repeat
-    ) {
-        highlightButton(volumeBtn, event.code, volumeAction);
-    }
-    if ((event.shiftKey && event.code == 'KeyR') || event.code == 'Period') {
-        let keyRepeat = event.repeat ? true : false;
-        changeVolumeAction('increase', keyRepeat);
-    }
-    if ((event.shiftKey && event.code == 'KeyF') || event.code == 'Comma') {
-        let keyRepeat = event.repeat ? true : false;
-        changeVolumeAction('reduce', keyRepeat);
-    }
-});
-
-// Changing buttons configuration, player coloring, playlist style
-document.addEventListener('keydown', (event) => {
-    if (event.code == 'KeyZ' && !event.repeat && !event.ctrlKey) {
-        changeConfig.eventType = event.type;
-        let idx = configsBank.indexOf(config);
-        highlightButton(configBtn, event.code, changeConfig, idx + 1);
-    }
-    if (event.code == 'KeyX' && !event.repeat && !event.ctrlKey) {
-        let idx = playerColorsBank.indexOf(playerColor);
-        highlightButton(colorBtn, event.code, changePlayerColor, idx + 1);
-    }
-    if (event.code == 'KeyC' && !event.repeat && !event.ctrlKey) {
-        let idx = playlistStylesBank.indexOf(playlistStyle);
-        highlightButton(playlistStyleBtn, event.code, changePlaylistStyle, idx + 1);
-    }
-});
-
-// Showing/hiding settings
-document.addEventListener('keydown', (event) => {
-    if (event.code === 'KeyF' && !event.shiftKey && !event.repeat) {
-        highlightButton(settingsBtn, event.code, settingsAction, event.type);
-    }
-});
-
-// Showing/hiding key info
-document.addEventListener('keydown', (event) => {
-    if (event.code === 'KeyT' && !event.repeat) {
-        highlightButton(keyInfoBtn, event.code, keyInfoAction, event.type);
-    }
-});
-
-// Scrolling playlist
-document.addEventListener('keydown', (event) =>  {
-    if (
-        (event.code == 'ArrowUp' || event.code == 'ArrowDown' ||
-        event.code == 'PageUp' || event.code == 'PageDown' ||
-        event.code == 'Home' || event.code == 'End') &&
-        !event.repeat
-    ) {
-        downKeyScrollAction(event);
-    }
-    if (
-        (event.code == 'ArrowUp' || event.code == 'ArrowDown' ||
-        event.code == 'PageUp' || event.code == 'PageDown' ||
-        event.code == 'Home' || event.code == 'End') &&
-        event.repeat
-    ) {
-        repeatKeyScrollAction(event);
-    }
-});
-document.addEventListener('keyup', (event) =>  {
-    if (
-        event.code == 'ArrowUp' || event.code == 'ArrowDown' ||
-        event.code == 'PageUp' || event.code == 'PageDown' ||
-        event.code == 'Home' || event.code == 'End'
-    ) {
-        upKeyScrollAction(event);
-    }
-});
-
 ////////////////////////////
 // Touch device detection //
 ////////////////////////////
@@ -3902,9 +3805,9 @@ tracklistDatabase.onclick = (event) => {
     }
 };
 
-/////////////////////////
-// Tracklists creation //
-/////////////////////////
+/////////////////////////////////
+// Tracklist database creation //
+/////////////////////////////////
 
 let tracklistNum = 0;
 
@@ -3923,10 +3826,15 @@ function createTracklistDatabase(tracklists) {
 
 function createTracklistSection(tracklistTitle, tracklist) {
     tracklistNum++;
+
+    tracklistTitle = tracklistTitle.replace(/(#)|(\s-\s)/g, (match, p1, p2) => {
+        if (match == p1) return '/';
+        if (match == p2) return ' \u2013 ';
+    });
     
     let tracklistSection = document.createElement('section');
     tracklistSection.className = 'tracklist-section';
-    tracklistSection.setAttribute('tabindex', 0);
+    tracklistSection.tabIndex = 0;
     tracklistDatabase.lastElementChild.before(tracklistSection);
     
     connectFocusHandler(tracklistSection);
@@ -3985,6 +3893,15 @@ function createTracklistSection(tracklistTitle, tracklist) {
     detailsMain.appendChild(list);
 
     let trackNum = 0;
+    let hidenity = 'hidden';
+    let firstTackArtist = tracklist.tracks[0].artist;
+
+    for (let track of tracklist.tracks) {
+        if (track.artist != firstTackArtist) {
+            hidenity = '';
+            break;
+        }
+    }
 
     tracklist.tracks.forEach(track => {
         trackNum++;
@@ -3996,8 +3913,8 @@ function createTracklistSection(tracklistTitle, tracklist) {
             ><label for="checkbox-tracklist[${tracklistNum}]-track[${trackNum}]" class="designed-checkbox"></label
             ><label for="checkbox-tracklist[${tracklistNum}]-track[${trackNum}]"
                 ><div class="order"><span>${trackNum}.</span></div
-                ><span class="track-artist">${track.artist}</span
-                ><span> &ndash; </span
+                ><span class="track-artist"${ hidenity}>${track.artist}</span
+                ><span class="hyphen"${ hidenity}> &ndash; </span
                 ><span class="track-title">${track.title}</span>
             </label> 
         `;
@@ -4222,9 +4139,173 @@ window.addEventListener('load', () => {
     showLastPlayedTrackInfo();
 });
 
+//////////////////
+// Key handlers //
+//////////////////
+
+// Playing/pausing/stoping audio
+document.addEventListener('keydown', (event) =>  {
+    if (event.code == 'Space') event.preventDefault();
+    if (
+        ((event.code == 'KeyW' && !event.shiftKey) ||
+        event.code == 'Space') &&
+        !event.repeat
+    ) {
+        highlightButton(playPauseBtn, event.code, playPauseAction);
+    }
+    if (event.code == 'KeyS' && !event.shiftKey && !event.repeat) {
+        highlightButton(stopBtn, event.code, stopAction);
+    }
+});
+
+// Stepping/accelerating audio
+document.addEventListener('keydown', (event) => {
+    if (
+        (event.code == 'ArrowLeft' || event.code == 'ArrowRight' ||
+        event.code == 'KeyA' || event.code == 'KeyD') &&
+        !event.repeat
+    ) {
+        if (
+            (event.code == 'ArrowLeft' || event.code == 'ArrowRight') &&
+            document.activeElement.matches('input[type="number"]')
+        ) {
+            return;
+        }
+
+        let btn = stepKeysData[event.code].button;
+        highlightButton(btn, event.code, downKeyStepAccAction, event.code);
+    }
+});
+
+// Randomizing/repeating track/playlist
+document.addEventListener('keydown', (event) => {
+    if (event.code == 'KeyQ' && !event.repeat) {
+        let btn = shuffleBtn.closest('.btn-img-wrapper');
+        highlightButton(btn, event.code, shuffleAction);
+    }
+    if (event.code == 'KeyE' && !event.repeat) {
+        let btn = repeatBtn.closest('.btn-img-wrapper');
+        highlightButton(btn, event.code, repeatAction);
+    }
+});
+
+// Changing volume
+document.addEventListener('keydown', (event) => {
+    if (
+        (event.code == 'KeyM' || (event.code == 'KeyR' && !event.shiftKey)) &&
+        !event.repeat
+    ) {
+        highlightButton(volumeBtn, event.code, volumeAction);
+    }
+    if ((event.shiftKey && event.code == 'KeyR') || event.code == 'Period') {
+        let keyRepeat = event.repeat ? true : false;
+        changeVolumeAction('increase', keyRepeat);
+    }
+    if ((event.shiftKey && event.code == 'KeyF') || event.code == 'Comma') {
+        let keyRepeat = event.repeat ? true : false;
+        changeVolumeAction('reduce', keyRepeat);
+    }
+});
+
+// Changing buttons configuration, player coloring, playlist style
+document.addEventListener('keydown', (event) => {
+    if (event.code == 'KeyZ' && !event.repeat && !event.ctrlKey) {
+        changeConfig.eventType = event.type;
+        let idx = configsBank.indexOf(config);
+        highlightButton(configBtn, event.code, changeConfig, idx + 1);
+    }
+    if (event.code == 'KeyX' && !event.repeat && !event.ctrlKey) {
+        let idx = playerColorsBank.indexOf(playerColor);
+        highlightButton(colorBtn, event.code, changePlayerColor, idx + 1);
+    }
+    if (event.code == 'KeyC' && !event.repeat && !event.ctrlKey) {
+        let idx = playlistStylesBank.indexOf(playlistStyle);
+        highlightButton(playlistStyleBtn, event.code, changePlaylistStyle, idx + 1);
+    }
+});
+
+// Showing/hiding settings
+document.addEventListener('keydown', (event) => {
+    if (event.code === 'KeyF' && !event.shiftKey && !event.repeat) {
+        highlightButton(settingsBtn, event.code, settingsAction, event.type);
+    }
+});
+
+// Showing/hiding key info
+document.addEventListener('keydown', (event) => {
+    if (event.code === 'KeyT' && !event.repeat) {
+        highlightButton(keyInfoBtn, event.code, keyInfoAction, event.type);
+    }
+});
+
+// Scrolling playlist
+document.addEventListener('keydown', (event) =>  {
+    if (
+        (event.code == 'ArrowUp' || event.code == 'ArrowDown' ||
+        event.code == 'PageUp' || event.code == 'PageDown' ||
+        event.code == 'Home' || event.code == 'End') &&
+        !event.repeat
+    ) {
+        downKeyScrollAction(event);
+    }
+    if (
+        (event.code == 'ArrowUp' || event.code == 'ArrowDown' ||
+        event.code == 'PageUp' || event.code == 'PageDown' ||
+        event.code == 'Home' || event.code == 'End') &&
+        event.repeat
+    ) {
+        repeatKeyScrollAction(event);
+    }
+});
+document.addEventListener('keyup', (event) =>  {
+    if (
+        event.code == 'ArrowUp' || event.code == 'ArrowDown' ||
+        event.code == 'PageUp' || event.code == 'PageDown' ||
+        event.code == 'Home' || event.code == 'End'
+    ) {
+        upKeyScrollAction(event);
+    }
+});
+
+// Focusing playlist elements
+visPlaylistArea.addEventListener('keydown', (event) => {
+    if (event.target.matches('.remove-track') && event.key == 'Enter' && event.repeat) {
+        removeTrackBtnRepeat = true;
+    }
+});
+visPlaylistArea.addEventListener('keyup', function (event) {
+    // Playlist focused, key == 'Enter'
+    if (event.target == this && event.key == 'Enter') {
+        if (selectedAudio) {
+            let track = selectedAudio.closest('.track');
+
+            document.getSelection().empty();
+            selectTrackInPlaylist(track);
+        } else {
+            playPauseAction();
+        }
+    }
+
+    // Remove track button focused, key == 'Delete'
+    if (event.target.matches('.remove-track') && event.key == 'Delete') {
+        let track = event.target.closest('.track');
+        removeTrackFromPlaylist(track, event.pointerType);
+    }
+
+    removeTrackBtnRepeat = false;
+});
+
+// Enable focus on visPlaylistArea when switching focus back from curPlaylist
+curPlaylist.addEventListener('keydown', (event) => {
+    if (event.code == 'Tab' && event.shiftKey) {
+        event.preventDefault();
+        visPlaylistArea.focus();
+    }
+});
+
 // Temporary check handler
 document.addEventListener('keydown', (event) => {
     if (event.code == 'KeyG') {
-        console.log(highlightActiveElem);
+        console.log(document.activeElement);
     }
 });
