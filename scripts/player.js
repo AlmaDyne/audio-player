@@ -3827,7 +3827,7 @@ function createTracklistDatabase(tracklists) {
 function createTracklistSection(tracklistTitle, tracklist) {
     tracklistNum++;
 
-    tracklistTitle = tracklistTitle.replace(/(#)|(\s-\s)/g, (match, p1, p2) => {
+    tracklistTitle = tracklistTitle.replace(/(--)|(\s-\s)/g, (match, p1, p2) => {
         if (match == p1) return '/';
         if (match == p2) return ' \u2013 ';
     });

@@ -46,45 +46,45 @@ export const tracklistObjData = {
         )
     },
     
-    'Dmitry Miroshkin - Orchestra#Ethno#Folk': {
-        cover: '',
+    'Dmitry Miroshkin - Orchestra--Ethno--Folk': {
+        cover: 'music/Dmitry Miroshkin - Orchestra--Ethno--Folk/cover.jpg',
 
         tracks: new Array(
             {
                 artist: 'Dmitry Miroshkin',
                 title: 'Thousand Miles',
-                src: 'music/Dmitry Miroshkin - Orchestra#Ethno#Folk/01. Dmitry Miroshkin - Thousand Miles.mp3'
+                src: 'music/Dmitry Miroshkin - Orchestra--Ethno--Folk/01. Dmitry Miroshkin - Thousand Miles.mp3'
             },
             {
                 artist: 'Dmitry Miroshkin',
                 title: 'Wolf Spirit',
-                src: 'music/Dmitry Miroshkin - Orchestra#Ethno#Folk/02. Dmitry Miroshkin - Wolf Spirit.mp3'
+                src: 'music/Dmitry Miroshkin - Orchestra--Ethno--Folk/02. Dmitry Miroshkin - Wolf Spirit.mp3'
             },
             {
                 artist: 'Dmitry Miroshkin',
-                title: 'The King\'s path',
-                src: 'music/Dmitry Miroshkin - Orchestra#Ethno#Folk/03. Dmitry Miroshkin - The King\'s path.mp3'
+                title: 'The King\'s Path',
+                src: 'music/Dmitry Miroshkin - Orchestra--Ethno--Folk/03. Dmitry Miroshkin - The King\'s path.mp3'
             },
             {
-                artist: 'Dmitry Miroshkin',
-                title: 'When the mountains fall',
-                src: 'music/Dmitry Miroshkin - Orchestra#Ethno#Folk/04. Dmitry Miroshkin - When the mountains fall.mp3'
+                artist: 'Dmitry Miroshkin & Anthony Driverson',
+                title: 'When the Mountains Fall',
+                src: 'music/Dmitry Miroshkin - Orchestra--Ethno--Folk/04. Dmitry Miroshkin & Anthony Driverson - When the Mountains Fall.mp3'
             },
             {
                 artist: 'Dmitry Miroshkin',
                 title: 'Wind Waves',
-                src: 'music/Dmitry Miroshkin - Orchestra#Ethno#Folk/05. Dmitry Miroshkin - Wind Waves.mp3'
+                src: 'music/Dmitry Miroshkin - Orchestra--Ethno--Folk/05. Dmitry Miroshkin - Wind Waves.mp3'
             },
             {
                 artist: 'Dmitry Miroshkin',
                 title: 'Heart of the Forest',
-                src: 'music/Dmitry Miroshkin - Orchestra#Ethno#Folk/06. Dmitry Miroshkin - Heart of the Forest.mp3'
+                src: 'music/Dmitry Miroshkin - Orchestra--Ethno--Folk/06. Dmitry Miroshkin - Heart of the Forest.mp3'
             }
         )
     },
 
     'Dmitry Miroshkin - Piano Music': {
-        cover: '',
+        cover: 'music/Dmitry Miroshkin - Piano Music/cover.png',
 
         tracks: new Array(
             {
@@ -99,8 +99,8 @@ export const tracklistObjData = {
             },
             {
                 artist: 'Dmitry Miroshkin',
-                title: 'Flowers in your hair',
-                src: 'music/Dmitry Miroshkin - Piano Music/03. Dmitry Miroshkin - Flowers in your hair.mp3'
+                title: 'Flowers in Your Hair',
+                src: 'music/Dmitry Miroshkin - Piano Music/03. Dmitry Miroshkin - Flowers in Your Hair.mp3'
             },
             {
                 artist: 'Dmitry Miroshkin',
@@ -109,8 +109,8 @@ export const tracklistObjData = {
             },
             {
                 artist: 'Dmitry Miroshkin',
-                title: 'Flowers and lovers',
-                src: 'music/Dmitry Miroshkin - Piano Music/05. Dmitry Miroshkin - Flowers and lovers.mp3'
+                title: 'Flowers and Lovers',
+                src: 'music/Dmitry Miroshkin - Piano Music/05. Dmitry Miroshkin - Flowers and Lovers.mp3'
             },
         )
     },
