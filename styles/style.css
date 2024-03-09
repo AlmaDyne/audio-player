@@ -605,6 +605,7 @@ player-controls #volume-bar.active {
 #playlist-container .scroll-arrows-box.down > .playlist-scroll-arrow {
     border-top: var(--playlist-scroll-arrow-height) solid var(--playlist-scroll-arrow-color);
 }
+
 #playlist-container .outer-scroll-arrow {
     --y-shift: 7px + var(--scroll-arrows-box-height);
     position: absolute;
