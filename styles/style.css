@@ -257,7 +257,7 @@ i {
     margin-left: var(--list-text-indent);
     list-style-type: none;
     text-align: left;
-    text-indent: calc(var(--list-text-indent)*(-1));
+    text-indent: calc((-1)*var(--list-text-indent));
     transition: color var(--transition-time-main);
 }
 .tracklist-details .list > li {
@@ -576,10 +576,10 @@ player-controls #volume-bar.active {
     z-index: 1;
 }
 #playlist-container .scroll-arrows-box.up {
-    top: calc(var(--scroll-arrows-box-height)*(-1));
+    top: calc((-1)*var(--scroll-arrows-box-height));
 }
 #playlist-container .scroll-arrows-box.down {
-    bottom: calc(var(--scroll-arrows-box-height)*(-1));
+    bottom: calc((-1)*var(--scroll-arrows-box-height));
 }
 #playlist-container .playlist-scroll-arrow {
     width: 0;
@@ -606,9 +606,9 @@ player-controls #volume-bar.active {
     border-top: var(--playlist-scroll-arrow-height) solid var(--playlist-scroll-arrow-color);
 }
 #playlist-container .outer-scroll-arrow {
-    --x-shift: -72px;
-    --y-shift: calc(7px + var(--scroll-arrows-box-height));
+    --y-shift: 7px + var(--scroll-arrows-box-height);
     position: absolute;
+    right: -72px;
     padding: 6px;
     font-size: 20pt;
     color: rgb(var(--player-color-emphase));
@@ -616,28 +616,13 @@ player-controls #volume-bar.active {
     cursor: pointer;
     opacity: var(--scroll-elems-opacity);
     transition: background-color var(--transition-time-main);
-    right: var(--x-shift);
 }
-/*#playlist-container .outer-scroll-arrow.left  {
-    left: var(--x-shift);
-}
-#playlist-container .outer-scroll-arrow.right {
-    right: var(--x-shift);
-}
-#playlist-container .scroll-arrows-box.up > .outer-scroll-arrow {
-    top: var(--y-shift);
-}
-#playlist-container .scroll-arrows-box.down > .outer-scroll-arrow {
-    bottom: var(--y-shift);
-}*/
-
 #playlist-container .outer-scroll-arrow.up {
-    bottom: calc(7px + var(--scroll-arrows-box-height) + 45px);
+    bottom: calc(var(--y-shift) + 7px + 45px);
 }
 #playlist-container .outer-scroll-arrow.down {
-    bottom: calc(7px + var(--scroll-arrows-box-height));
+    bottom: calc(var(--y-shift));
 }
-
 #playlist-container .outer-scroll-arrow:hover {
     background-color: var(--player-background-color-even);
 }
@@ -784,9 +769,6 @@ player-controls #volume-bar.active {
     outline: 1px solid rgb(var(--player-color-emphase));
     box-shadow: 0 0 var(--outline-width) 1px rgba(var(--player-color-emphase), 0.75);
     transition: text-shadow var(--transition-time-main);
-}
-#playlist.strict > .track.selected > .track-title-limiter > .track-title:focus {
-    box-shadow: 0 0 var(--outline-width) 2px var(--player-color-main);
 }
 #player.changing-color #playlist > .track > .track-title-limiter > .track-title {
     transition:

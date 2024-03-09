@@ -37,10 +37,8 @@ const visPlaylistArea = document.getElementById('visible-playlist-area');
 const playlist = document.getElementById('playlist');
 const playlistScrollArrowUp = playlistContainer.querySelector('.scroll-arrows-box.up > .playlist-scroll-arrow');
 const playlistScrollArrowDown = playlistContainer.querySelector('.scroll-arrows-box.down > .playlist-scroll-arrow');
-//const outerScrollArrowsUp = playlistContainer.querySelectorAll('.scroll-arrows-box.up > .outer-scroll-arrow');
-//const outerScrollArrowsDown = playlistContainer.querySelectorAll('.scroll-arrows-box.down > .outer-scroll-arrow');
-const outerScrollArrowsUp = playlistContainer.querySelectorAll('.outer-scroll-arrow.up');
-const outerScrollArrowsDown = playlistContainer.querySelectorAll('.outer-scroll-arrow.down');
+const outerScrollArrowUp = playlistContainer.querySelector('.outer-scroll-arrow.up');
+const outerScrollArrowDown = playlistContainer.querySelector('.outer-scroll-arrow.down');
 const tempTrackBox = document.getElementById('temporary-track-box');
 const configBtn = document.getElementById('configuration');
 const colorBtn = document.getElementById('coloring');
@@ -122,7 +120,7 @@ function defineProperty(propertyName, audio) {
             if (audio && audio.hasAttribute('data-relocated') && audio != newAudio) {
                 audio.parentElement.remove();
             }
-
+            
             audio = newAudio;
         }
     });
@@ -3193,8 +3191,6 @@ function promiseChange(btn, key, time, func) {
 function highlightButton(btn, key, actionFunc, ...args) {
     highlightedBtns.set(key, btn);
 
-    console.log('+');
-
     if (actionFunc == downKeyStepAccAction) {
         let keyAccType = stepKeysData[key].accelerationType;
 
@@ -3286,9 +3282,9 @@ function checkVisibilityScrollElems() {
             playlistLimVisibleTop = -playlistLimRect.top + SCROLL_ARROW_BOX_HEIGHT;
         }
         
-        outerScrollArrowsUp.forEach(arrow => arrow.hidden = false);
+        outerScrollArrowUp.hidden = false;
     } else {
-        outerScrollArrowsUp.forEach(arrow => arrow.hidden = true);
+        outerScrollArrowUp.hidden = true;
     }
 
     if (playlistContainerRect.bottom > winHeight - heightShift) {
@@ -3296,9 +3292,9 @@ function checkVisibilityScrollElems() {
             playlistLimVisibleBottom = playlistLimRect.bottom - winHeight + SCROLL_ARROW_BOX_HEIGHT;
         }
         
-        outerScrollArrowsDown.forEach(arrow => arrow.hidden = false);
+        outerScrollArrowDown.hidden = false;
     } else {
-        outerScrollArrowsDown.forEach(arrow => arrow.hidden = true);
+        outerScrollArrowDown.hidden = true;
     }
 
     playlistLim.style.maskImage = (!playlistLimVisibleTop && !playlistLimVisibleBottom) ?
@@ -3359,15 +3355,15 @@ playlistScrollArrowDown.onclick = () => {
 };
 
 // Outer scroll arrows handlers
-outerScrollArrowsUp.forEach(arrow => arrow.addEventListener('click', () => {
+outerScrollArrowUp.addEventListener('click', () => {
     window.scrollTo({
         left: 0,
         top: 0,
         behavior: 'smooth'
     });
-}));
+});
 
-outerScrollArrowsDown.forEach(arrow => arrow.addEventListener('click', () => {
+outerScrollArrowDown.addEventListener('click', () => {
     let scrollHeight = Math.max(
         document.body.scrollHeight, document.documentElement.scrollHeight,
         document.body.offsetHeight, document.documentElement.offsetHeight,
@@ -3379,7 +3375,7 @@ outerScrollArrowsDown.forEach(arrow => arrow.addEventListener('click', () => {
         top: scrollHeight,
         behavior: 'smooth'
     });
-}));
+});
 
 ////////////////////////////
 // Touch device detection //
