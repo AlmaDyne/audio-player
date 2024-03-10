@@ -57,7 +57,7 @@ i {
 }
 #player-container.color-black {
     --player-color-main: var(--site-color-main);
-    --player-background-color-even: #050505;
+    --player-color-main-invert: #050505;
     --player-background-color-gradient: linear-gradient(to left top, rgba(0, 0, 0, 0.5), rgba(0, 0, 0));
     --player-background-hover1: linear-gradient(to right, rgba(136, 136, 136, 0), rgba(0, 0, 0, 0.75));
     --player-background-hover2: linear-gradient(to right, rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 1));
@@ -72,7 +72,7 @@ i {
 }
 #player-container.color-white {
     --player-color-main: #050505;
-    --player-background-color-even: var(--site-color-main);
+    --player-color-main-invert: var(--site-color-main);
     --player-background-color-gradient: linear-gradient(to left top, rgba(255, 255, 255, 0.5), rgba(255, 255, 255));
     --player-background-hover1: linear-gradient(to right, rgba(136, 136, 136, 0), rgba(255, 255, 255, 0.75));
     --player-background-hover2: linear-gradient(to right, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 1));
@@ -106,7 +106,7 @@ i {
     font-size: 18pt;
     line-height: 0;
     text-transform: uppercase;
-    text-shadow: 0 0 10px var(--player-background-color-even);
+    text-shadow: 0 0 10px var(--player-color-main-invert);
     transition: color var(--transition-time-main), text-shadow var(--transition-time-main);
 }
 #tracklist-database h3.database-title > span {
@@ -119,24 +119,33 @@ i {
 #tracklist-database h3.database-title > span::after {
     content: '';
     position: absolute;
-    top: -50%;
-    bottom: -50%;
+    top: -25%;
+    bottom: -25%;
     left: -50%;
     right: -50%;
     background: linear-gradient(
         to bottom,
-        rgba(229, 172, 142, 0),
-        rgba(255,255,255,0.5) 50%,
-        rgba(229, 172, 142, 0))
-    ;
-    transform: rotateZ(55deg) translate(-5em, 4.4em);
+        rgba(255, 255, 255, 0),
+        rgba(255, 255, 255, 0.1) 15%,
+        rgba(var(--player-color-emphase), 0.5) 50%,
+        rgba(255, 255, 255, 0.1) 85%,
+        rgba(255, 255, 255, 0) 100%
+    );
+    transform: rotateZ(58deg) translate(-5em, 4.4em);
+    opacity: 0;
 }
 #tracklist-database h3.database-title > span:hover::after {
     animation: sheen 0.8s forwards ease-in-out;
 }
 @keyframes sheen {
+    15%, 85% {
+        opacity: 0;
+    }
+    50% {
+        opacity: 1;
+    }
     100% {
-        transform: rotateZ(55deg) translate(5em, -4.4em);
+        transform: rotateZ(58deg) translate(5em, -4.4em);
     }
 }
 
@@ -657,7 +666,7 @@ player-controls #volume-bar.active {
     bottom: calc(var(--y-shift));
 }
 #playlist-container .outer-scroll-arrow:hover {
-    background-color: var(--player-background-color-even);
+    background-color: var(--player-color-main-invert);
 }
 
 #visible-playlist-area:focus {
@@ -697,7 +706,7 @@ player-controls #volume-bar.active {
 }
 #playlist.strict {
     text-align: left;
-    --load-info-background-color: var(--player-background-color-even);
+    --load-info-background-color: var(--player-color-main-invert);
     --load-info-margin-top: -6px;
     --load-info-elems-top: -7px;
 }
@@ -1024,7 +1033,7 @@ player-controls #volume-bar.active {
         var(--player-color-demarcation-line) calc(var(--assigned-keys-width) + var(--key-info-padding)),
         var(--player-color-main) calc(var(--assigned-keys-width) + var(--key-info-padding) + 100px)
     );
-    color: var(--player-background-color-even);
+    color: var(--player-color-main-invert);
     vertical-align: middle;
     white-space: normal;
     border-radius: 36px;
@@ -1102,7 +1111,7 @@ player-controls #volume-bar.active {
 .keys-info .icon-background {
     display: inline-block;
     padding: 3px;
-    background: var(--player-background-color-even);
+    background: var(--player-color-main-invert);
     color: var(--player-color-main);
     line-height: 0.625em;
 }
@@ -1189,7 +1198,7 @@ player-controls #volume-bar.active {
     position: absolute;
     padding: 6px 4px;
     background-color: var(--track-menu-color);
-    color: var(--player-background-color-even);
+    color: var(--player-color-main-invert);
     text-transform: none;
     white-space: nowrap;
     z-index: 3;
@@ -1218,7 +1227,6 @@ footer {
     text-align: center;
     font-size: 10pt;
     line-height: 1.5em;
-    user-select: none;
 }
 
 @keyframes scaling-load-fig {
