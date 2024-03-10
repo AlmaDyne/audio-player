@@ -49,7 +49,7 @@ i {
 #player-container {
     --player-width: 550px;
     --player-side-padding: 20px;
-    --player-side-margin: 6px;
+    --player-side-margin: 3px;
     --player-global-color-emphase: #0ea109;
     --player-global-color-warning: 196, 13, 43;
     display: flex;
@@ -100,14 +100,46 @@ i {
     color: var(--player-color-main);
     text-align: center;
 }
-#tracklist-database h3 {
+
+#tracklist-database h3.database-title {
     font-family: 'Garet';
     font-size: 18pt;
+    line-height: 0;
     text-transform: uppercase;
-    text-decoration: underline;
     text-shadow: 0 0 10px var(--player-background-color-even);
     transition: color var(--transition-time-main), text-shadow var(--transition-time-main);
 }
+#tracklist-database h3.database-title > span {
+    display: inline-block;
+    position: relative;
+    line-height: 1.25em;
+    text-decoration: underline;
+    overflow: hidden;
+}
+#tracklist-database h3.database-title > span::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    bottom: -50%;
+    left: -50%;
+    right: -50%;
+    background: linear-gradient(
+        to bottom,
+        rgba(229, 172, 142, 0),
+        rgba(255,255,255,0.5) 50%,
+        rgba(229, 172, 142, 0))
+    ;
+    transform: rotateZ(55deg) translate(-5em, 4.4em);
+}
+#tracklist-database h3.database-title > span:hover::after {
+    animation: sheen 0.8s forwards ease-in-out;
+}
+@keyframes sheen {
+    100% {
+        transform: rotateZ(55deg) translate(5em, -4.4em);
+    }
+}
+
 #tracklist-database .tracklist-section {
     --symmetrical-padding: 6px;
     margin: 50px 0;
@@ -607,7 +639,7 @@ player-controls #volume-bar.active {
 }
 
 #playlist-container .outer-scroll-arrow {
-    --y-shift: 7px + var(--scroll-arrows-box-height);
+    --y-shift: 8px + var(--scroll-arrows-box-height);
     position: absolute;
     right: -72px;
     padding: 6px;
@@ -619,7 +651,7 @@ player-controls #volume-bar.active {
     transition: background-color var(--transition-time-main);
 }
 #playlist-container .outer-scroll-arrow.up {
-    bottom: calc(var(--y-shift) + 7px + 45px);
+    bottom: calc(var(--y-shift) + 8px + 45px);
 }
 #playlist-container .outer-scroll-arrow.down {
     bottom: calc(var(--y-shift));
@@ -645,6 +677,11 @@ player-controls #volume-bar.active {
     height: calc(var(--track-height) * var(--visible-tracks));
     overflow: hidden;
     touch-action: none;
+    /*border: 1px solid;
+    box-sizing: border-box;*/
+}
+#playlist-limiter:focus-within {
+    /*width: calc(100% + 200px);*/
 }
 
 #playlist {
@@ -671,6 +708,9 @@ player-controls #volume-bar.active {
     padding: 0 9%;
     /*border: 1px solid;
     box-sizing: border-box;*/
+}
+#playlist > .track:focus-within {
+    /*left: 200px;*/
 }
 #playlist > .track > .additionals {
     height: 100%;
@@ -1201,9 +1241,9 @@ footer {
     }
 }
 
-@media (max-width: 1568px), screen and (orientation: portrait) {
+@media (max-width: 1562px), screen and (orientation: portrait) {
     #tracklist-database {
-        margin-left: 3px;
+        margin-left: var(--player-side-margin);
     }
 }
 
