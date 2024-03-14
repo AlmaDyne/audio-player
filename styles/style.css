@@ -137,6 +137,17 @@ i {
 #tracklist-database h3.database-title > span:hover::after {
     animation: sheen 0.8s forwards ease-in-out;
 }
+@keyframes sheen {
+    15%, 85% {
+        opacity: 0;
+    }
+    50% {
+        opacity: 1;
+    }
+    100% {
+        transform: rotateZ(58deg) translate(5em, -4.4em);
+    }
+}
 
 #tracklist-database .tracklist-section {
     --symmetrical-padding: 6px;
@@ -675,7 +686,8 @@ player-controls #volume-bar.active {
     height: calc(var(--track-height) * var(--visible-tracks));
     overflow: hidden;
     touch-action: none;
-    outline: 1px solid;
+
+    /*outline: 1px solid;*/
 }
 
 #playlist {
@@ -696,14 +708,14 @@ player-controls #volume-bar.active {
     padding: 0 9%;
     opacity: 0;
 
-    border: 1px solid;
-    box-sizing: border-box;
+    /*border: 1px solid;
+    box-sizing: border-box;*/
 }
 #playlist > .track.adding {
     transform-origin: 0 50%;
     transform: scale(0, 0);
     pointer-events: none;
-    animation: add-track 2s ease-in;
+    animation: add-track 0.5s ease-in;
 }
 @keyframes add-track {
     100% {
@@ -715,7 +727,7 @@ player-controls #volume-bar.active {
     left: 0;
     opacity: 1;
     pointer-events: none;
-    animation: remove-track 2s ease-out forwards;
+    animation: remove-track 0.5s ease-out forwards;
 }
 @keyframes remove-track {
     50% {
@@ -779,6 +791,16 @@ player-controls #volume-bar.active {
 }
 #playlist > .track.loading > .additionals > .loading-figure {
     visibility: visible;
+}
+@keyframes scaling-load-fig {
+    0%, 100% {
+        background-color: var(--player-color-main);
+        transform: scale(1);
+    }
+    50% {
+        background-color: var(--player-background-color-gradient);
+        transform: scale(0)
+    }
 }
 #playlist > .track > .track-title-limiter {
     --outline-width: 3px;
@@ -937,6 +959,11 @@ player-controls #volume-bar.active {
 }
 .player-footer .config-wrapper.rotate {
     animation: rotate-config-button 500ms;
+}
+@keyframes rotate-config-button {
+    100% {
+        transform: rotate(1turn);
+    }
 }
 .player-footer i {
     padding: 6px;
@@ -1256,38 +1283,6 @@ footer {
     text-align: center;
     font-size: 10pt;
     line-height: 1.5em;
-}
-
-@keyframes scaling-load-fig {
-    0%, 100% {
-        background-color: var(--player-color-main);
-        transform: scale(1);
-    }
-    50% {
-        background-color: var(--player-background-color-gradient);
-        transform: scale(0)
-    }
-}
-
-@keyframes rotate-config-button {
-    0% {
-        transform: rotate(0);
-    }
-    100% {
-        transform: rotate(1turn);
-    }
-}
-
-@keyframes sheen {
-    15%, 85% {
-        opacity: 0;
-    }
-    50% {
-        opacity: 1;
-    }
-    100% {
-        transform: rotateZ(58deg) translate(5em, -4.4em);
-    }
 }
 
 @media (max-width: 1562px), screen and (orientation: portrait) {
