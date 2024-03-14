@@ -65,7 +65,7 @@ const DEFAULT_SCROLLING_TIME = 150;
 const KEY_SCROLLING_TIME = 120;
 const HIDE_SCROLL_ELEMENTS_DELAY = 500;
 const RETURN_FOCUS_DELAY = 500;
-let originOrderedAudios = [];
+let origOrderedAudios = [];
 let curOrderedAudios = [];
 let orderedDownloads = [];
 let fixedCurPlaylistStrings = new Map();
@@ -106,6 +106,7 @@ let accelerationType = 'none';
 let timeRangeHoverIntent = {};
 let volumeRangeHoverIntent = {};
 let endWindowScrolling = new CustomEvent('endWinScroll');
+let removingTracksNum = 0;
 
 defineProperty('selectedAudio', undefined);
 
@@ -117,7 +118,7 @@ function defineProperty(propertyName, audio) {
         set(newAudio) {
             if (propertyName != 'selectedAudio') return;
 
-            if (audio && audio.hasAttribute('data-relocated') && audio != newAudio) {
+            if (audio && audio.hasAttribute('data-removed') && audio != newAudio) {
                 audio.parentElement.remove();
             }
             
@@ -1271,7 +1272,7 @@ function shuffleAction() {
     if (shuffleBtn.classList.contains('active')) {
         randomizePlaylist();
     } else {
-        setOriginPlaylistOrder();
+        setOrigPlaylistOrder();
     }
 
     if (selectedAudio) {
@@ -1281,15 +1282,18 @@ function shuffleAction() {
     }
 };
 
-function setOriginPlaylistOrder() {
+function setOrigPlaylistOrder() {
+    if (!origOrderedAudios.length) return;
+
     console.log('original track order');
 
     curOrderedAudios.length = 0;
 
     let curPlaylistText = 'Current playlist (origin order):\n\n';
 
-    originOrderedAudios.forEach((audio, idx, array) => {
+    origOrderedAudios.forEach((audio, idx, array) => {
         curOrderedAudios.push(audio);
+        
         curPlaylistText += (idx + 1) + '. ' + audio.dataset.artist + ' \u2013 ' + audio.dataset.title;
         if (audio.dataset.dub) curPlaylistText += ' (' + audio.dataset.dub + ')';
         if (array[idx + 1]) curPlaylistText += '\n';
@@ -1299,6 +1303,8 @@ function setOriginPlaylistOrder() {
 }
 
 function randomizePlaylist() {
+    if (!curOrderedAudios.length) return;
+
     console.log('random track order');
 
     shuffle(curOrderedAudios);
@@ -1539,33 +1545,50 @@ visPlaylistArea.onpointerover = (event) => {
     let trackTitle = event.target;
     let trackTitleLim = trackTitle.parentElement;
     
-    adjustPlaylistLimiterWidth(trackTitle);
     trackTitleLim.classList.add('hover');
+    adjustPlaylistLimiterWidth(trackTitle);
     
     trackTitle.onpointerleave = () => {
-        trackTitle.parentElement.classList.remove('hover');
-        playlistLim.style.width = '';
+        trackTitleLim.classList.remove('hover');
+        if (!removingTracksNum) playlistLim.style.width = '';
 
         trackTitle.onpointerleave = () => false;
     };
 };
 
 function adjustPlaylistLimiterWidth(trackTitle) {
+    if (removingTracksNum) return;
+    
+    let titleLeft = trackTitle.getBoundingClientRect().left + window.scrollX;
+    let titleWidth = trackTitle.offsetWidth;
+    let playlistLimLeft = playlistLim.getBoundingClientRect().left + window.scrollX;
+    let trackTitleLim = trackTitle.parentElement;
+    let outlineWidth = parseInt(getComputedStyle(trackTitleLim).getPropertyValue('--outline-width'));
+    let shift = isTouchDevice ? 1 : 0; // Bug on some mobile devices
+
+    if (titleLeft - playlistLimLeft + titleWidth + outlineWidth <= playlist.offsetWidth) {
+        playlistLim.style.width = '';
+        return;
+    }
     let docWidth = Math.max(
         document.body.scrollWidth, document.documentElement.scrollWidth,
         document.body.offsetWidth, document.documentElement.offsetWidth,
         document.body.clientWidth, document.documentElement.clientWidth
     );
-    let trackTitleLim = trackTitle.parentElement;
-    let playlistLimLeft = playlistLim.getBoundingClientRect().left + window.scrollX;
-    let shift = isTouchDevice ? 1 : 0; // Bug on some mobile devices
 
     if (trackTitleLim.matches('.animated')) {
         playlistLim.style.width = docWidth - playlistLimLeft - shift + 'px';
 
         trackTitleLim.ontransitionend = () => {
             trackTitleLim.classList.remove('animated');
-            if (trackTitle.matches(':hover')) extendWidth();
+
+            if (trackTitle.matches(':hover')) {
+                if (trackTitleLim.classList.contains('hover')) {
+                    extendWidth();
+                } else { // Works on touchscreen
+                    playlistLim.style.width = '';
+                }
+            }
 
             trackTitleLim.ontransitionend = () => false;
         };
@@ -1574,10 +1597,9 @@ function adjustPlaylistLimiterWidth(trackTitle) {
     }
 
     function extendWidth() {
-        let titleWidth = trackTitle.offsetWidth;
-        let titleLeft = trackTitle.getBoundingClientRect().left + window.scrollX;
-        let outlineWidth = parseInt(getComputedStyle(trackTitleLim).getPropertyValue('--outline-width'));
-    
+        titleLeft = trackTitle.getBoundingClientRect().left + window.scrollX;
+        titleWidth = trackTitle.offsetWidth;
+
         if (titleLeft - playlistLimLeft + titleWidth + outlineWidth > playlist.offsetWidth) {
             playlistLim.style.width = titleLeft - playlistLimLeft + titleWidth + outlineWidth + 'px';
         }
@@ -1613,7 +1635,7 @@ visPlaylistArea.onclick = (event) => {
     // Remove track button
     if (target = event.target.closest('.remove-track')) {
         let track = target.closest('.track');
-        removeTrackFromPlaylist(track, event.pointerType);
+        removeTrackFromPlaylist(track, event.type);
     }
 };
 
@@ -1652,109 +1674,148 @@ function selectTrackInPlaylist(track) {
         selectedAudio.currentTime = 0;
         timelinePos = 0;
     
-        
         showTrackInfo(selectedAudio, prevSelectedAudio);
     } else {
         selectedAudio.currentTime = 0;
         timelinePos = 0;
 
-        keepSelectedTitleVisible(selectedAudio);
-        updateTime(selectedAudio);
-        updateTimeline(selectedAudio);
+        showTrackInfo(selectedAudio, selectedAudio);
     }
 
     playAudio(selectedAudio);
 }
 
-function removeTrackFromPlaylist(track, pointerType) {
+function removeTrackFromPlaylist(track, eventType = null) {
+    if (track.classList.contains('removing')) return;
+
     let audio = track.querySelector('audio');
 
-    console.log('remove track from playlist | ' + audio.dataset.title);
+    let trackTitle = track.querySelector('.track-title');
+    let docWidth = Math.max(
+        document.body.scrollWidth, document.documentElement.scrollWidth,
+        document.body.offsetWidth, document.documentElement.offsetWidth,
+        document.body.clientWidth, document.documentElement.clientWidth
+    );
+    let playlistLimLeft = playlistLim.getBoundingClientRect().left + window.scrollX;
 
-    // Set focus on next remove track button
-    // Pressing 'Enter' on .remove-track counts as a 'click' => event.pointerType == ""
-    if (!pointerType) {
-        let nextTrack = track.nextElementSibling || track.previousElementSibling;
-        let nextFocusedElem = nextTrack ?
-            nextTrack.querySelector('.track-title') :
-            tracklistDatabase.querySelector('.tracklist-section');
+    playlistLim.style.width = docWidth - playlistLimLeft + 'px';
 
-        if (
-            !settingsArea.hidden &&
-            selectedAudio &&
-            audio != selectedAudio &&
-            !selectedAudio.hasAttribute('data-relocated')
-        ) {
-            highlightActiveElem = nextFocusedElem;
-        } else {
-            nextFocusedElem.focus();
-        }
-    }
+    track.classList.remove('adding');
+    track.classList.add('removing');
 
-    // Cutting audio from arrays
-    let originAudioIdx = originOrderedAudios.indexOf(audio);
-    originOrderedAudios.splice(originAudioIdx, 1);
-    curTracklist.splice(originAudioIdx, 1);
+    removingTracksNum++;
 
-    let curAudioIdx = curOrderedAudios.indexOf(audio);
-    curOrderedAudios.splice(curAudioIdx, 1);
+    track.onanimationend = () => {
+        console.log('remove track from playlist | ' + audio.dataset.title);
 
-    // Removing track element from playlist
-    if (audio == selectedAudio) {
-        audio.setAttribute('data-relocated', '');
-        tempTrackBox.append(track);
-    } else {
-        track.remove();
-    }
+        removingTracksNum--;
 
-    // Recounting duplicates
-    let artist = audio.dataset.artist;
-    let title = audio.dataset.title;
+        // If focused elem == track title => set focus on another elem
+        if (eventType == 'keydown' && document.activeElement == trackTitle) {
+            let nextTrack = track.nextElementSibling || track.previousElementSibling;
+            let nextFocusedElem = nextTrack ?
+                nextTrack.querySelector('.track-title') :
+                tracklistDatabase.querySelector('.tracklist-section');
 
-    for (let i = originAudioIdx; i < curTracklist.length; i++) {
-        let comparedArtist = curTracklist[i].artist;
-        let comparedTitle = curTracklist[i].title;
-
-        if (comparedArtist == artist && comparedTitle == title) {
-            let dub = --curTracklist[i].dub;
-
-            if (dub > 1) {
-                curTracklist[i].dub = dub;
-                originOrderedAudios[i].dataset.dub = dub; // curOrderedAudios will be updated
+            if (
+                !settingsArea.hidden &&
+                selectedAudio &&
+                audio != selectedAudio &&
+                !selectedAudio.hasAttribute('data-removed')
+            ) {
+                highlightActiveElem = nextFocusedElem;
             } else {
-                dub = null;
-                delete curTracklist[i].dub;
-                delete originOrderedAudios[i].dataset.dub; // curOrderedAudios will be updated
+                nextFocusedElem.focus();
+            }
+        }
+
+        // Cutting audio from arrays
+        let origIdx = origOrderedAudios.indexOf(audio);
+        origOrderedAudios.splice(origIdx, 1);
+        curTracklist.splice(origIdx, 1);
+
+        let curIdx = curOrderedAudios.indexOf(audio);
+        curOrderedAudios.splice(curIdx, 1);
+
+        // Removing track element from playlist
+        if (audio == selectedAudio) {
+            track.classList.remove('removing');
+            audio.setAttribute('data-removed', '');
+            tempTrackBox.append(track);
+        } else {
+            track.remove();
+        }
+
+        // Recounting duplicates
+        let artist = audio.dataset.artist;
+        let title = audio.dataset.title;
+
+        for (let i = origIdx; i < curTracklist.length; i++) {
+            let comparedArtist = curTracklist[i].artist;
+            let comparedTitle = curTracklist[i].title;
+
+            if (comparedArtist == artist && comparedTitle == title) {
+                let dub = --curTracklist[i].dub;
+
+                if (dub > 1) {
+                    curTracklist[i].dub = dub;
+                    origOrderedAudios[i].dataset.dub = dub; // curOrderedAudios will be updated
+                } else {
+                    dub = null;
+                    delete curTracklist[i].dub;
+                    delete origOrderedAudios[i].dataset.dub; // curOrderedAudios will be updated
+                }
+
+                let playlistTrackTitle = playlist.children[i].querySelector('.track-title');
+                playlistTrackTitle.textContent = artist + ' \u2013 ' + title;
+                if (dub) playlistTrackTitle.textContent += ' (' + dub + ')';
+            }
+        }
+
+        // Cutting string from curPlaylist textarea
+        if (curOrderedAudios.length) {
+            let textMark = '\n\n';
+            let textMarkEndIdx = curPlaylist.value.indexOf(textMark) + textMark.length;
+            let curPlaylistText = curPlaylist.value.slice(0, textMarkEndIdx);
+
+            curOrderedAudios.forEach((audio, idx, array) => {
+                curPlaylistText += (idx + 1) + '. ' + audio.dataset.artist + ' \u2013 ' + audio.dataset.title;
+                if (audio.dataset.dub) curPlaylistText += ' (' + audio.dataset.dub + ')';
+                if (array[idx + 1]) curPlaylistText += '\n';
+            });
+
+            breakLine(curPlaylistText);
+        } else {
+            curPlaylist.value = 'Playlist cleared';
+        }
+
+        // Last removed track
+        if (!removingTracksNum) {
+            // Save current tracklist
+            localStorage.setItem('current_tracklist', JSON.stringify(curTracklist));
+
+            // Change the playlist limiter width to default value
+            let hoveredTrackTitleLim = playlist.querySelector('.track-title-limiter.hover');
+            if (hoveredTrackTitleLim) {
+                let hoveredTrackTitle = hoveredTrackTitleLim.firstElementChild;
+                adjustPlaylistLimiterWidth(hoveredTrackTitle);
+            } else {
+                playlistLim.style.width = '';
             }
 
-            let playlistTrackTitle = playlist.children[i].querySelector('.track-title');
-            playlistTrackTitle.textContent = artist + ' \u2013 ' + title;
-            if (dub) playlistTrackTitle.textContent += ' (' + dub + ')';
+            // Highlight selected audio
+            if ((highlightActiveElem || eventType != 'keydown')) highlightSelected(selectedAudio);
+
+            // Align playlist (bug)
+            stopScrolling(KEY_SCROLLING_TIME);
         }
-    }
 
-    localStorage.setItem('current_tracklist', JSON.stringify(curTracklist));
-
-    // Cutting string from curPlaylist textarea
-    let textMark = '\n\n';
-    let textMarkEndIdx = curPlaylist.value.indexOf(textMark) + textMark.length;
-    let curPlaylistText = curPlaylist.value.slice(0, textMarkEndIdx);
-
-    curOrderedAudios.forEach((audio, idx, array) => {
-        curPlaylistText += (idx + 1) + '. ' + audio.dataset.artist + ' \u2013 ' + audio.dataset.title;
-        if (audio.dataset.dub) curPlaylistText += ' (' + audio.dataset.dub + ')';
-        if (array[idx + 1]) curPlaylistText += '\n';
-    });
-
-    breakLine(curPlaylistText);
-
-    // Additional functions
-    setTimeout(() => {
+        // Additional functions
+        checkReachingPlaylistLimits('up');
+        checkReachingPlaylistLimits('down');
         checkPlaylistScrollability();
         checkVisibilityScrollElems();
-        highlightSelected(selectedAudio);
-    }, 0);
-    
+    };
 }
 
 visPlaylistArea.oncontextmenu = function(event) {
@@ -1793,8 +1854,8 @@ visPlaylistArea.oncontextmenu = function(event) {
     document.addEventListener('pointerdown', removeTrackMenu);
 
     function clickDownloadLink() {
-        let loadInfoElem = audio.parentElement.querySelector('.load-info');
-        if (loadInfoElem) loadInfoElem.remove();
+        let loadInfo = audio.parentElement.querySelector('.load-info');
+        if (loadInfo) loadInfo.remove();
 
         downloadAudio(audio);
 
@@ -1811,31 +1872,31 @@ visPlaylistArea.oncontextmenu = function(event) {
     }
 
     async function downloadAudio(audio) {
-        let trackElem = audio.parentElement;
+        let track = audio.parentElement;
             
-        let loadInfoElem = document.createElement('div');
-        loadInfoElem.className = 'load-info';
-        trackElem.appendChild(loadInfoElem);
+        let loadInfo = document.createElement('div');
+        loadInfo.className = 'load-info';
+        track.appendChild(loadInfo);
 
-        let progressElem = document.createElement('div');
-        progressElem.className = 'progress';
-        loadInfoElem.appendChild(progressElem);
+        let progress = document.createElement('div');
+        progress.className = 'progress';
+        loadInfo.appendChild(progress);
 
-        let statusElem = document.createElement('div');
-        statusElem.className = 'status';
-        statusElem.innerHTML = 'Waiting for loading...';
-        progressElem.appendChild(statusElem);
+        let status = document.createElement('div');
+        status.className = 'status';
+        status.innerHTML = 'Waiting for loading...';
+        progress.appendChild(status);
 
-        let displayProgressElem = document.createElement('div');
-        displayProgressElem.className = 'display-progress';
-        displayProgressElem.innerHTML = '0%';
-        loadInfoElem.appendChild(displayProgressElem);
+        let displayProgress = document.createElement('div');
+        displayProgress.className = 'display-progress';
+        displayProgress.innerHTML = '0%';
+        loadInfo.appendChild(displayProgress);
 
         let url = audio.dataset.src;
         let response = await fetch(url);
     
         if (response.ok) {
-            statusElem.innerHTML = 'Loading...';
+            status.innerHTML = 'Loading...';
 
             const reader = response.body.getReader();
             const contentLength = +response.headers.get('Content-Length');
@@ -1850,11 +1911,11 @@ visPlaylistArea.oncontextmenu = function(event) {
                 receivedLength += value.length;
 
                 let receivedPercent = receivedLength / contentLength * 100;
-                progressElem.style.width = `calc(${receivedPercent}%)`;
-                displayProgressElem.innerHTML = Math.floor(receivedPercent) + '%';
+                progress.style.width = `calc(${receivedPercent}%)`;
+                displayProgress.innerHTML = Math.floor(receivedPercent) + '%';
             }
 
-            if (receivedLength === contentLength) statusElem.innerHTML = 'Complete download!';
+            if (receivedLength === contentLength) status.innerHTML = 'Complete download!';
 
             let audioBlob = new Blob([binaryData], {type: 'audio/mpeg'});
             let audioName = audio.dataset.artist + ' - ' + audio.dataset.title + '.mp3';
@@ -1887,14 +1948,14 @@ visPlaylistArea.oncontextmenu = function(event) {
                         await writable.write(blob);
                         await writable.close();
 
-                        statusElem.innerHTML = 'Audio file is saved!';
+                        status.innerHTML = 'Audio file is saved!';
                         hideLoadStatus();
                         return;
                     } catch (err) {
                         console.error(err.name + ': ' + err.message);
 
                         if (err.name === 'AbortError') { // Отмена скачивания файла, не предлагать второй вариант
-                            statusElem.innerHTML = 'Audio file saving canceled';
+                            status.innerHTML = 'Audio file saving canceled';
                             hideLoadStatus();
                             return;
                         }
@@ -1920,15 +1981,15 @@ visPlaylistArea.oncontextmenu = function(event) {
         } else {
             alert("Download error! Response status: " + response.status);
 
-            statusElem.innerHTML = 'Download failed';
+            status.innerHTML = 'Download failed';
             hideLoadStatus();
         }
 
         function hideLoadStatus() {
-            loadInfoElem.style.opacity = 0;
+            loadInfo.style.opacity = 0;
 
-            let hideDelay = parseInt(getComputedStyle(loadInfoElem).transitionDuration) * 1000;
-            setTimeout(() => loadInfoElem.remove(), hideDelay);
+            let hideDelay = parseInt(getComputedStyle(loadInfo).transitionDuration) * 1000;
+            setTimeout(() => loadInfo.remove(), hideDelay);
 
             orderedDownloads.shift();
             if (orderedDownloads.length) orderedDownloads[0]();
@@ -1976,7 +2037,7 @@ playlistContainer.onpointerenter = () => {
     if (!isDocScrollbar) return;
     if (activeElem == visPlaylistArea) return;
     if (activeElem != visPlaylistArea && !activeElem.matches('.tracklist-section') &&
-        (activeElem.scrollHeight > activeElem.clientHeight)) return;
+        activeElem.scrollHeight > activeElem.clientHeight) return;
     if (activeElem.matches('input[type="number"]') && (key == 'ArrowUp' || key == 'ArrowDown')) return;
     if (pointerModeScrolling) return;
 
@@ -1990,7 +2051,7 @@ playlistContainer.onpointerleave = () => {
     if (pointerModeScrolling) return;
 
     if (!activeScrollKeys.size) {
-        hideScrollElems();
+        if (!removingTracksNum) hideScrollElems();
     } else {
         let activeElem = document.activeElement;
         if (activeElem == visPlaylistArea) return;
@@ -2008,10 +2069,10 @@ playlistContainer.onpointerleave = () => {
             if (accelerateScrolling && !isReachingLimits && !isProhibitedActiveElem) {
                 stopScrolling(KEY_SCROLLING_TIME);
             } else {
-                hideScrollElems();
+                if (!removingTracksNum) hideScrollElems();
             }
-        } else if (isProhibitedActiveElem) {
-            hideScrollElems();
+        } else {
+            if (isProhibitedActiveElem && !removingTracksNum) hideScrollElems();
         }
     }
 };
@@ -2234,7 +2295,7 @@ visPlaylistArea.onpointerdown = function(event) {
 };
 
 function keepSelectedTitleVisible(audio) {
-    if (audio.hasAttribute('data-relocated')) return;
+    if (audio.hasAttribute('data-removed')) return;
 
     let winScrollDuration = LAG;
 
@@ -2242,7 +2303,7 @@ function keepSelectedTitleVisible(audio) {
     if (playlistLim.scrollHeight > playlistLim.clientHeight) {
         let initScrolled = playlistLim.scrollTop;
         let visibleHeight = playlistLim.clientHeight;
-        let selTrackPlaylistTop = originOrderedAudios.indexOf(audio) * trackHeight;
+        let selTrackPlaylistTop = origOrderedAudios.indexOf(audio) * trackHeight;
         let direction, deltaHeight;
 
         if (selTrackPlaylistTop + trackHeight > initScrolled + visibleHeight) {
@@ -2527,8 +2588,19 @@ function scrollAndAlign(options) {
         clearTimeout(timerHideScrollElems);
 
         timerHideScrollElems = setTimeout(() => {
+            let activeElem = document.activeElement;
+            let key = Array.from(activeScrollKeys)[activeScrollKeys.size - 1];
+            let isDocScrollbar = checkDocHeight();
+
             if (cursorOverPlaylist) return;
             if (pointerModeScrolling) return;
+            if (removingTracksNum) return;
+            if (
+                !isDocScrollbar &&
+                activeScrollKeys.size &&
+                activeElem.scrollHeight <= activeElem.clientHeight &&
+                !(activeElem.matches('input[type="number"]') && (key == 'ArrowUp' || key == 'ArrowDown'))
+            ) return;
 
             hideScrollElems();
         }, hideDelay);
@@ -2690,7 +2762,10 @@ function checkAnimatedTransition(track) {
             trackTitleLim.ontransitionend = () => false;
         };
 
-        if (trackTitle.matches(':hover')) adjustPlaylistLimiterWidth(trackTitle);
+        if (trackTitle.matches(':hover')) {
+            console.log('+ checkAnimatedTransition');
+            adjustPlaylistLimiterWidth(trackTitle);
+        }
     }
 }
 
@@ -2767,11 +2842,11 @@ function hideSettings() {
 
 function highlightSelected(audio) {
     if (!audio) return;
-    if (audio.hasAttribute('data-relocated')) return;
+    if (audio.hasAttribute('data-removed')) return;
     if (!settingsArea.classList.contains('active')) return;
     if (keysInfoArea.classList.contains('active')) return;
 
-    //console.log('+ highlight');
+    console.log('+ highlight');
 
     // Searching string
     let artist = audio.dataset.artist.replace(/\p{P}/gu, '\\$&');
@@ -2850,7 +2925,7 @@ defaultSetBtn.onclick = () => {
     changeConfig(null);
     changePlayerColor(null);
     changePlaylistStyle(null);
-    changeVolume(null);
+    changeInitialVolume(null);
     changeNumberOfVisibleTracks(null);
     changeScrollElemsOpacity(null);
     changeWheelScrollStep(null);
@@ -2927,7 +3002,6 @@ document.addEventListener('click', (event) => {
     if (event.target.closest('#keys-info-area')) return;
     if (event.target.closest('#visible-playlist-area')) return;
     if (event.target.closest('i')) return;
-    if (event.target.closest('.remove-track')) return; // Pressing 'Enter' on .remove-track counts as a 'click'
     if (event.target.closest(`
         #tracklist-database input[type="checkbox"],
         #tracklist-database label,
@@ -3057,8 +3131,8 @@ function connectFocusHandler(elem) {
             cancelReturningFocus();
         }
 
-        // Alignment after auto scrolling delete buttons on focus
-        if (this.matches('.remove-track')) {
+        // Alignment after auto scrolling focused track title
+        if (this.matches('.track-title')) {
             playlistLim.onscrollend = () => {
                 let isDocScrollbar = checkDocHeight();
 
@@ -3071,7 +3145,7 @@ function connectFocusHandler(elem) {
                 playlistLim.onscrollend = () => false;
             };
         } else {
-            if (event.relatedTarget && event.relatedTarget.matches('.remove-track')) {
+            if (event.relatedTarget && event.relatedTarget.matches('.track-title')) {
                 playlistLim.onscrollend = () => false;
             }
         }
@@ -3579,14 +3653,14 @@ function changePlaylistStyle(idx) {
     }
 }
 
-////////////
-// Volume //
-////////////
+////////////////////
+// Initial volume //
+////////////////////
 
 let settedVolume = localStorage.getItem('player_volume');
 let savedVolume;
 
-function changeVolume(value) {
+function changeInitialVolume(value) {
     if (value == null) value = DEFAULTS_DATA['player_volume'];
 
     settedVolume = +value;
@@ -3835,6 +3909,8 @@ function deleteTracklist(tracklistSection) {
 }
 
 function addTracklistToPlaylist(tracklistSection, clearPlaylist) {
+    if (clearPlaylist && removingTracksNum && playlist.children.length > 100) return;
+
     console.log('playlist changed');
 
     let list = tracklistSection.querySelector('.list');
@@ -3843,9 +3919,11 @@ function addTracklistToPlaylist(tracklistSection, clearPlaylist) {
     createPlaylist(tracklist, clearPlaylist);
     checkPlaylistScrollability();
     checkVisibilityScrollElems();
+    activateScrollArrows();
+    checkReachingPlaylistLimits('up');
 
     if (shuffleBtn.classList.contains('active')) randomizePlaylist();
-    highlightSelected(selectedAudio);
+    if (!clearPlaylist) highlightSelected(selectedAudio);
 
     function processSelectedTracklist(list) {
         let tracklist = [];
@@ -3876,7 +3954,7 @@ function createTracklistDatabase(tracklists) {
         createTracklistSection(tracklistTitle, tracklists[tracklistTitle]);
     }
 
-    // First player load
+    // First player load, gaining access to first tracklist after creating tracklist database
     if (!curTracklist) {
         curTracklist = tracklists[Object.keys(tracklists)[0]] ? 
             tracklists[Object.keys(tracklists)[0]].tracks :
@@ -3995,36 +4073,22 @@ let curTracklist = JSON.parse(localStorage.getItem('current_tracklist'));
 function createPlaylist(addedTracklist, clearPlaylist) {
     if (addedTracklist) addedTracklist = JSON.parse(JSON.stringify(addedTracklist));
 
-    if (clearPlaylist) {
-        if (selectedAudio) {
-            selectedAudio.setAttribute('data-relocated', '');
-            tempTrackBox.append(selectedAudio.parentElement);
-        }
+    // Updating current tracklist object
+    if (!playerContainer.classList.contains('loading')) {
+        if (addedTracklist) {
+            for (let trackObject of curTracklist) {
+                delete trackObject['dub'];
+            }
 
-        playlist.innerHTML = '';
-        originOrderedAudios.length = 0;
+            curTracklist = curTracklist.concat(addedTracklist);
+    
+            // Marking duplicates
+            for (let i = 0; i < curTracklist.length; i++) {
+                let dub = curTracklist[i]['dub'];
+                if (dub) continue;
 
-        if (addedTracklist) { // Replace playlist (or initial)
-            curTracklist = addedTracklist;
-        } else { // Only clear playlist
-            curTracklist.length = 0;
-            curOrderedAudios.length = 0;
-            curPlaylist.value = 'Playlist cleared';
-        }
-    } else { // Add to playlist
-        for (let track of curTracklist) {
-            delete track['dub'];
-        }
-        
-        curTracklist = addedTracklist ? curTracklist.concat(addedTracklist) : [];
-
-        // Marking duplicates
-        for (let i = 0; i < curTracklist.length; i++) {
-            let artist = curTracklist[i]['artist'];
-            let title = curTracklist[i]['title'];
-            let dub = curTracklist[i]['dub'];
-
-            if (!dub) {
+                let artist = curTracklist[i]['artist'];
+                let title = curTracklist[i]['title'];
                 let k = 1;
         
                 for (let j = i + 1; j < curTracklist.length; j++) {
@@ -4037,22 +4101,43 @@ function createPlaylist(addedTracklist, clearPlaylist) {
                 }
             }
         }
+
+        if (clearPlaylist && playlist.children.length) {
+            // Removing tracks (current tracklist will be updated and saved after removing of each track)
+            let isPlaylistScrollable = playlistContainer.classList.contains('scrollable-playlist');
+
+            if (isPlaylistScrollable) {
+                showScrollElems();
+                scrollAndAlign({
+                    direction: 'up',
+                    deltaHeight: playlistLim.scrollTop,
+                    align: false,
+                    hide: true
+                });
+            }
+
+            Array.from(playlist.children).forEach((track, idx) => {
+                if (track.classList.contains('removing')) return;
+
+                setTrackAnimationDelay(idx, () => removeTrackFromPlaylist(track));
+            });
+        } else { // Saving the current tracklist if the playlist tracks are not removing
+            localStorage.setItem('current_tracklist', JSON.stringify(curTracklist));
+        }
     }
 
-    localStorage.setItem('current_tracklist', JSON.stringify(curTracklist));
-
-    if (!addedTracklist) return;
+    if (!addedTracklist || !addedTracklist.length) return;
     
     // Creation HTML elements
-    for (let track of addedTracklist) {
-        let artist = track['artist'];
-        let title = track['title'];
-        let src = track['src'];
-        let dub = track['dub'];
+    addedTracklist.forEach((trackObject, idx) => {
+        let artist = trackObject['artist'];
+        let title = trackObject['title'];
+        let src = trackObject['src'];
+        let dub = trackObject['dub'];
 
-        let trackElem = document.createElement('div');
-        trackElem.className = 'track';
-        playlist.appendChild(trackElem);
+        let track = document.createElement('div');
+        track.className = 'track';
+        playlist.appendChild(track);
     
         let audio = document.createElement('audio');
         audio.setAttribute('data-artist', artist);
@@ -4062,20 +4147,19 @@ function createPlaylist(addedTracklist, clearPlaylist) {
         if (dub) audio.setAttribute('data-dub', dub);
         audio.setAttribute('type', 'audio/mpeg');
         audio.setAttribute('preload', 'auto');
-        trackElem.appendChild(audio);
+        track.appendChild(audio);
 
-        originOrderedAudios.push(audio);
+        origOrderedAudios.push(audio);
 
         let additionals = document.createElement('div');
         additionals.className = 'additionals';
-        trackElem.appendChild(additionals);
+        track.appendChild(additionals);
 
         let removeTrackBtn = document.createElement('i');
         removeTrackBtn.className = 'icon-cancel remove-track';
         removeTrackBtn.setAttribute('data-tooltip', 'Remove track');
         additionals.appendChild(removeTrackBtn);
 
-        connectFocusHandler(removeTrackBtn);
         connectTooltipHoverIntent(removeTrackBtn);
 
         let loadFig = document.createElement('div');
@@ -4084,7 +4168,7 @@ function createPlaylist(addedTracklist, clearPlaylist) {
     
         let trackTitleLim = document.createElement('div');
         trackTitleLim.className = 'track-title-limiter';
-        trackElem.appendChild(trackTitleLim);
+        track.appendChild(trackTitleLim);
     
         let trackTitle = document.createElement('span');
         trackTitle.className = 'track-title';
@@ -4092,9 +4176,29 @@ function createPlaylist(addedTracklist, clearPlaylist) {
         trackTitle.textContent = artist + ' \u2013 ' + title;
         if (dub) trackTitle.textContent += ' (' + dub + ')';
         trackTitleLim.appendChild(trackTitle);
-    }
+
+        connectFocusHandler(trackTitle);
+
+        setTrackAnimationDelay(idx, () => {
+            track.classList.add('adding');
+
+            track.onanimationend = () => {
+                track.style.opacity = 1;
+                track.classList.remove('adding');
+            }
+        });
+    });
     
-    setOriginPlaylistOrder();
+    setOrigPlaylistOrder();
+
+    function setTrackAnimationDelay(k, func) {
+        addAnimationFrameDelay();
+
+        function addAnimationFrameDelay() { // Recursive
+            let callback = k-- ? addAnimationFrameDelay : func;
+            requestAnimationFrame(callback);
+        }
+    }
 }
 
 //////////////////////////////////
@@ -4188,7 +4292,7 @@ function initPlayerChanges() {
     changeNumberOfVisibleTracks(numOfVisTracks);
     changePlayerColor(playerColorsBank.indexOf(playerColor) );
     changePlaylistStyle(playlistStylesBank.indexOf(playlistStyle));
-    changeVolume(settedVolume);
+    changeInitialVolume(settedVolume);
     changeScrollElemsOpacity(scrollElemsOpacity);
     changeWheelScrollStep(wheelScrollStep);
 }
@@ -4209,11 +4313,11 @@ document.addEventListener('keydown', (event) =>  {
 
     //Playing/pausing audio
     if (event.code == 'KeyW' || event.code == 'Space') {
+        event.preventDefault();
         highlightButton(playPauseBtn, event.code, playPauseAction);
     }
     // Stoping audio
     if (event.code == 'KeyS') {
-        event.preventDefault();
         highlightButton(stopBtn, event.code, stopAction);
     }
 
@@ -4352,8 +4456,8 @@ visPlaylistArea.addEventListener('keydown', function (event) {
     // Remove track from playlist
     if (event.key == 'Delete') {
         let track = event.target.closest('.track');
-        let removetrackBtn = track.querySelector('.remove-track');
-        highlightButton(removetrackBtn, event.code, removeTrackFromPlaylist, track, event.pointerType);
+        let removeTrackBtn = track.querySelector('.remove-track');
+        highlightButton(removeTrackBtn, event.code, removeTrackFromPlaylist, track, event.type);
     }
 });
 

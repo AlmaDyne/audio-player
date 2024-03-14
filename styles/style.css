@@ -137,17 +137,6 @@ i {
 #tracklist-database h3.database-title > span:hover::after {
     animation: sheen 0.8s forwards ease-in-out;
 }
-@keyframes sheen {
-    15%, 85% {
-        opacity: 0;
-    }
-    50% {
-        opacity: 1;
-    }
-    100% {
-        transform: rotateZ(58deg) translate(5em, -4.4em);
-    }
-}
 
 #tracklist-database .tracklist-section {
     --symmetrical-padding: 6px;
@@ -686,11 +675,7 @@ player-controls #volume-bar.active {
     height: calc(var(--track-height) * var(--visible-tracks));
     overflow: hidden;
     touch-action: none;
-    /*border: 1px solid;
-    box-sizing: border-box;*/
-}
-#playlist-limiter:focus-within {
-    /*width: calc(100% + 200px);*/
+    outline: 1px solid;
 }
 
 #playlist {
@@ -700,26 +685,54 @@ player-controls #volume-bar.active {
 }
 #playlist.smooth {
     text-align: center;
-    --load-info-background-color: '';
-    --load-info-margin-top: -10px;
-    --load-info-elems-top: 0px;
 }
 #playlist.strict {
     text-align: left;
-    --load-info-background-color: var(--player-color-main-invert);
-    --load-info-margin-top: -6px;
-    --load-info-elems-top: -7px;
 }
 
 #playlist > .track {
-    position: relative;
     height: var(--track-height);
+    position: relative;
     padding: 0 9%;
-    /*border: 1px solid;
-    box-sizing: border-box;*/
+    opacity: 0;
+
+    border: 1px solid;
+    box-sizing: border-box;
 }
-#playlist > .track:focus-within {
-    /*left: 200px;*/
+#playlist > .track.adding {
+    transform-origin: 0 50%;
+    transform: scale(0, 0);
+    pointer-events: none;
+    animation: add-track 2s ease-in;
+}
+@keyframes add-track {
+    100% {
+        opacity: 1;
+        transform: scale(1, 1);
+    }
+}
+#playlist > .track.removing {
+    left: 0;
+    opacity: 1;
+    pointer-events: none;
+    animation: remove-track 2s ease-out forwards;
+}
+@keyframes remove-track {
+    50% {
+        left: calc(100% + var(--player-side-padding));
+        top: 0;
+        margin-top: 0;
+        transform: rotateX(0);
+        opacity: 1;
+        animation-timing-function: linear; /* Работает с текущего ключевого кадра */
+    }
+    100% {
+        left: calc(100% + var(--player-side-padding));
+        top: calc(var(--track-height)/2);
+        margin-top: calc((-1)*var(--track-height));
+        transform: rotateX(90deg);
+        opacity: 0;
+    }
 }
 #playlist > .track > .additionals {
     height: 100%;
@@ -843,39 +856,55 @@ player-controls #volume-bar.active {
 
 #playlist > .track > .load-info {
     position: relative;
-    width: calc(100% - 5px); /* Minus padding-left */
-    padding-left: 5px;
-    margin-top: var(--load-info-margin-top);
+    padding-left: 7px;
     color: rgb(var(--player-color-emphase));
     font-size: 7pt;
     font-weight: lighter;
     text-align: right;
     text-transform: none;
     opacity: 1;
-    transition: opacity 5s;
+    transition: opacity 5s, margin var(--transition-time-main);
+}
+#playlist.smooth > .track > .load-info {
+    margin-top: -10px;
+}
+#playlist.strict > .track > .load-info {
+    margin-top: -6px;
+}
+#playlist.smooth > .track.selected > .load-info {
+    margin-left: -2%;
+    margin-right: -2%;
 }
 #playlist > .track > .load-info > .progress {
     width: 0%;
     height: 0;
     text-align: center;
-    background: rgb(var(--player-color-emphase));
     border-top: 1px solid rgb(var(--player-color-emphase));
+}
+#playlist.strict > .track.selected > .load-info > .progress {
+    border-top-color: var(--player-color-main);
 }
 #playlist > .track > .load-info > .progress > .status {
     display: inline-block;
     position: relative;
-    top: var(--load-info-elems-top);
     padding: 0 2px;
     background: var(--load-info-background-color);
+}
+#playlist.smooth > .track > .load-info > .progress > .status,
+#playlist.smooth > .track > .load-info > .display-progress {
+    top: 0;
+}
+#playlist.strict > .track > .load-info > .progress > .status,
+#playlist.strict > .track > .load-info > .display-progress {
+    top: -7px;
+    background: var(--player-color-main-invert);
 }
 #playlist > .track > .load-info > .display-progress {
     display: inline-block;
     width: 22px;
     position: relative;
-    top: var(--load-info-elems-top);
     padding-left: 1px;
     padding-right: 2px;
-    background: var(--load-info-background-color);
     text-align: right;
 }
 
@@ -1246,6 +1275,18 @@ footer {
     }
     100% {
         transform: rotate(1turn);
+    }
+}
+
+@keyframes sheen {
+    15%, 85% {
+        opacity: 0;
+    }
+    50% {
+        opacity: 1;
+    }
+    100% {
+        transform: rotateZ(58deg) translate(5em, -4.4em);
     }
 }
 
