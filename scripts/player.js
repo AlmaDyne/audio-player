@@ -1583,7 +1583,9 @@ function adjustPlaylistLimiterWidth(trackTitle) {
     if (trackTitleLim.matches('.animated')) {
         playlistLim.style.width = docWidth - playlistLimLeft - shift + 'px';
 
-        trackTitleLim.ontransitionend = () => {
+        trackTitleLim.ontransitionend = function(event) {
+            if (event.target != this) return;
+
             trackTitleLim.classList.remove('animated');
 
             if (trackTitle.matches(':hover')) {
@@ -1692,7 +1694,7 @@ function selectTrackInPlaylist(track) {
 function removeTrackFromPlaylist(track, eventType = null) {
     if (track.classList.contains('removing')) return;
 
-    removingTracksNum++;
+    if (eventType) removingTracksNum++;
 
     let audio = track.querySelector('audio');
     let trackTitle = track.querySelector('.track-title');
@@ -1718,13 +1720,16 @@ function removeTrackFromPlaylist(track, eventType = null) {
         let curOpacity = trackStyle.opacity;
         track.style.opacity = curOpacity;
 
-        track.classList.remove('adding');
         track.classList.remove('not-ready');
+        track.classList.remove('adding');
     }
 
+    track.classList.remove('pending-removal');
     track.classList.add('removing');
 
-    track.onanimationend = () => {
+    track.onanimationend = function(event) {
+        if (event.target != this) return;
+
         console.log('remove track from playlist | ' + audio.dataset.title);
 
         removingTracksNum--;
@@ -2801,7 +2806,9 @@ function checkAnimatedTransition(track) {
 
         trackTitleLim.classList.add('animated');
 
-        trackTitleLim.ontransitionend = () => {
+        trackTitleLim.ontransitionend = function(event) {
+            if (event.target != this) return;
+
             trackTitleLim.classList.remove('animated');
             trackTitleLim.ontransitionend = () => false;
         };
@@ -2849,22 +2856,28 @@ variantsBtn.onclick = () => leftBorder.classList.toggle('inactive');
 //tracklistDatabaseBtn.onclick = tracklistDatabaseAction;
 
 function tracklistDatabaseAction() {
-    //player.style.transition = '';
-
     let playerLeft = player.getBoundingClientRect().left;
-    player.style.marginLeft = playerLeft + 'px';
 
-    tracklistDatabase.classList.toggle('active');
-    
-    setTimeout(() => {
-        player.style.transition = 'margin var(--transition-time-main)';
-        player.style.marginLeft = '';
+    player.classList.remove('moving');
 
-        player.ontransitionend = () => {
-            player.style.transition = '';
-            player.ontransitionend = () => false;
+    if (tracklistDatabase.classList.contains('active')) {
+        player.style.marginLeft = playerLeft + 'px';
+
+        tracklistDatabase.classList.remove('active');
+        player.classList.add('moving');
+
+        player.onanimationend = function (event) {
+            if (event.target != this) return;
+
+            player.style.marginLeft = '';
+            player.classList.remove('moving');
+
+            player.onanimationend = () => false;
         }
-    });
+    } else {
+
+    }
+    
 }
 
 ///////////////////
@@ -3974,7 +3987,9 @@ function expandTracklist(tracklistSection) {
         tracklistDetails.style.height = 0;
     }
 
-    tracklistDetails.ontransitionend = function() {
+    tracklistDetails.ontransitionend = function(event) {
+        if (event.target != this) return;
+
         if (tracklistDetails.style.height !== '0px') {
             tracklistDetails.style.height = 'auto';
         }
@@ -4237,7 +4252,12 @@ function createPlaylist(addedTracklist, clearPlaylist) {
             }
 
             Array.from(playlist.children).forEach((track, idx) => {
+                if (track.classList.contains('pending-removal')) return;
                 if (track.classList.contains('removing')) return;
+
+                removingTracksNum++;
+
+                track.classList.add('pending-removal');
 
                 setTrackAnimationDelay(idx, () => removeTrackFromPlaylist(track));
             });
@@ -4249,7 +4269,9 @@ function createPlaylist(addedTracklist, clearPlaylist) {
     // Creation HTML elements
     if (!addedTracklist || !addedTracklist.length) return;
 
-    let areTracksRemoving = (clearPlaylist && playlist.children.length || removingTracksNum) ? true : false;
+    //let areTracksRemoving = (clearPlaylist && playlist.children.length || removingTracksNum) ? true : false;
+
+    //console.log('areTracksRemoving = ' + areTracksRemoving);
 
     addedTracklist.forEach((trackObject, idx) => {
         let artist = trackObject['artist'];
@@ -4301,7 +4323,7 @@ function createPlaylist(addedTracklist, clearPlaylist) {
 
         connectFocusHandler(trackTitle);
 
-        if (areTracksRemoving) {
+        if (removingTracksNum) {
             document.addEventListener('removingTracksEnd', deferAddAnimation, {once: true});
         } else {
             deferAddAnimation();
@@ -4309,9 +4331,13 @@ function createPlaylist(addedTracklist, clearPlaylist) {
         
         function deferAddAnimation() {
             setTrackAnimationDelay(idx, () => {
+                if (track.classList.contains('removing')) return;
+
                 track.classList.add('adding');
     
-                track.onanimationend = () => {
+                track.onanimationend = function(event) {
+                    if (event.target != this) return;
+
                     track.classList.remove('adding');
                     track.classList.remove('not-ready');
                 }

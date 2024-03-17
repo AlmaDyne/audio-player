@@ -377,7 +377,7 @@ i {
     position: relative;
     height: 100%;
     width: var(--player-width);
-    margin-left: calc(50% - var(--player-side-padding) - var(--player-width)/2 + var(--scrollbar-width)*0.5);
+    margin-left: var(--player-margin-left);
     padding: 26px var(--player-side-padding) 0;
     text-align: center;
     text-transform: uppercase;
@@ -386,10 +386,15 @@ i {
     border-radius: 36px;
 }
 #tracklist-database.active + #player {
-    margin-left: 0;
+    --player-margin-left: 0;
 }
 #player.moving {
-    transition: margin var(--transition-time-main);
+    animation: move-player var(--transition-time-main) forwards;
+}
+@keyframes move-player {
+    100% {
+        margin-left: var(--player-margin-left);
+    }
 }
 
 .selected-track {
