@@ -2,7 +2,7 @@
     --page-footer-height: 50px;
     --site-color-main: #fafafa;
     --site-shadow-hover: 0 0 12px rgba(240, 240, 240, 0.5);
-    --transition-time-main: 120ms;
+    --transition-time-main: 1200ms;
     --scrollbar-width: 0px;
 }
 
@@ -89,6 +89,7 @@ i {
 
 #tracklist-database {
     --tracklist-database-width: 480px;
+    display: none;
     position: sticky;
     top: 0;
     width: var(--tracklist-database-width);
@@ -100,6 +101,9 @@ i {
     margin-right: var(--player-side-margin);
     color: var(--player-color-main);
     text-align: center;
+}
+#tracklist-database.active {
+    display: block;
 }
 
 #tracklist-database h3.database-title {
@@ -369,6 +373,7 @@ i {
 }
 
 #player {
+    --player-margin-left: calc(50% - var(--player-side-padding) - var(--player-width)/2 + var(--scrollbar-width)*0.5);
     position: relative;
     height: 100%;
     width: var(--player-width);
@@ -382,6 +387,9 @@ i {
 }
 #tracklist-database.active + #player {
     margin-left: 0;
+}
+#player.moving {
+    transition: margin var(--transition-time-main);
 }
 
 .selected-track {
@@ -605,7 +613,9 @@ player-controls #volume-bar.active {
     --scroll-arrows-box-height: calc(var(--playlist-scroll-arrow-height) + 2*var(--scroll-arrows-box-padding));
     --playlist-scroll-arrow-color: rgb(var(--player-color-emphase));
     --playlist-scroll-arrow-shadow: rgb(var(--player-color-emphase));
+    position: relative;
     margin-top: 10px;
+    z-index: 1;
 }
 #playlist-container.scrollable-playlist {
     --scroll-arrows-box-height: 0px;
@@ -982,6 +992,59 @@ player-controls #volume-bar.active {
     transition: color var(--transition-time-main);
 }
 
+.tracklist-database-button-container {
+    --button-container-width: 28px;
+    width: var(--button-container-width);
+    height: 400px;
+    position: absolute;
+    left: 0;
+    top: 200px;
+    overflow: hidden;
+}
+#tracklist-database-button {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    left: calc(var(--button-container-width)/(-2));
+    background: var(--player-color-neutral);
+    border-top-right-radius: var(--button-container-width);
+    border-bottom-right-radius: var(--button-container-width);
+    cursor: pointer;
+    overflow: hidden;
+    user-select: none;
+}
+#tracklist-database-button > .left-border {
+    height: 100%;
+    width: 1px;
+    position: absolute;
+    left: calc(var(--button-container-width)/2);
+    background: var(--player-color-neutral);
+}
+#tracklist-database-button > i {
+    position: absolute;
+    left: 9px;
+    top: calc(50% - 0.625em);
+    line-height: 1.25;
+    font-size: 14pt;
+}
+#tracklist-database-button.active > i {
+    color: rgb(var(--player-color-emphase));
+}
+#tracklist-database-button:hover > i {
+    text-shadow: var(--player-shadow-hover);
+}
+#tracklist-database-button:active,
+#tracklist-database-button.key-pressed {
+    width: calc(100% - 1px);
+    height: calc(100% - 2px);
+    top: 1px;
+    outline: 1px solid var(--player-color-inactive);
+}
+#tracklist-database-button:active > .left-border:not(.inactive),
+#tracklist-database-button.key-pressed > .left-border {
+    background: var(--player-color-inactive);
+}
+
 #settings-area {
     position: sticky;
     top: 0;
@@ -1225,7 +1288,7 @@ player-controls #volume-bar.active {
     text-shadow: var(--player-shadow-hover);
 }
 
-#player-container i:not(.icon-fast-forward, .icon-fast-backward):active,
+#player-container i:not(.icon-fast-forward, .icon-fast-backward, .icon-left-open):active,
 #clear-playlist:active,
 .key-pressed {
     outline: 1px solid currentColor;

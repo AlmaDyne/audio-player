@@ -9,6 +9,7 @@ console.log(localStorage);
 const cssRoot = document.querySelector(':root');
 const playerContainer = document.getElementById('player-container');
 const tracklistDatabase = document.getElementById('tracklist-database');
+const tracklistDatabaseBtn = document.getElementById('tracklist-database-button');
 const player = document.getElementById('player');
 const tooltip = document.getElementById('tooltip');
 const displayInfo = document.getElementById('display-info');
@@ -2836,6 +2837,36 @@ settingsBtn.onclick = settingsAction;
 
 keysInfoBtn.onclick = showKeysInfo;
 
+///////////////////////////////////////////////
+// Side button (tracklist databse show/hide) //
+///////////////////////////////////////////////
+
+const variantsBtn = document.getElementById('variants');
+const leftBorder = player.querySelector('.left-border');
+
+variantsBtn.onclick = () => leftBorder.classList.toggle('inactive');
+
+//tracklistDatabaseBtn.onclick = tracklistDatabaseAction;
+
+function tracklistDatabaseAction() {
+    //player.style.transition = '';
+
+    let playerLeft = player.getBoundingClientRect().left;
+    player.style.marginLeft = playerLeft + 'px';
+
+    tracklistDatabase.classList.toggle('active');
+    
+    setTimeout(() => {
+        player.style.transition = 'margin var(--transition-time-main)';
+        player.style.marginLeft = '';
+
+        player.ontransitionend = () => {
+            player.style.transition = '';
+            player.ontransitionend = () => false;
+        }
+    });
+}
+
 ///////////////////
 // Settings area //
 ///////////////////
@@ -4152,8 +4183,6 @@ function createTracklistSection(tracklistTitle, tracklist) {
         connectCheckboxEnterKeyDown(liCheckboxLabel);
     });
 }
-
-
 
 ///////////////////////
 // Playlist creation //
