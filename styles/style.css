@@ -707,7 +707,6 @@ player-controls #volume-bar.active {
     height: var(--track-height);
     position: relative;
     padding: 0 9%;
-    /*transform-origin: 0 50%;*/
 
     /*border: 1px solid;
     box-sizing: border-box;*/

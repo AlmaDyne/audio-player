@@ -4164,8 +4164,6 @@ let curTracklist = JSON.parse(localStorage.getItem('current_tracklist'));
 function createPlaylist(addedTracklist, clearPlaylist) {
     if (addedTracklist) addedTracklist = JSON.parse(JSON.stringify(addedTracklist));
 
-    let areTracksRemoving = false;
-
     // Updating current tracklist object
     if (!playerContainer.classList.contains('loading')) {
         if (addedTracklist) {
@@ -4197,8 +4195,6 @@ function createPlaylist(addedTracklist, clearPlaylist) {
 
         if (clearPlaylist && playlist.children.length) { // Removing tracks
             // The current tracklist will be updated and saved after the removal of each track
-            areTracksRemoving = true;
-
             let isPlaylistScrollable = playlistContainer.classList.contains('scrollable-playlist');
 
             if (isPlaylistScrollable) {
@@ -4220,10 +4216,12 @@ function createPlaylist(addedTracklist, clearPlaylist) {
             localStorage.setItem('current_tracklist', JSON.stringify(curTracklist));
         }
     }
-
-    if (!addedTracklist || !addedTracklist.length) return;
     
     // Creation HTML elements
+    if (!addedTracklist || !addedTracklist.length) return;
+
+    let areTracksRemoving = (clearPlaylist && playlist.children.length || removingTracksNum) ? true : false;
+
     addedTracklist.forEach((trackObject, idx) => {
         let artist = trackObject['artist'];
         let title = trackObject['title'];
