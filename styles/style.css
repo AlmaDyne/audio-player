@@ -726,6 +726,7 @@ player-controls #volume-bar.active {
     box-sizing: border-box;*/
 }
 #playlist > .track.not-ready {
+    height: 0;
     transform: scale(0, 0);
     opacity: 0;
     pointer-events: none;
@@ -735,6 +736,7 @@ player-controls #volume-bar.active {
 }
 @keyframes add-track {
     100% {
+        height: var(--track-height);
         opacity: 1;
         transform: scale(1, 1);
     }

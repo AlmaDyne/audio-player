@@ -62,9 +62,9 @@ const TIMELINE_UPDATE_INTERVAL = 200;
 const LAG = 16.7;
 const ACCELERATION_FACTOR = 5;
 const ACCELERATION_DELAY = 750;
-const PLAYLIST_FINISH_DELAY = 500;
 const DEFAULT_SCROLLING_TIME = 150;
 const KEY_SCROLLING_TIME = 120;
+const PLAYLIST_FINISH_DELAY = 500;
 const HIDE_SCROLL_ELEMENTS_DELAY = 500;
 const RETURN_FOCUS_DELAY = 500;
 let origOrderedAudios = [];
@@ -81,6 +81,7 @@ let activeScrollAndAlign = false;
 let activeScrollOnKeyRepeat = false;
 let activeScrollInPointerMode = false;
 let cursorOverPlaylist = false;
+let scrollablePlaylist = false;
 let scrollElemsDisplaying = false;
 let playOn = false;
 let roundTime = false;
@@ -2046,7 +2047,7 @@ playlistLim.onscroll = () => {
 playlistContainer.onpointerenter = () => {
     cursorOverPlaylist = true;
 
-    if (playlistLim.scrollHeight <= playlistLim.clientHeight) return;
+    if (!scrollablePlaylist) return;
 
     clearTimeout(timerHideScrollElems);
 
@@ -2082,7 +2083,7 @@ playlistContainer.onpointerenter = () => {
 playlistContainer.onpointerleave = () => {
     cursorOverPlaylist = false;
 
-    if (playlistLim.scrollHeight <= playlistLim.clientHeight) return;
+    if (!scrollablePlaylist) return;
     if (pointerModeScrolling) return;
 
     if (!activeScrollKeys.size) {
@@ -2112,9 +2113,9 @@ playlistContainer.onpointerleave = () => {
     }
 };
 
-// Useful if document.activeElement = document.body
+// Works if document.activeElement = document.body
 visPlaylistArea.addEventListener('blur', () => {
-    if (playlistLim.scrollHeight <= playlistLim.clientHeight) return;
+    if (!scrollablePlaylist) return;
     if (!accelerateScrolling) return;
     if (cursorOverPlaylist) return;
     if (pointerModeScrolling) return;
@@ -2132,7 +2133,8 @@ visPlaylistArea.addEventListener('blur', () => {
 });
 
 visPlaylistArea.onwheel = (event) => {
-    if (playlistLim.scrollHeight <= playlistLim.clientHeight) return;
+    if (!scrollablePlaylist) return;
+
     event.preventDefault();
     
     scrollAndAlignPlaylist({
@@ -2157,7 +2159,7 @@ visPlaylistArea.addEventListener('pointerdown', function (event) {
 
 // Pointer Mode Scrolling
 visPlaylistArea.onpointerdown = function(event) {
-    if (playlistLim.scrollHeight <= playlistLim.clientHeight) return;
+    if (!scrollablePlaylist) return;
     if (event.pointerType == 'mouse' && event.button != 1) return;
     if (isTouchDevice && !event.isPrimary) return;
     event.preventDefault();
@@ -2335,11 +2337,10 @@ function keepSelectedTitleVisible(audio) {
 
     clearTimeout(timerReturnFocusDelay);
 
-    let isPlaylistScrollable = playlistContainer.classList.contains('scrollable-playlist');
     let isScrollAndAlignPlaylistActive = false;
 
     // Playlist scroll alignment
-    if (isPlaylistScrollable) {
+    if (scrollablePlaylist) {
         let initScrolled = playlistLim.scrollTop;
         let visibleHeight = playlistLim.clientHeight;
         let selTrackPlaylistTop = origOrderedAudios.indexOf(audio) * trackHeight;
@@ -2384,7 +2385,7 @@ function keepSelectedTitleVisible(audio) {
     document.removeEventListener('scrollAndAlignPlaylistEnd', scrollAndAlignDocument, {once: true});
     if (hasScrollend) document.onscrollend = () => false;
 
-    scrollEndStates.curPlaylist = false;
+    scrollEndStates.curPlaylist = false; // Gotta be close to scrollEndStates.document
 
     let isPlaylistInView = checkPlaylistBoundaries();
     if (!isPlaylistInView) {
@@ -2405,8 +2406,7 @@ function scrollAndAlignDocument() {
     let trackRect = track.getBoundingClientRect();
     let initScrolled = window.scrollY;
     let winHeight = isTouchDevice ? window.innerHeight : document.documentElement.clientHeight;
-    let isPlaylistScrollable = playlistContainer.classList.contains('scrollable-playlist');
-    let heightShift = isPlaylistScrollable ? scrollArrowBoxHeight : 0;
+    let heightShift = scrollablePlaylist ? scrollArrowBoxHeight : 0;
     let y = initScrolled;
 
     if (trackRect.top < heightShift) {
@@ -2521,7 +2521,7 @@ function checkPlaylistScrolling() {
     let activeElem = document.activeElement;
     let key = Array.from(activeScrollKeys)[activeScrollKeys.size - 1];
 
-    if (playlistLim.scrollHeight <= playlistLim.clientHeight) return false;
+    if (!scrollablePlaylist) return false;
     if (activeElem != visPlaylistArea && !activeElem.matches('.tracklist-section') &&
         activeElem.scrollHeight > activeElem.clientHeight) return false;
     if (activeElem.matches('input[type="number"]') && (key == 'ArrowUp' || key == 'ArrowDown')) return false;
@@ -2561,7 +2561,7 @@ function startScrolling(key) {
 }
 
 function stopScrolling(hideDelay) {
-    if (playlistLim.scrollHeight <= playlistLim.clientHeight) return;
+    if (!scrollablePlaylist) return;
 
     scrollAndAlignPlaylist({
         duration: KEY_SCROLLING_TIME,
@@ -2789,9 +2789,11 @@ function hideScrollElems() {
 
 function checkPlaylistScrollability() {
     if (playlistLim.scrollHeight > playlistLim.clientHeight) {
+        scrollablePlaylist = true;
         playlistContainer.classList.add('scrollable-playlist');
         if (cursorOverPlaylist || pointerModeScrolling) showScrollElems();
     } else {
+        scrollablePlaylist = false;
         playlistContainer.classList.remove('scrollable-playlist');
         hideScrollElems();
     }
@@ -3253,9 +3255,9 @@ function initFocusHandlerConnections() {
 }
 
 function connectFocusHandler(elem) {
-    elem.onfocus = function(event) {
+    elem.onfocus = function() {
         if (accelerateScrolling) {
-            if (playlistLim.scrollHeight <= playlistLim.clientHeight) return;
+            if (!scrollablePlaylist) return;
 
             let isDocScrollbar = checkDocHeight();
             let key = Array.from(activeScrollKeys)[activeScrollKeys.size - 1];
@@ -3298,11 +3300,8 @@ function connectFocusHandler(elem) {
         if (this != curPlaylist && highlightActiveElem) cancelReturningFocus();
 
         // Check reaching playlist limits when focusing on the last track via Tab
-        if (this.matches('.track-title') && 
-            (!event.relatedTarget || !event.relatedTarget.closest('#visible-playlist-area'))
-        ) {
-            let isPlaylistScrollable = playlistContainer.classList.contains('scrollable-playlist');
-            if (!isPlaylistScrollable) return;
+        if (this.matches('.track-title')) {
+            if (!scrollablePlaylist) return;
 
             activateScrollArrows();
             checkReachingPlaylistLimits('up');
@@ -3316,10 +3315,8 @@ function connectFocusHandler(elem) {
 // Alignment after auto scrolling focused track title
 visPlaylistArea.addEventListener('keydown', function(event) {
     if (event.code != 'Tab') return;
+    if (!scrollablePlaylist) return;
     if (activeScrollAndAlign) return;
-    
-    let isPlaylistScrollable = playlistContainer.classList.contains('scrollable-playlist');
-    if (!isPlaylistScrollable) return;
 
     let selTrack;
     if (event.target == this) selTrack = playlist.firstElementChild;
@@ -3357,21 +3354,20 @@ visPlaylistArea.addEventListener('keydown', function(event) {
         });
     }
 
-    // Aligning the selected track after auto-scrolling to the center of the playlist
-    setTimeout(() => {
-        let remainder = playlistLim.scrollTop % trackHeight;
-
-        if (remainder) {
-            let isDocScrollbar = checkDocHeight();
-        
+    // Showing scroll elements and aligning the playlist after auto-scrolling
+    if (
+        selTrack.getBoundingClientRect().top < playlistLim.getBoundingClientRect().top ||
+        selTrack.getBoundingClientRect().bottom > playlistLim.getBoundingClientRect().bottom
+    ) {
+        setTimeout(() => {
             showScrollElems();
             scrollAndAlignPlaylist({
-                direction: event.shiftKey ? 'up' : 'down',
+                direction: (event.shiftKey || selTrack == playlist.firstElementChild) ? 'up' : 'down',
                 duration: KEY_SCROLLING_TIME,
-                hide: (accelerateScrolling && !isDocScrollbar) ? false : true
+                hide: true
             });
-        }
-    }, LAG);
+        }, LAG);
+    }
 });
 
 // Stop scrolling on context menu
@@ -3567,13 +3563,12 @@ function checkVisibilityScrollElems() {
     let playlistLimRect = playlistLim.getBoundingClientRect();
     let winHeight = isTouchDevice ? window.innerHeight : document.documentElement.clientHeight;
     let isPlaylistInView = checkPlaylistBoundaries();
-    let isPlaylistScrollable = playlistContainer.classList.contains('scrollable-playlist');
-    let heightShift = (isPlaylistInView || isPlaylistScrollable) ? 0 : scrollArrowBoxHeight;
+    let heightShift = (isPlaylistInView || scrollablePlaylist) ? 0 : scrollArrowBoxHeight;
     let playlistLimVisibleTop = 0;
     let playlistLimVisibleBottom = 0;
 
     if (playlistContainerRect.top < -heightShift) {
-        if (isPlaylistScrollable) {
+        if (scrollablePlaylist) {
             playlistLimVisibleTop = -playlistLimRect.top + scrollArrowBoxHeight;
         }
         
@@ -3583,7 +3578,7 @@ function checkVisibilityScrollElems() {
     }
 
     if (playlistContainerRect.bottom > winHeight + heightShift) {
-        if (isPlaylistScrollable) {
+        if (scrollablePlaylist) {
             playlistLimVisibleBottom = playlistLimRect.bottom - winHeight + scrollArrowBoxHeight;
         }
         
@@ -4151,10 +4146,11 @@ function addTracklistToPlaylist(tracklistSection, clearPlaylist) {
     let tracklist = processSelectedTracklist(list);
 
     createPlaylist(tracklist, clearPlaylist);
-    checkPlaylistScrollability();
-    checkVisibilityScrollElems();
     activateScrollArrows();
     checkReachingPlaylistLimits('up');
+    checkReachingPlaylistLimits('down');
+    checkPlaylistScrollability();
+    checkVisibilityScrollElems();
 
     if (shuffleBtn.classList.contains('active')) randomizePlaylist();
     if (!clearPlaylist) highlightSelected(selectedAudio);
@@ -4337,11 +4333,8 @@ function createPlaylist(addedTracklist, clearPlaylist) {
         }
 
         if (clearPlaylist && playlist.children.length) { // Removing existing tracks
-            console.log('+1');
             // The current tracklist will be updated and saved after the removal of each track
-            let isPlaylistScrollable = playlistContainer.classList.contains('scrollable-playlist');
-
-            if (isPlaylistScrollable) {
+            if (scrollablePlaylist) {
                 showScrollElems();
                 scrollAndAlignPlaylist({
                     direction: 'up',
