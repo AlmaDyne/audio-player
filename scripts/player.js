@@ -1187,8 +1187,6 @@ function finishPlaying() {
             curPlaylist.setSelectionRange(0, 0);
             if (curPlaylist != highlightActiveElem) curPlaylist.blur();
     
-            // Scrolling document and curPlaylist to top after playlistLim aligning
-            // and returning focus to the active element
             if (isScrollAndAlignPlaylistActive) {
                 document.addEventListener('scrollAndAlignPlaylistEnd', finScrollToBeginning, {once: true});
             } else {
@@ -1204,7 +1202,11 @@ function finishPlaying() {
 
 function finScrollToBeginning() {
     // Current playlist
-    curPlaylist.scrollTop = 0;
+    curPlaylist.scrollTo({
+        left: 0,
+        top: 0,
+        behavior: 'smooth'
+    });
 
     if (curPlaylist.scrollTop && hasScrollend) {
         curPlaylist.onscrollend = endScrollingCurPlaylist;
@@ -1291,7 +1293,11 @@ function shuffleAction() {
     if (selectedAudio) {
         highlightSelected(selectedAudio);
     } else {
-        curPlaylist.scrollTop = 0;
+        curPlaylist.scrollTo({
+            left: 0,
+            top: 0,
+            behavior: 'smooth'
+        });
     }
 };
 
@@ -1624,17 +1630,28 @@ function adjustPlaylistLimiterWidth(trackTitle) {
     }
 }
 
-// Prohibiting text selection on the touchscreen
 visPlaylistArea.addEventListener('pointerdown', (event) => {
-    if (isTouchDevice && event.isPrimary && event.target.matches('.track-title')) {
-        let trackTitle = event.target;
-        trackTitle.style.userSelect = 'none';
+    if (event.target.matches('.track-title')) {
+        // Prohibiting text selection on the touchscreen
+        if (isTouchDevice && event.isPrimary) {
+            let trackTitle = event.target;
 
-        document.onpointerup = () => {
-            trackTitle.style.userSelect = '';
+            trackTitle.style.userSelect = 'none';
 
-            document.onpointerup = () => false;
-        };
+            document.onpointerup = () => {
+                trackTitle.style.userSelect = '';
+
+                document.onpointerup = () => false;
+            };
+        }
+    } else { // Prevent focus on the playlist if there was a click outside of it.
+        // Track being removed will not be event.target <= pointer-event == 'none'
+        let outOfVisibleArea = event.clientX > visPlaylistArea.getBoundingClientRect().right;
+
+        if (outOfVisibleArea) {
+            visPlaylistArea.removeAttribute('tabindex');
+            setTimeout(() => visPlaylistArea.setAttribute('tabindex', 0));
+        }
     }
 });
 
@@ -1729,12 +1746,17 @@ function removeTrackFromPlaylist(track, eventType = null) {
         let curOpacity = trackStyle.opacity;
         track.style.opacity = curOpacity;
 
+        let curHeight = trackStyle.height;
+        track.style.height = curHeight;
+
         track.classList.remove('not-ready');
         track.classList.remove('adding');
     }
 
     track.classList.remove('pending-removal');
     track.classList.add('removing');
+
+    if (scrollablePlaylist) showScrollElems();
 
     track.onanimationend = function(event) {
         if (event.target != this) return;
@@ -1839,18 +1861,16 @@ function removeTrackFromPlaylist(track, eventType = null) {
             // Highlight selected audio
             if ((highlightActiveElem || eventType != 'keydown')) highlightSelected(selectedAudio);
 
-            // Align playlist (bug)
+            // Hide scroll elements after a while and align playlist (bug)
             stopScrolling(KEY_SCROLLING_TIME);
 
             // Trigger for adding track animation
             document.dispatchEvent(eventRemovingTracksEnd);
         }
 
-        // Additional functions
-        checkReachingPlaylistLimits('up');
-        checkReachingPlaylistLimits('down');
+        // Check playlist scroll elements
         checkPlaylistScrollability();
-        checkVisibilityScrollElems();
+        checkScrollElemsVisibility();
     };
 }
 
@@ -2441,9 +2461,9 @@ function downKeyScrollAction(event) {
             timerAccelerateScrolling = null;
             accelerateScrolling = true;
 
-            let isPlaylistScrolling = checkPlaylistScrolling();
+            let isPlaylistScrollingAllowed = checkIfPlaylistScrollingIsAllowed(key);
 
-            if (isPlaylistScrolling) {
+            if (isPlaylistScrollingAllowed) {
                 event.preventDefault();
                 startScrolling(key);
                 if (pointerModeScrolling) document.dispatchEvent(new Event('pointermove'));
@@ -2455,20 +2475,21 @@ function downKeyScrollAction(event) {
         accelerateScrolling = true;
     }
 
-    let isPlaylistScrolling = checkPlaylistScrolling();
+    let isPlaylistScrollingAllowed = checkIfPlaylistScrollingIsAllowed(key);
 
-    if (isPlaylistScrolling) {
+    if (isPlaylistScrollingAllowed) {
         event.preventDefault();
         startScrolling(key);
     } else {
-        if (!activeScrollInPointerMode) stopScrolling(KEY_SCROLLING_TIME);
+        if (activeScrollOnKeyRepeat) {stopScrolling(KEY_SCROLLING_TIME);}
         if (pointerModeScrolling) document.dispatchEvent(new Event('pointermove'));
     }
 }
 
 function repeatKeyScrollAction(event) {
-    let isPlaylistScrolling = checkPlaylistScrolling();
-    if (isPlaylistScrolling) event.preventDefault();
+    let key = event.code;
+    let isPlaylistScrollingAllowed = checkIfPlaylistScrollingIsAllowed(key);
+    if (isPlaylistScrollingAllowed) event.preventDefault();
 }
 
 function upKeyScrollAction(event) {
@@ -2484,42 +2505,37 @@ function upKeyScrollAction(event) {
     let key = event.code;
     activeScrollKeys.delete(key);
 
-    let isPlaylistScrolling = checkPlaylistScrolling();
+    if (activeScrollKeys.size) {
+        let prevKey = Array.from(activeScrollKeys)[activeScrollKeys.size - 1];
+        let isPlaylistScrollingAllowed = checkIfPlaylistScrollingIsAllowed(prevKey);
 
-    if (isPlaylistScrolling) {
-        event.preventDefault();
-
-        if (activeScrollKeys.size) {
-            let prevKey = Array.from(activeScrollKeys)[activeScrollKeys.size - 1];
+        if (isPlaylistScrollingAllowed) {
+            event.preventDefault();
             startScrolling(prevKey);
-        } else { // The last active scroll key has been released
-            let direction = scrollingKeysData[key].direction;
-            let isReachingLimits = checkReachingPlaylistLimits(direction);
-    
-            if (
-                !pointerModeScrolling &&
-                !cursorOverPlaylist &&
-                isReachingLimits
-            ) {
-                hideScrollElems();
-            }
-
-            if (!isReachingLimits) stopScrolling(HIDE_SCROLL_ELEMENTS_DELAY);
-    
-            if (accelerateScrolling) accelerateScrolling = false;
-        }
-    } else {
-        if (activeScrollKeys.size) {
-            if (!activeScrollInPointerMode) stopScrolling(KEY_SCROLLING_TIME);
         } else {
-            accelerateScrolling = false;
+            if (activeScrollOnKeyRepeat) stopScrolling(KEY_SCROLLING_TIME);
+        }
+    } else { // The last active scroll key has been released
+        if (accelerateScrolling) accelerateScrolling = false;
+
+        let isPlaylistScrollingAllowed = checkIfPlaylistScrollingIsAllowed(null);
+        if (!isPlaylistScrollingAllowed) return;
+
+        let direction = scrollingKeysData[key].direction;
+        let isReachingLimits = checkReachingPlaylistLimits(direction);
+
+        if (isReachingLimits && !cursorOverPlaylist && !pointerModeScrolling) {
+            hideScrollElems();
+        }
+
+        if (activeScrollOnKeyRepeat && !activeScrollInPointerMode && !isReachingLimits) {
+            stopScrolling(HIDE_SCROLL_ELEMENTS_DELAY);
         }
     }
 }
 
-function checkPlaylistScrolling() {
+function checkIfPlaylistScrollingIsAllowed(key) {
     let activeElem = document.activeElement;
-    let key = Array.from(activeScrollKeys)[activeScrollKeys.size - 1];
 
     if (!scrollablePlaylist) return false;
     if (activeElem != visPlaylistArea && !activeElem.matches('.tracklist-section') &&
@@ -2734,12 +2750,9 @@ function scrollAndAlignPlaylist(options) {
 
             // If the scroll keys are pressed after the wheel or Tab focus has completed scrolling
             if (accelerateScrolling) {
-                let isPlaylistScrolling = checkPlaylistScrolling();
-    
-                if (isPlaylistScrolling) {
-                    let key = Array.from(activeScrollKeys)[activeScrollKeys.size - 1];
-                    startScrolling(key);
-                }
+                let key = Array.from(activeScrollKeys)[activeScrollKeys.size - 1];
+                let isPlaylistScrollingAllowed = checkIfPlaylistScrollingIsAllowed(key);
+                if (isPlaylistScrollingAllowed) startScrolling(key);
             }
         }
     });
@@ -2757,15 +2770,15 @@ function checkDocHeight() {
 }
 
 function checkReachingPlaylistLimits(direction) {
-    if (direction == 'up' && playlistLim.scrollTop == 0) {
-        playlistScrollArrowUp.classList.add('inactive');
-        return true;
+    if (playlistLim.scrollTop == 0) {
+        if (!direction || direction === 'up') playlistScrollArrowUp.classList.add('inactive');
+        if (direction === 'up') return true;
     }
-    if (direction == 'down' && playlistLim.scrollHeight - playlistLim.scrollTop == playlistLim.clientHeight) {
-        playlistScrollArrowDown.classList.add('inactive');
-        return true;
+    if (playlistLim.scrollHeight - playlistLim.scrollTop == playlistLim.clientHeight) {
+        if (!direction || direction === 'down') playlistScrollArrowDown.classList.add('inactive');
+        if (direction === 'down') return true;
     }
-    return false;
+    if (direction) return false;
 }
 
 function activateScrollArrows() {
@@ -2774,6 +2787,8 @@ function activateScrollArrows() {
 }
 
 function showScrollElems() {
+    clearTimeout(timerHideScrollElems);
+
     scrollElemsDisplaying = true;
 
     playlistScrollArrowUp.hidden = false;
@@ -2782,20 +2797,32 @@ function showScrollElems() {
 
 function hideScrollElems() {
     clearTimeout(timerHideScrollElems);
+
     scrollElemsDisplaying = false;
+
     playlistScrollArrowUp.hidden = true;
     playlistScrollArrowDown.hidden = true;
 }
 
 function checkPlaylistScrollability() {
     if (playlistLim.scrollHeight > playlistLim.clientHeight) {
+        if (scrollablePlaylist) return;
+
         scrollablePlaylist = true;
         playlistContainer.classList.add('scrollable-playlist');
+
+        activateScrollArrows();
+        checkReachingPlaylistLimits();
         if (cursorOverPlaylist || pointerModeScrolling) showScrollElems();
     } else {
+        if (!scrollablePlaylist) return;
+
         scrollablePlaylist = false;
         playlistContainer.classList.remove('scrollable-playlist');
-        hideScrollElems();
+
+        checkReachingPlaylistLimits();
+
+        timerHideScrollElems = setTimeout(hideScrollElems, HIDE_SCROLL_ELEMENTS_DELAY);
     }
 }
 
@@ -2901,6 +2928,9 @@ function tracklistDatabaseAction() {
     } else { // Show tracklists
 
     }
+}
+
+function calcTracklistDatabaseBtnPosition() {
     
 }
 
@@ -2923,15 +2953,22 @@ function showSettings(eventType) {
 
     setTimeout(() => {
         settingsArea.classList.add('active');
-        highlightSelected(selectedAudio);
 
-        if (!selectedAudio) {
+        if (selectedAudio) {
+            highlightSelected(selectedAudio);
+        } else { // If stop playback while the settings area is hidden,
+            //the scroll position and text selection will not be reset
             let activeElem = document.activeElement;
             
             curPlaylist.select();
             curPlaylist.setSelectionRange(0, 0);
             if (curPlaylist != activeElem) curPlaylist.blur();
-            curPlaylist.scrollTop = 0;
+
+            curPlaylist.scrollTo({
+                left: 0,
+                top: 0,
+                behavior: 'smooth'
+            });
 
             activeElem.focus();
         }
@@ -2986,7 +3023,12 @@ function highlightSelected(audio) {
         let rowsTop = stringsTop.length - 1;
 
         deltaScroll = (rowsTop - Math.ceil((visibleRows - selectedRows) / 2)) * rowHeight;
-        curPlaylist.scrollTop = deltaScroll;
+
+        curPlaylist.scrollTo({
+            left: 0,
+            top: deltaScroll,
+            behavior: 'smooth'
+        });
     }
 
     // Checking scroll duration to return focus to the last active element
@@ -3304,8 +3346,7 @@ function connectFocusHandler(elem) {
             if (!scrollablePlaylist) return;
 
             activateScrollArrows();
-            checkReachingPlaylistLimits('up');
-            checkReachingPlaylistLimits('down');
+            checkReachingPlaylistLimits();
         }
 
         if (pointerModeScrolling) document.dispatchEvent(new Event('pointermove'));
@@ -3533,7 +3574,7 @@ let scrollTicking = false;
 document.addEventListener('scroll', function () {
     if (!scrollTicking) {
         requestAnimationFrame(function () {
-            checkVisibilityScrollElems();
+            checkScrollElemsVisibility();
 
             scrollTicking = false;
         });
@@ -3548,7 +3589,7 @@ let resizeTick = false;
 window.addEventListener('resize', () => {
     if (!resizeTick) {
         requestAnimationFrame(function () {
-            checkVisibilityScrollElems();
+            checkScrollElemsVisibility();
             compensateScrollbarWidth();
 
             resizeTick = false;
@@ -3558,7 +3599,7 @@ window.addEventListener('resize', () => {
     resizeTick = true;
 });
   
-function checkVisibilityScrollElems() {
+function checkScrollElemsVisibility() {
     let playlistContainerRect = playlistContainer.getBoundingClientRect();
     let playlistLimRect = playlistLim.getBoundingClientRect();
     let winHeight = isTouchDevice ? window.innerHeight : document.documentElement.clientHeight;
@@ -3635,7 +3676,7 @@ playlistScrollArrowUp.onclick = () => {
     });
 
     playlistLim.addEventListener('scrollend', () => {
-        checkReachingPlaylistLimits('up');
+        checkReachingPlaylistLimits();
     }, {once: true});
 };
 
@@ -3651,7 +3692,7 @@ playlistScrollArrowDown.onclick = () => {
     });
 
     playlistLim.addEventListener('scrollend', () => {
-        checkReachingPlaylistLimits('down');
+        checkReachingPlaylistLimits();
     }, {once: true});
 };
 
@@ -3810,7 +3851,7 @@ function changeNumberOfVisibleTracks(value) {
     localStorage.setItem('visible_tracks_checkbox_checked', visibleTracksCheckbox.checked);
 
     checkPlaylistScrollability();
-    checkVisibilityScrollElems();
+    checkScrollElemsVisibility();
     compensateScrollbarWidth();
 
     if (accelerateScrolling) {
@@ -4062,7 +4103,7 @@ function clearPlaylist() {
 
     createPlaylist(null, true);
     checkPlaylistScrollability();
-    checkVisibilityScrollElems();
+    checkScrollElemsVisibility();
 }
 
 function expandTracklist(tracklistSection) {
@@ -4146,11 +4187,6 @@ function addTracklistToPlaylist(tracklistSection, clearPlaylist) {
     let tracklist = processSelectedTracklist(list);
 
     createPlaylist(tracklist, clearPlaylist);
-    activateScrollArrows();
-    checkReachingPlaylistLimits('up');
-    checkReachingPlaylistLimits('down');
-    checkPlaylistScrollability();
-    checkVisibilityScrollElems();
 
     if (shuffleBtn.classList.contains('active')) randomizePlaylist();
     if (!clearPlaylist) highlightSelected(selectedAudio);
@@ -4332,9 +4368,21 @@ function createPlaylist(addedTracklist, clearPlaylist) {
             }
         }
 
-        if (clearPlaylist && playlist.children.length) { // Removing existing tracks
+        if (clearPlaylist && playlist.children.length) { // Queue a track for removing.
             // The current tracklist will be updated and saved after the removal of each track
-            if (scrollablePlaylist) {
+            let removingTracks = [];
+            let delayTime = 0;
+
+            Array.from(playlist.children).forEach(track => {
+                if (track.classList.contains('pending-removal')) return;
+                if (track.classList.contains('removing')) return;
+
+                removingTracksNum++;
+                track.classList.add('pending-removal');
+                removingTracks.push(track);
+            });
+
+            if (scrollablePlaylist && playlistLim.scrollTop) {
                 showScrollElems();
                 scrollAndAlignPlaylist({
                     direction: 'up',
@@ -4342,19 +4390,21 @@ function createPlaylist(addedTracklist, clearPlaylist) {
                     align: false,
                     hide: true
                 });
+
+                delayTime = 100;
+
+                document.addEventListener('scrollAndAlignPlaylistEnd', deferRemoveAnimation, {once: true});
+            } else {
+                deferRemoveAnimation();
             }
 
-            Array.from(playlist.children).forEach((track, idx) => {
-                if (track.classList.contains('pending-removal')) return;
-                if (track.classList.contains('removing')) return;
-
-                removingTracksNum++;
-
-                track.classList.add('pending-removal');
-
-                // Queue a track for removing
-                setTrackAnimationDelay(idx, () => removeTrackFromPlaylist(track));
-            });
+            function deferRemoveAnimation() {
+                setTimeout(() => {
+                    removingTracks.forEach((track, idx) => {
+                        setTrackAnimationDelay(idx, () => removeTrackFromPlaylist(track));
+                    });
+                }, delayTime);
+            }
         } else { // Saving the current tracklist if the playlist tracks are not removing
             localStorage.setItem('current_tracklist', JSON.stringify(curTracklist));
         }
@@ -4431,6 +4481,9 @@ function createPlaylist(addedTracklist, clearPlaylist) {
 
                     track.classList.remove('adding');
                     track.classList.remove('not-ready');
+
+                    checkPlaylistScrollability();
+                    checkScrollElemsVisibility();
                 }
             });
         }

@@ -748,6 +748,7 @@ player-controls #volume-bar.active {
 }
 @keyframes remove-track {
     50% {
+        height: var(--track-height);
         left: calc(100% + var(--player-side-padding));
         top: 0;
         margin-top: 0;
@@ -756,6 +757,7 @@ player-controls #volume-bar.active {
         animation-timing-function: linear; /* Работает с текущего ключевого кадра */
     }
     100% {
+        height: var(--track-height);
         left: calc(100% + var(--player-side-padding));
         top: calc(var(--track-height)/2);
         margin-top: calc((-1)*var(--track-height));
@@ -1074,7 +1076,6 @@ player-controls #volume-bar.active {
     word-break: break-all;
     resize: none;
     overflow: auto;
-    scroll-behavior: smooth;
 }
 #settings-area > .setting-section {
     height: 23px;
