@@ -9,10 +9,10 @@ console.log(localStorage);
 const cssRoot = document.querySelector(':root');
 const playerContainer = document.getElementById('player-container');
 const tracklistDatabase = document.getElementById('tracklist-database');
-const tracklistDatabaseBtn = document.getElementById('tracklist-database-button');
+const tracklistDtbsBtn = document.getElementById('tracklist-database-button');
 const player = document.getElementById('player');
 const tooltip = document.getElementById('tooltip');
-const displayInfo = document.getElementById('display-info');
+const playerInfoDisplay = document.getElementById('display-info');
 const trackTitleDisplay = document.getElementById('display-title');
 const artistNameDisplay = document.getElementById('display-artist');
 const curTimeDisplay = document.getElementById('current-time');
@@ -232,7 +232,7 @@ const scrollingKeysData = {
 /////////////////////////
 
 function showTrackInfo(audio, prevSelected = null) {
-    displayInfo.hidden = true;
+    playerInfoDisplay.hidden = true;
 
     keepSelectedTitleVisible(audio);
     if (timeRangeHoverIntent.elemRect) timeRangeHoverIntent.executeTask();
@@ -2904,34 +2904,94 @@ const leftBorder = player.querySelector('.left-border');
 
 variantsBtn.onclick = () => leftBorder.classList.toggle('inactive');
 
-//tracklistDatabaseBtn.onclick = tracklistDatabaseAction;
+tracklistDtbsBtn.onclick = tracklistDatabaseAction;
 
 function tracklistDatabaseAction() {
-    player.classList.remove('moving');
+    let centering = getComputedStyle(cssRoot).getPropertyValue('--centering') === 'true';
+    
+    if (centering) {
+        resetProperties();
 
-    let playerLeft = player.getBoundingClientRect().left;
+        tracklistDatabase.classList.toggle('active');
+    } else {
+        let playerLeft = player.getBoundingClientRect().left; // Before resetting properties
 
-    if (tracklistDatabase.classList.contains('active')) { // Hide tracklists
-        player.style.marginLeft = playerLeft + 'px';
+        resetProperties();
 
-        tracklistDatabase.classList.remove('active');
-        player.classList.add('moving');
-
-        player.onanimationend = function (event) {
-            if (event.target != this) return;
-
-            player.style.marginLeft = '';
-            player.classList.remove('moving');
-
-            player.onanimationend = () => false;
+        if (tracklistDatabase.classList.contains('active')) { // Hide tracklists
+            player.style.marginLeft = playerLeft + 'px';
+    
+            tracklistDatabase.classList.remove('active');
+            player.classList.add('smooth-moving');
+    
+            player.onanimationend = endSmoothMoving;
+        } else { // Show tracklists
+            tracklistDatabase.classList.add('active');
+    
+            let tracklistDtbsWidth = tracklistDatabase.offsetWidth;
+            let tracklistDtbsMarginLeft = parseInt(getComputedStyle(tracklistDatabase).marginLeft);
+            tracklistDtbsMarginLeft = playerLeft - tracklistDtbsWidth - tracklistDtbsMarginLeft;
+    
+            // The width is fixed, otherwise it changes after the margin-left is changed
+            tracklistDatabase.style.width = tracklistDtbsWidth + 'px'; 
+            tracklistDatabase.style.marginLeft = tracklistDtbsMarginLeft + 'px';
+    
+            tracklistDatabase.classList.add('smooth-moving');
+    
+            tracklistDatabase.onanimationend = endSmoothMoving;
         }
-    } else { // Show tracklists
+    
+        function endSmoothMoving(event) {
+            let target = event.target;
+            if (target != this) return;
+    
+            target.style.width = '';
+            target.style.marginLeft = '';
+            target.classList.remove('smooth-moving');
 
+            animateTracklistDatabase();
+    
+            target.onanimationend = () => false;
+        }
+    }
+
+    function resetProperties() {
+        player.style.marginLeft = '';
+        tracklistDatabase.style.width = '';
+        tracklistDatabase.style.marginLeft = '';
+        player.classList.remove('smooth-moving');
+        tracklistDatabase.classList.remove('smooth-moving');
     }
 }
 
-function calcTracklistDatabaseBtnPosition() {
+function animateTracklistDatabase() {
     
+}
+
+function calcTracklistDtbsBtnPosition() {
+    let tracklistDtbsBtnCont = tracklistDtbsBtn.parentElement;
+    let tracklistDtbsBtnHeight = parseInt(
+        getComputedStyle(tracklistDtbsBtnCont).getPropertyValue('--button-container-height')
+    );
+    let borderRadius = parseInt(getComputedStyle(playerContainer).getPropertyValue('--player-border-radius'));
+    let winHeight = isTouchDevice ? window.innerHeight : document.documentElement.clientHeight;
+    let playerRect = player.getBoundingClientRect();
+    let playerScrolled = (playerRect.top < 0) ? Math.abs(playerRect.top) : 0;
+    let playerTop = (playerRect.top < 0) ? 0 : playerRect.top;
+    let playerBottom = (playerRect.bottom > winHeight) ? winHeight : playerRect.bottom;
+    let visPlayerHeight = playerBottom - playerTop;
+
+    if (tracklistDtbsBtnHeight > visPlayerHeight - borderRadius * 2) {
+        tracklistDtbsBtnHeight = visPlayerHeight - borderRadius * 2;
+
+        tracklistDtbsBtnCont.style.top = playerScrolled + borderRadius + 'px';
+        tracklistDtbsBtnCont.style.height = tracklistDtbsBtnHeight + 'px';
+    } else {
+        let tracklistDtbsBtnTop = playerScrolled + visPlayerHeight / 2 - tracklistDtbsBtnHeight / 2;
+
+        tracklistDtbsBtnCont.style.top = tracklistDtbsBtnTop + 'px';
+        tracklistDtbsBtnCont.style.height = '';
+    }
 }
 
 ///////////////////
@@ -3575,6 +3635,7 @@ document.addEventListener('scroll', function () {
     if (!scrollTicking) {
         requestAnimationFrame(function () {
             checkScrollElemsVisibility();
+            calcTracklistDtbsBtnPosition();
 
             scrollTicking = false;
         });
@@ -3591,6 +3652,7 @@ window.addEventListener('resize', () => {
         requestAnimationFrame(function () {
             checkScrollElemsVisibility();
             compensateScrollbarWidth();
+            calcTracklistDtbsBtnPosition();
 
             resizeTick = false;
         });
@@ -3795,6 +3857,8 @@ function changeConfig(idx) {
 
     if (changeConfig.eventType && !visibleTracksCheckbox.checked) {
         changeNumberOfVisibleTracks(numOfVisTracks);
+    } else {
+        calcTracklistDtbsBtnPosition();
     }
 
     delete changeConfig.eventType;
@@ -3853,6 +3917,7 @@ function changeNumberOfVisibleTracks(value) {
     checkPlaylistScrollability();
     checkScrollElemsVisibility();
     compensateScrollbarWidth();
+    calcTracklistDtbsBtnPosition();
 
     if (accelerateScrolling) {
         let isDocScrollbar = checkDocHeight();
@@ -4540,21 +4605,21 @@ function showLastPlayedTrackInfo() {
         <span class="track">"${lastPlayedAudio}"</span>
         <span class="time">${timeElapsed}</span> ago.`;
 
-    displayInfo.innerHTML = startInfo;
-    displayInfo.hidden = false;
+    playerInfoDisplay.innerHTML = startInfo;
+    playerInfoDisplay.hidden = false;
 
     setTimeout(() => {
-        displayInfo.style.opacity = 1;
+        playerInfoDisplay.style.opacity = 1;
 
-        let transTime = parseFloat(getComputedStyle(displayInfo).transitionDuration) * 1000;
+        let transTime = parseFloat(getComputedStyle(playerInfoDisplay).transitionDuration) * 1000;
 
         setTimeout(() => {
-            displayInfo.scrollTop = displayInfo.scrollHeight;
+            playerInfoDisplay.scrollTop = playerInfoDisplay.scrollHeight;
             
             setTimeout(() => {
-                displayInfo.style.opacity = '';
+                playerInfoDisplay.style.opacity = '';
     
-                setTimeout(() => displayInfo.hidden = true, transTime);
+                setTimeout(() => playerInfoDisplay.hidden = true, transTime);
             }, 1750);
         }, 1750 + transTime);
     }, 250);
@@ -4670,8 +4735,13 @@ document.addEventListener('keydown', (event) =>  {
         highlightButton(settingsBtn, event.code, settingsAction, event.type);
     }
     // Showing/hiding keys info
-    if (event.code === 'KeyT') {
+    if (event.code === 'KeyI') {
         highlightButton(keysInfoBtn, event.code, keysInfoAction, event.type);
+    }
+
+    // Showing/hiding tracklist database
+    if (event.code === 'KeyT') {
+        highlightButton(tracklistDtbsBtn, event.code, tracklistDatabaseAction);
     }
 
     // Closing keys info and settings by keypressing "Escape"

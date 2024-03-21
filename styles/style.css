@@ -1,4 +1,5 @@
 :root {
+    --centering: true;
     --page-footer-height: 50px;
     --site-color-main: #fafafa;
     --site-shadow-hover: 0 0 12px rgba(240, 240, 240, 0.5);
@@ -18,7 +19,7 @@ html {
 
 body {
     position: relative;
-    min-width: 824px;
+    /*min-width: 824px;*/
     min-height: 100%;
     background: url("../img/Minimalist_Piano.jpg") no-repeat fixed;
     background-size: cover;
@@ -50,6 +51,7 @@ i {
     --player-width: 550px;
     --player-side-padding: 20px;
     --player-side-margin: 3px;
+    --player-border-radius: 36px;
     --player-global-color-emphase: #0ea109;
     --player-global-color-warning: 196, 13, 43;
     display: flex;
@@ -100,6 +102,8 @@ i {
     margin-right: var(--player-side-margin);
     color: var(--player-color-main);
     text-align: center;
+
+    /*outline: 1px solid;*/
 }
 #tracklist-database.active {
     display: block;
@@ -382,18 +386,13 @@ i {
     text-transform: uppercase;
     background: var(--player-background-color-gradient);
     color: var(--player-color-main);
-    border-radius: 36px;
+    border-radius: var(--player-border-radius);
 }
 #tracklist-database.active + #player {
     --player-margin-left: 0;
 }
-#player.moving {
-    animation: move-player var(--transition-time-main) forwards;
-}
-@keyframes move-player {
-    100% {
-        margin-left: var(--player-margin-left);
-    }
+#player.smooth-moving {
+    --block-margin-left: var(--player-margin-left);
 }
 
 .selected-track {
@@ -994,7 +993,7 @@ player-controls #volume-bar.active {
 }
 .player-footer .version {
     font-size: 8pt;
-    font-weight: lighter;
+    font-weight: light;
     text-transform: none;
     color: rgb(var(--player-color-emphase));
     transition: color var(--transition-time-main);
@@ -1002,11 +1001,12 @@ player-controls #volume-bar.active {
 
 .tracklist-database-button-container {
     --button-container-width: 28px;
+    --button-container-height: 500px;
     width: var(--button-container-width);
-    height: 400px;
+    height: var(--button-container-height);
     position: absolute;
     left: 0;
-    top: 200px;
+    top: var(--player-border-radius);
     overflow: hidden;
 }
 #tracklist-database-button {
@@ -1064,6 +1064,8 @@ player-controls #volume-bar.active {
     z-index: 2;
     opacity: 0;
     transition: opacity var(--transition-time-main);
+
+    /*outline: 1px solid;*/
 }
 #settings-area.active {
     opacity: 1;
@@ -1163,7 +1165,7 @@ player-controls #volume-bar.active {
     color: var(--player-color-main-invert);
     vertical-align: middle;
     white-space: normal;
-    border-radius: 36px;
+    border-radius: var(--player-border-radius);
     transition: all var(--transition-time-main);
 }
 .keys-info .inner-scroll {
@@ -1240,7 +1242,10 @@ player-controls #volume-bar.active {
     padding: 3px;
     background: var(--player-color-main-invert);
     color: var(--player-color-main);
+}
+.keys-info .icon-background.small-size {
     line-height: 0.625em;
+    width: 0.8em;
 }
 .keys-info .icon i,
 .keys-info .icon div {
@@ -1356,10 +1361,31 @@ footer {
     line-height: 1.5em;
 }
 
+.smooth-moving {
+    animation: move-block var(--transition-time-main);
+}
+@keyframes move-block {
+    100% {
+        margin-left: var(--block-margin-left);
+    }
+}
+
 @media (max-width: 1562px), screen and (orientation: portrait) {
+    :root {
+        --centering: false;
+    }
     #tracklist-database {
         margin-left: var(--player-side-margin);
     }
+    #tracklist-database.smooth-moving {
+        --block-margin-left: var(--player-side-margin);
+    }
+}
+
+@media (max-width: 1384px), screen and (orientation: portrait) {
+    /*#player-container {
+        justify-content: flex-end;
+    }*/
 }
 
 @media screen and (orientation: portrait) {
