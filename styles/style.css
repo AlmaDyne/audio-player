@@ -1,10 +1,10 @@
 :root {
     --centering: true;
+    --scrollbar-width: 0px;
     --page-footer-height: 50px;
     --site-color-main: #fafafa;
     --site-shadow-hover: 0 0 12px rgba(240, 240, 240, 0.5);
     --transition-time-main: 120ms;
-    --scrollbar-width: 0px;
 }
 
 * {
@@ -19,7 +19,6 @@ html {
 
 body {
     position: relative;
-    /*min-width: 824px;*/
     min-height: 100%;
     background: url("../img/Minimalist_Piano.jpg") no-repeat fixed;
     background-size: cover;
@@ -392,7 +391,7 @@ i {
     --player-margin-left: 0;
 }
 #player.smooth-moving {
-    --block-margin-left: var(--player-margin-left);
+    --animation-margin-left: var(--player-margin-left);
 }
 
 .selected-track {
@@ -1366,7 +1365,7 @@ footer {
 }
 @keyframes move-block {
     100% {
-        margin-left: var(--block-margin-left);
+        margin-left: var(--animation-margin-left);
     }
 }
 
@@ -1378,14 +1377,8 @@ footer {
         margin-left: var(--player-side-margin);
     }
     #tracklist-database.smooth-moving {
-        --block-margin-left: var(--player-side-margin);
+        --animation-margin-left: var(--player-side-margin);
     }
-}
-
-@media (max-width: 1384px), screen and (orientation: portrait) {
-    /*#player-container {
-        justify-content: flex-end;
-    }*/
 }
 
 @media screen and (orientation: portrait) {
