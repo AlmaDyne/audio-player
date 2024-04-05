@@ -9,16 +9,17 @@
         <link rel="stylesheet" href="styles/fonts.css" type="text/css">
         <link rel="stylesheet" href="styles/style.css" type="text/css">
     </head>
-    <body class="background-blur">
+    <body class="background-blur loading">
         <script>
             window.onerror = function(message, url, line, col, error) {
                 //alert(`${message}\nВ ${line}:${col} на ${url}`);
                 console.error(`${message}\nВ ${line}:${col} на ${url}`);
             };
         </script>
+        <div id="preloader" class="active"></div>
         <header></header>
-        <main id="player-container" class="loading">
-            <aside id="tracklist-database" class="active">
+        <main id="player-container" data-initial>
+            <aside id="tracklist-database">
                 <h3 class="database-title"><span>Tracklists:</span></h3>
                 
                 <!-- Example tracklist-section tree
@@ -127,8 +128,8 @@
                 <button id="variants">Изменить варианты обводки боковой кнопки</button>
 
                 <div id="playlist-container">
-                    <div class="scroll-arrow-box up">
-                        <div class="playlist-scroll-arrow" hidden></div>
+                    <div class="playlist-scroll-arrow-box up">
+                        <div id="playlist-scroll-arrow-up" class="scroll-arrow" hidden></div>
                     </div>
 
                     <div id="visible-playlist-area" tabindex="0">
@@ -159,10 +160,8 @@
                 
                     <div id="temporary-track-box" style="outline: 1px solid" hidden></div>
 
-                    <div class="scroll-arrow-box down">
-                        <div class="playlist-scroll-arrow" hidden></div>
-                        <i class="icon-up-circled outer-scroll-arrow up" hidden></i>
-                        <i class="icon-down-circled outer-scroll-arrow down" hidden></i>
+                    <div class="playlist-scroll-arrow-box down">
+                        <div id="playlist-scroll-arrow-down" class="scroll-arrow" hidden></div>
                     </div>
                 </div>
 
@@ -175,7 +174,7 @@
                         <i id="playlist-style" class="icon-align-center" data-tooltip="Playlist style"></i>
                     </div>
                     <div class="center-col">
-                        <span class="version">v1.1.9</span>
+                        <span class="version">v1.1.18</span>
                     </div>
                     <div class="right-col">
                         <i id="settings" class="icon-cog-circled" data-tooltip="Settings"></i>
@@ -192,29 +191,40 @@
 
             <div id="tooltip"></div>
     
-            <div id="settings-area" class="active">
-                <textarea id="current-playlist" cols="50" readonly></textarea>
-                <section class="setting-section">
-                    <input id="visible-tracks-checkbox" type="checkbox">
-                    <label for="">Set own number of visible tracks (0-999)</label>
-                    <input id="visible-tracks-input" type="number" min="0" max="999" disabled>
-                </section>
-                <section class="setting-section">
-                    <label for="scroll-elements-opacity-input">Playlist scroll elements opacity (0-100)</label>
-                    <input id="scroll-elements-opacity-input" type="number" min="0" max="100">
-                </section>
-                <section class="setting-section">
-                    <label for="wheel-scroll-step-input">Wheel scroll step (1-5)</label>
-                    <input id="wheel-scroll-step-input" type="number" min="1" max="5">
-                </section>
-                <section class="setting-section">
-                    <label for="additional-options-checkbox">Enable additional options</label>
-                    <span class="input-box">
-                        <input id="additional-options-checkbox" type="checkbox">
-                    </span>
-                </section>
-                <button id="default-settings"><i class="icon-wrench"></i> Reset to default</button>
-                <button id="close-settings" class="close-block"><i class="icon-cancel"></i></button>
+            <div class="container-right-side">
+                <div id="settings-area" hidden>
+                    <textarea id="current-playlist" cols="50" readonly></textarea>
+                    <section class="setting-section">
+                        <input id="visible-tracks-checkbox" type="checkbox">
+                        <label for="">Set own number of visible tracks (0-999)</label>
+                        <input id="visible-tracks-input" type="number" min="0" max="999" disabled>
+                    </section>
+                    <section class="setting-section">
+                        <label for="scroll-elements-opacity-input">Playlist scroll elements opacity (0-100)</label>
+                        <input id="scroll-elements-opacity-input" type="number" min="0" max="100">
+                    </section>
+                    <section class="setting-section">
+                        <label for="wheel-scroll-step-input">Wheel scroll step (1-5)</label>
+                        <input id="wheel-scroll-step-input" type="number" min="1" max="5">
+                    </section>
+                    <section class="setting-section">
+                        <label for="additional-options-checkbox">Enable additional options</label>
+                        <span class="input-box">
+                            <input id="additional-options-checkbox" type="checkbox">
+                        </span>
+                    </section>
+                    <button id="default-settings"><i class="icon-wrench"></i> Reset to default</button>
+                    <button id="close-settings" class="close-block"><i class="icon-cancel"></i></button>
+                </div>
+
+                <div id="document-scroll-arrows-container">
+                    <div class="box" hidden>
+                        <i id="document-scroll-arrow-up" class="icon-up-circled scroll-arrow"></i>
+                    </div>
+                    <div class="box" hidden>
+                        <i id="document-scroll-arrow-down" class="icon-down-circled scroll-arrow"></i>
+                    </div>
+                </div>
             </div>
 
             <div id="keys-info-area" class="modal-container" hidden
@@ -867,7 +877,7 @@
                         </section>
                     </div>
                     
-                    <button id="close-info" class="close-block"><i class="icon-cancel"></i></button>
+                    <button id="close-keys-info" class="close-block"><i class="icon-cancel"></i></button>
                 </article>
             </div>
             <script src="scripts/player.js" type="module"></script>
