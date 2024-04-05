@@ -2996,6 +2996,7 @@ function tracklistDatabaseAction() {
 
         checkPlayerContentJustify();
         checkGlobalStates();
+        calcTracklistsTextIndent();
 
         if (isTracklistDtbsStickedLeft) { // Move tracklists
             moveTracklistDatabase();
@@ -4715,6 +4716,12 @@ function changeAddOptionsDisplaying(isChecked) {
 }
 
 function calcTracklistsTextIndent() {
+    if (document.body.classList.contains('loading')) return;
+    if (!tracklistDatabase.classList.contains('enabled')) return;
+
+    let addOptionsActivity = playerContainer.classList.contains('add-options-active') ? 'active' : 'disactive';
+    if (tracklistDatabase.dataset.textIndentForAddOptions === addOptionsActivity) return;
+
     tracklistDatabase.querySelectorAll('.tracklist-details').forEach(tracklistDetails => {
         let list = tracklistDetails.querySelector('.list');
         if (!list.children.length) return;
@@ -4735,6 +4742,8 @@ function calcTracklistsTextIndent() {
         list.style.setProperty('--list-text-indent', listTextIndent + 'px');
         list.style.setProperty('--order-width', orderWidth + 'px');
     });
+
+    tracklistDatabase.setAttribute('data-text-indent-for-add-options', addOptionsActivity);
 }
 
 // Remove elem activity if elem is NOT in focus
@@ -5024,7 +5033,7 @@ function createTracklistSection(tracklistTitle, tracklist) {
     });
 
     // When creating a new tracklist in the database
-    if (!document.body.classList.contains('loading')) calcTracklistsTextIndent();
+    calcTracklistsTextIndent();
 }
 
 ///////////////////////
