@@ -93,6 +93,7 @@ i {
     --player-color-demarcation-line: #eee;
     --player-shadow-hover: var(--site-shadow-hover);
     --playlist-color-static: #ccc;
+    --tracklist-database-button-background: #333;
     --track-menu-color: #bbb;
     --player-img-invert-filter: 0;
 }
@@ -108,6 +109,7 @@ i {
     --player-color-demarcation-line: #111;
     --player-shadow-hover: 0 0 12px rgba(15, 15, 15, 0.5);
     --playlist-color-static: #333;
+    --tracklist-database-button-background: #ccc;
     --track-menu-color: #444;
     --player-img-invert-filter: 0.95;
 }
@@ -129,7 +131,7 @@ i {
     text-align: center;
     transition: width var(--transition-time-moving) ease-in-out;
 
-    outline: 1px solid;
+    /*outline: 1px solid;*/
 }
 #tracklist-database.enabled {
     display: block;
@@ -757,7 +759,7 @@ player-controls #volume-bar.active {
     overflow: hidden;
     touch-action: none;
 
-    outline: 1px solid;
+    /*outline: 1px solid;*/
 }
 
 #playlist {
@@ -1056,57 +1058,52 @@ player-controls #volume-bar.active {
 }
 
 .tracklist-database-button-container {
-    --default-width: 28px;
-    --default-height: 500px;
+    --default-width: 36px;
+    --default-height: 120px;
     width: var(--default-width);
     height: var(--default-height);
     position: absolute;
     left: 0;
     top: var(--global-border-radius);
     overflow: hidden;
+
+    /*outline: 1px solid;*/
 }
 #tracklist-database-button {
     width: 100%;
     height: 100%;
     position: relative;
     left: calc(var(--default-width)/(-2));
-    background: var(--player-color-neutral);
+    background: var(--tracklist-database-button-background);
     border-top-right-radius: var(--default-width);
     border-bottom-right-radius: var(--default-width);
     cursor: pointer;
-    overflow: hidden;
     user-select: none;
-}
-#tracklist-database-button > .left-border {
-    height: 100%;
-    width: 1px;
-    position: absolute;
-    left: calc(var(--default-width)/2);
-    background: var(--player-color-neutral);
 }
 #tracklist-database-button > i {
     position: absolute;
-    left: 9px;
-    top: calc(50% - 0.625em);
-    line-height: 1.25;
-    font-size: 14pt;
+    left: 14px;
+    top: calc(50% - 0.625em + 0.5px);
+    font-size: 15pt;
+    transform-origin: calc(50% + 0.5px) 50%;
+    transition:
+        text-shadow var(--transition-time-main),
+        transform var(--transition-time-main)
+    ;
 }
-#tracklist-database-button.active > i {
-    color: rgb(var(--player-color-emphase));
+#tracklist-database-button.enabled > i {
+    transform: rotateY(180deg);
 }
 #tracklist-database-button:hover > i {
     text-shadow: var(--player-shadow-hover);
 }
 #tracklist-database-button:active,
 #tracklist-database-button.key-pressed {
-    width: calc(100% - 1px);
-    height: calc(100% - 2px);
-    top: 1px;
-    outline: 1px solid var(--player-color-inactive);
+    box-shadow: 0 0 4px 0 rgb(var(--player-color-emphase));
 }
-#tracklist-database-button:active > .left-border:not(.inactive),
-#tracklist-database-button.key-pressed > .left-border {
-    background: var(--player-color-inactive);
+#tracklist-database-button:active > i,
+#tracklist-database-button.key-pressed > i {
+    color: rgb(var(--player-color-emphase));
 }
 
 .container-right-side {
@@ -1395,7 +1392,7 @@ player-controls #volume-bar.active {
 
 #player-container i:not(.icon-fast-forward, .icon-fast-backward, .icon-left-open):active,
 #clear-playlist:active,
-.key-pressed {
+.key-pressed:not(#tracklist-database-button) {
     outline: 1px solid currentColor;
 }
 

@@ -2938,11 +2938,6 @@ keysInfoBtn.onclick = showKeysInfo;
 // Side button (tracklist databse show/hide) //
 ///////////////////////////////////////////////
 
-const variantsBtn = document.getElementById('variants');
-const leftBorder = player.querySelector('.left-border');
-
-variantsBtn.onclick = () => leftBorder.classList.toggle('inactive');
-
 function calcTracklistDtbsBtnPosition() {
     let tracklistDtbsBtnCont = tracklistDtbsBtn.parentElement;
     let tracklistDtbsBtnHeight = defTracklistDtbsBtnHeight;
@@ -2964,7 +2959,6 @@ function calcTracklistDtbsBtnPosition() {
         }
     } else {
         let tracklistDtbsBtnTop = playerScrolled + visPlayerHeight / 2 - tracklistDtbsBtnHeight / 2;
-
         tracklistDtbsBtnCont.style.top = tracklistDtbsBtnTop + 'px';
         tracklistDtbsBtnCont.style.height = '';
     }
@@ -2993,6 +2987,7 @@ function tracklistDatabaseAction() {
 
     if (!tracklistDatabase.classList.contains('enabled')) { // Move/show tracklists
         tracklistDatabase.classList.add('enabled');
+        tracklistDtbsBtn.classList.add('enabled');
 
         checkPlayerContentJustify();
         checkGlobalStates();
@@ -3005,11 +3000,14 @@ function tracklistDatabaseAction() {
         }
     } else { // Hide tracklists/move player
         if (tracklistDatabase.classList.contains('active')) { // Hide tracklists
+            tracklistDtbsBtn.classList.remove('enabled');
             disactivateTracklistDatabase();
         } else {
             if (isTracklistDtbsMoved) { // Cancel tracklists moving animation (move player)
+                tracklistDtbsBtn.classList.remove('enabled');
                 movePlayer();
             } else { // Cancel tracklists hiding animation (show tracklists)
+                tracklistDtbsBtn.classList.add('enabled');
                 activateTracklistDatabase();
             }
         }
@@ -5324,7 +5322,7 @@ function hidePreload() {
                 setTimeout(showLastPlayedTrackInfo, 1200);
             }, 750);
         });
-    }, 1000);
+    }, 0);
 }
 
 //////////////////
