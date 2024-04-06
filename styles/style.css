@@ -454,8 +454,8 @@ i {
 }
 
 #player {
-    --player-margin-left: calc(50% -
-        var(--player-lateral-padding) - var(--player-width)/2 + var(--scrollbar-y-width)*0.5
+    --player-margin-left: calc(
+        50% - var(--player-lateral-padding) - var(--player-width)/2 + var(--scrollbar-y-width)*0.5
     );
     position: relative;
     height: 100%;
@@ -467,6 +467,28 @@ i {
     background: var(--player-background-color-gradient);
     color: var(--player-color-main);
     border-radius: var(--global-border-radius);
+    opacity: 0;
+}
+#player.show {
+    transform-origin: 50% 0%;
+    animation: show-player 2.2s cubic-bezier(0.3,1,0.5,1.45);
+}
+@keyframes show-player {
+    0% {
+        transform: perspective(1200px) rotate3d(1, 0.75, 0.5, -90deg) scale(50%);
+    }
+    50% {
+        transform: perspective(1200px) rotate3d(1, 0.75, 0.5, 0) scale(50%);
+        opacity: 1;
+        animation-timing-function: cubic-bezier(.6,-0.25,.4,1.25);
+    }
+    100% {
+        transform: none;
+        opacity: 1;
+    }
+}
+#player.active {
+    opacity: 1;
 }
 #player-container.justify-right > #player,
 #tracklist-database.enabled + #player {
@@ -1013,6 +1035,7 @@ player-controls #volume-bar.active {
     width: 80%;
     height: 48px;
     margin: auto;
+    box-sizing: border-box; /* Для учитывания border-top в расчётах общей высоты при загрузке страницы */
     border-top: 2px solid var(--player-color-neutral);
     transition: border-color var(--transition-time-main);
 }
@@ -1127,7 +1150,7 @@ player-controls #volume-bar.active {
     opacity: 0;
     transition: opacity var(--transition-time-main);
 
-    border: 1px solid;
+    /*border: 1px solid;*/
 }
 #settings-area.active {
     opacity: 1;

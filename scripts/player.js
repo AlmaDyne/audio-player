@@ -1916,12 +1916,6 @@ function removeTrackFromPlaylist(track, eventType = null) {
         checkPlaylistScrollability();
         checkScrollElemsVisibility();
     });
-
-    /*track.onanimationend = function(event) {
-        if (event.target != this) return;
-
-        
-    };*/
 }
 
 visPlaylistArea.oncontextmenu = function(event) {
@@ -4463,8 +4457,6 @@ function changeConfig(idx) {
 
     if (changeConfig.eventType && !visibleTracksCheckbox.checked) {
         changeNumberOfVisibleTracks(numOfVisTracks);
-    } else {
-        calcTracklistDtbsBtnPosition();
     }
 
     delete changeConfig.eventType;
@@ -5292,16 +5284,16 @@ function runInitials() {
     initTooltipHoverIntentConnections();
     initPlayerChanges();
     createTracklistDatabase(tracklistObjData);
-}
 
-function initPlayerChanges() {
-    changeConfig(configsBank.indexOf(config));
-    changeNumberOfVisibleTracks(numOfVisTracks);
-    changePlayerColor(playerColorsBank.indexOf(playerColor) );
-    changePlaylistStyle(playlistStylesBank.indexOf(playlistStyle));
-    changeInitialVolume(settedVolume);
-    changeScrollElemsOpacity(scrollElemsOpacity);
-    changeWheelScrollStep(wheelScrollStep);
+    function initPlayerChanges() {
+        changeConfig(configsBank.indexOf(config));
+        changeNumberOfVisibleTracks(numOfVisTracks);
+        changePlayerColor(playerColorsBank.indexOf(playerColor) );
+        changePlaylistStyle(playlistStylesBank.indexOf(playlistStyle));
+        changeInitialVolume(settedVolume);
+        changeScrollElemsOpacity(scrollElemsOpacity);
+        changeWheelScrollStep(wheelScrollStep);
+    }
 }
 
 eventManager.addOnceEventListener(window, 'load', hidePreload);
@@ -5313,14 +5305,21 @@ function hidePreload() {
     
         eventManager.addOnceEventListener(preloader, 'transitionend', () => {
             preloader.remove();
-            createPlaylist(curTracklist, true);
+            player.classList.add('show');
+
+            eventManager.addOnceEventListener(player, 'animationend', () => {
+                player.classList.remove('show');
+                player.classList.add('active');
+
+                createPlaylist(curTracklist, true);
     
-            setTimeout(() => {
-                tracklistDatabaseAction();
-                connectKeyHandlers();
-    
-                setTimeout(showLastPlayedTrackInfo, 1200);
-            }, 750);
+                setTimeout(() => {
+                    tracklistDatabaseAction();
+                    connectKeyHandlers();
+        
+                    setTimeout(showLastPlayedTrackInfo, 1200);
+                }, 750);
+            });
         });
     }, 0);
 }
