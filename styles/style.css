@@ -140,7 +140,10 @@ i {
     margin-left: var(--global-lateral-margin);
 }
 #tracklist-database.sticked-left.smooth-moving {
-    --animation-end-point: var(--global-lateral-margin);
+    transition:
+        margin var(--transition-time-moving) ease-in-out,
+        width var(--transition-time-moving) ease-in-out
+    ;
 }
 
 #tracklist-database h3.database-title {
@@ -195,7 +198,7 @@ i {
     opacity: 0;
 }
 #tracklist-database h3.database-title > span:hover::after {
-    animation: sheen 0.8s forwards ease-in-out;
+    animation: sheen 0.8s ease-in-out forwards;
 }
 @keyframes sheen {
     15%, 85% {
@@ -454,13 +457,10 @@ i {
 }
 
 #player {
-    --player-margin-left: calc(
-        50% - var(--player-lateral-padding) - var(--player-width)/2 + var(--scrollbar-y-width)*0.5
-    );
     position: relative;
     height: 100%;
     width: var(--player-width);
-    margin-left: var(--player-margin-left);
+    margin-left: calc(50% - var(--player-lateral-padding) - var(--player-width)/2 + var(--scrollbar-y-width)*0.5);
     padding: 26px var(--player-lateral-padding) 0;
     text-align: center;
     text-transform: uppercase;
@@ -471,7 +471,7 @@ i {
 }
 #player.show {
     transform-origin: 50% 0%;
-    animation: show-player 2.2s cubic-bezier(0.3,1,0.5,1.45);
+    animation: show-player 0.2s cubic-bezier(0.3,1,0.5,1.45) forwards;
 }
 @keyframes show-player {
     0% {
@@ -490,12 +490,11 @@ i {
 #player.active {
     opacity: 1;
 }
-#player-container.justify-right > #player,
 #tracklist-database.enabled + #player {
-    --player-margin-left: 0;
+    margin-left: 0;
 }
 #player.smooth-moving {
-    --animation-end-point: var(--player-margin-left);
+    transition: margin var(--transition-time-moving) ease-in-out;
 }
 
 .selected-track {
@@ -565,7 +564,7 @@ i {
     display: inline-block;
     position: relative;
     top: 0;
-    width: 400px;
+    width: 420px;
     height: 8px;
     margin: 0 12px;
     background-color: var(--player-color-neutral);
@@ -811,7 +810,7 @@ player-controls #volume-bar.active {
     pointer-events: none;
 }
 #playlist > .track.adding {
-    animation: add-track 0.5s ease-out;
+    animation: add-track 0.5s ease-out forwards;
 }
 @keyframes add-track {
     100% {
@@ -847,9 +846,12 @@ player-controls #volume-bar.active {
 #playlist > .track > .additionals {
     height: 100%;
     position: absolute;
-    left: 0;
+    left: 22px;
     top: 0;
     user-select: none;
+}
+#player-container.add-options-active #playlist > .track > .additionals {
+    left: 0;
 }
 #playlist > .track > .additionals::before {
     content: '';
@@ -1108,10 +1110,10 @@ player-controls #volume-bar.active {
     left: 14px;
     top: calc(50% - 0.625em + 0.5px);
     font-size: 15pt;
-    transform-origin: calc(50% + 0.5px) 50%;
+    transform-origin: calc(50% + 0.5px) 45%;
     transition:
         text-shadow var(--transition-time-main),
-        transform var(--transition-time-main)
+        transform /*var(--transition-time-main)*/10s
     ;
 }
 #tracklist-database-button.enabled > i {
@@ -1128,6 +1130,14 @@ player-controls #volume-bar.active {
 #tracklist-database-button.key-pressed > i {
     color: rgb(var(--player-color-emphase));
 }
+#tracklist-database-button.waiting > i {
+    animation: rotate-arrow var(--transition-time-moving) linear infinite;
+}
+@keyframes rotate-arrow {
+    100% {
+        transform: scale(80%) rotateZ(1turn);
+    }
+}
 
 .container-right-side {
     display: flex;
@@ -1135,14 +1145,14 @@ player-controls #volume-bar.active {
     justify-content: flex-end;
     position: relative;
 }
-.container-right-side.settings-enabled {
+.container-right-side.justify-space-between {
     justify-content: space-between;
 }
 
 #settings-area {
     position: sticky;
     top: 0;
-    margin-left: var(--global-lateral-margin);
+    margin: 0 var(--global-lateral-margin);
     color: var(--site-color-main);
     text-align: center;
     text-transform: none;
@@ -1472,15 +1482,6 @@ footer {
     text-align: center;
     font-size: 10pt;
     line-height: 1.5em;
-}
-
-.smooth-moving {
-    animation: move-block var(--transition-time-moving) ease-in-out;
-}
-@keyframes move-block {
-    100% {
-        margin-left: var(--animation-end-point);
-    }
 }
 
 @media screen and (orientation: portrait) {

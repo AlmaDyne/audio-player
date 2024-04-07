@@ -60,8 +60,9 @@ const clearPlaylistBtn = document.getElementById('clear-playlist');
 
 // Calculated and transformed constants
 const scrollbarWidth = getScrollbarWidth(),
-    globalLateralMargin = parseInt(getComputedStyle(playerContainer).getPropertyValue('--global-lateral-margin')),
+    globLateralMargin = parseInt(getComputedStyle(playerContainer).getPropertyValue('--global-lateral-margin')),
     settingsAreaWidth = getSettingsAreaWidth(),
+    minTracklistDtbsWidth = parseInt(getComputedStyle(tracklistDatabase).minWidth),
     maxTracklistDtbsWidth = parseInt(getComputedStyle(tracklistDatabase).maxWidth),
     defTracklistDtbsBtnHeight = parseInt(
         getComputedStyle(tracklistDtbsBtn.parentElement).getPropertyValue('--default-height')
@@ -2131,7 +2132,7 @@ playlistContainer.onpointerenter = () => {
 
     let activeElem = document.activeElement;
     let key = Array.from(activeScrollKeys)[activeScrollKeys.size - 1];
-    let isDocScrollbar = checkDocHeight();
+    let isDocScrollbar = isDocScrollbarCheck();
 
     if (!accelerateScrolling) return;
     if (!isDocScrollbar) return;
@@ -2156,7 +2157,7 @@ playlistContainer.onpointerleave = () => {
         let activeElem = document.activeElement;
         if (activeElem == visPlaylistArea) return;
 
-        let isDocScrollbar = checkDocHeight();
+        let isDocScrollbar = isDocScrollbarCheck();
         let key = Array.from(activeScrollKeys)[activeScrollKeys.size - 1];
         let direction = scrollingKeysData[key].direction;
         let isReachingLimits = checkReachingPlaylistBoundaries(direction);
@@ -2186,7 +2187,7 @@ visPlaylistArea.addEventListener('blur', () => {
 
     setTimeout(() => {
         let activeElem = document.activeElement;
-        let isDocScrollbar = checkDocHeight();
+        let isDocScrollbar = isDocScrollbarCheck();
 
         if (!isDocScrollbar) return;
         if (activeElem != document.body) return;
@@ -2366,7 +2367,7 @@ visPlaylistArea.onpointerdown = function(event) {
             if (!accelerateScrolling) {
                 alignPlaylist();
             } else {
-                let isDocScrollbar = checkDocHeight();
+                let isDocScrollbar = isDocScrollbarCheck();
     
                 if (isDocScrollbar && !cursorOverPlaylist) {
                     alignPlaylist();
@@ -2467,7 +2468,7 @@ function keepSelectedTitleVisible(audio) {
         let track = selectedAudio.parentElement;
         let trackRect = track.getBoundingClientRect();
         let initScrolled = window.scrollY;
-        let winHeight = isTouchDevice ? window.innerHeight : document.documentElement.clientHeight;
+        let winHeight = calcWinHeight();
         let heightShift = scrollablePlaylist ? playlistScrollArrowBoxHeight : 0;
         let y = initScrolled;
     
@@ -2586,7 +2587,7 @@ function checkIfPlaylistScrollingIsAllowed(key) {
         activeElem.scrollHeight > activeElem.clientHeight) return false;
     if (activeElem.matches('input[type="number"]') && (key == 'ArrowUp' || key == 'ArrowDown')) return false;
 
-    let isDocScrollbar = checkDocHeight();
+    let isDocScrollbar = isDocScrollbarCheck();
 
     if (isDocScrollbar) {
         if (
@@ -2708,7 +2709,7 @@ function scrollAndAlignPlaylist(options) {
         timerHideScrollElems = setTimeout(() => {
             let activeElem = document.activeElement;
             let key = Array.from(activeScrollKeys)[activeScrollKeys.size - 1];
-            let isDocScrollbar = checkDocHeight();
+            let isDocScrollbar = isDocScrollbarCheck();
 
             if (cursorOverPlaylist) return;
             if (pointerModeScrolling) return;
@@ -2935,7 +2936,7 @@ keysInfoBtn.onclick = showKeysInfo;
 function calcTracklistDtbsBtnPosition() {
     let tracklistDtbsBtnCont = tracklistDtbsBtn.parentElement;
     let tracklistDtbsBtnHeight = defTracklistDtbsBtnHeight;
-    let winHeight = isTouchDevice ? window.innerHeight : document.documentElement.clientHeight;
+    let winHeight = calcWinHeight();
     let playerRect = player.getBoundingClientRect();
     let playerScrolled = (playerRect.top < 0) ? Math.abs(playerRect.top) : 0;
     let playerTop = (playerRect.top < 0) ? 0 : playerRect.top;
@@ -2961,10 +2962,13 @@ function calcTracklistDtbsBtnPosition() {
 tracklistDtbsBtn.onclick = tracklistDatabaseAction;
 
 function tracklistDatabaseAction() {
+    let playerMoveInfo = JSON.parse(player.getAttribute('data-move-info'));
+
     if (
         tracklistDatabase.hasAttribute('data-change-width') ||
-        settingsArea.hasAttribute('data-move-player') ||
-        settingsArea.hasAttribute('data-wait-running-hide-settings')
+        settingsArea.hasAttribute('data-wait-running-hide-settings') ||
+        settingsArea.hasAttribute('data-wait-action') ||
+        (playerMoveInfo && playerMoveInfo.moving && playerMoveInfo.trigger === 'settingsArea')
     ) {
         console.log('+ wait tracklists action');
 
@@ -2972,76 +2976,97 @@ function tracklistDatabaseAction() {
         return;
     }
 
+    tracklistDtbsBtn.classList.remove('enabled');
+    tracklistDtbsBtn.classList.add('waiting');
+
     let isTracklistDtbsStickedLeft = tracklistDatabase.classList.contains('sticked-left');
-    let isTracklistDtbsMoved = tracklistDatabase.classList.contains('smooth-moving');
+    let isTracklistDtbsMoved = tracklistDatabase.hasAttribute('data-moving');
     let playerLeft = player.getBoundingClientRect().left + window.scrollX;
 
-    resetPropertiesAndHandlers();
+    resetTracklistDtbsAndPlayerStates();
     scrollDoc('left', 'smooth');
 
     if (!tracklistDatabase.classList.contains('enabled')) { // Move/show tracklists
+        //tracklistDtbsBtn.classList.add('enabled');
         tracklistDatabase.classList.add('enabled');
-        tracklistDtbsBtn.classList.add('enabled');
 
         checkPlayerContentJustify();
         checkGlobalStates();
         calcTracklistsTextIndent();
 
-        if (isTracklistDtbsStickedLeft) { // Move tracklists
+        let winWidth = calcWinWidth();
+        let minWinWidth = globLateralMargin * 4 + minTracklistDtbsWidth + player.offsetWidth + settingsAreaWidth;
+        let noSpaceForMoving = !settingsArea.hidden &&
+            playerContainer.dataset.windowWidth === 'between-justify-right-min-max' &&
+            winWidth >= minWinWidth
+        ;
+
+        if (isTracklistDtbsStickedLeft && !noSpaceForMoving) { // Move tracklists
             moveTracklistDatabase();
         } else { // Show tracklists
             activateTracklistDatabase();
         }
     } else { // Hide tracklists/move player
         if (tracklistDatabase.classList.contains('active')) { // Hide tracklists
-            tracklistDtbsBtn.classList.remove('enabled');
+            //tracklistDtbsBtn.classList.remove('enabled');
             disactivateTracklistDatabase();
         } else {
             if (isTracklistDtbsMoved) { // Cancel tracklists moving animation (move player)
-                tracklistDtbsBtn.classList.remove('enabled');
+                //tracklistDtbsBtn.classList.remove('enabled');
                 movePlayer();
             } else { // Cancel tracklists hiding animation (show tracklists)
-                tracklistDtbsBtn.classList.add('enabled');
+                //tracklistDtbsBtn.classList.add('enabled');
                 activateTracklistDatabase();
             }
         }
     }
             
     function moveTracklistDatabase() {
-        let curTracklistDtbsWidth = tracklistDatabase.offsetWidth;
-        let tracklistDtbsLeft = playerLeft - curTracklistDtbsWidth - globalLateralMargin;
+        tracklistDatabase.setAttribute('data-moving', '');
 
-        // The width is fixed, otherwise it changes after the margin-left is changed
+        let curTracklistDtbsWidth = tracklistDatabase.offsetWidth;
+        let tracklistDtbsLeft = playerLeft - curTracklistDtbsWidth - globLateralMargin;
+
         tracklistDatabase.style.width = curTracklistDtbsWidth + 'px'; 
         tracklistDatabase.style.marginLeft = tracklistDtbsLeft + 'px';
-
+        tracklistDatabase.offsetWidth; // Causes a reflow
         tracklistDatabase.classList.add('smooth-moving');
+        tracklistDatabase.style.marginLeft = globLateralMargin + 'px';
 
-        eventManager.addOnceEventListener(tracklistDatabase, 'animationend', endSmoothMoving);
+        eventManager.addOnceEventListener(tracklistDatabase, 'transitionend', endSmoothMoving);
     }
 
     function movePlayer() {
         console.log('+ move player (hide tracklist)');
+
+        player.setAttribute('data-move-info', '{"moving": true, "trigger": "tracklistDatabase"}');
         
         tracklistDatabase.classList.remove('enabled');
 
         player.style.marginLeft = playerLeft + 'px';
+        player.offsetWidth; // Causes a reflow
         player.classList.add('smooth-moving');
+        player.style.marginLeft = '';
 
-        eventManager.addOnceEventListener(player, 'animationend', endSmoothMoving);
+        eventManager.addOnceEventListener(player, 'transitionend', endSmoothMoving);
     }
 
     function endSmoothMoving(event) {
         console.log('+ end moving ' + event.target.id);
 
-        resetPropertiesAndHandlers();
+        resetTracklistDtbsAndPlayerStates();
         checkGlobalStates();
 
         if (tracklistDatabase.classList.contains('enabled')) { // Tracklists ends moving => Show tracklists
+            tracklistDatabase.removeAttribute('data-moving');
+
             scrollDoc('left', 'smooth');
             activateTracklistDatabase();
             checkPendingSettingsAction();
         } else { // Player ends moving => End animations
+            tracklistDtbsBtn.classList.remove('waiting');
+            tracklistDtbsBtn.classList.remove('enabled');
+
             let isDocScrolling = (!settingsArea.hidden && settingsArea.dataset.waitAction !== 'hideSettings') ?
                 scrollDoc('right', 'smooth') :
                 false;
@@ -3071,17 +3096,19 @@ function tracklistDatabaseAction() {
         }
     }
 
-    function resetPropertiesAndHandlers() {
+    function resetTracklistDtbsAndPlayerStates() {
+        tracklistDatabase.removeAttribute('data-moving');
+        player.removeAttribute('data-move-info');
+
         tracklistDatabase.style.width = '';
         tracklistDatabase.style.marginLeft = '';
         player.style.marginLeft = '';
-        player.style.removeProperty('--animation-end-point');
 
         tracklistDatabase.classList.remove('smooth-moving');
         player.classList.remove('smooth-moving');
 
-        eventManager.removeOnceEventListener(tracklistDatabase, 'animationend', 'endSmoothMoving');
-        eventManager.removeOnceEventListener(player, 'animationend', 'endSmoothMoving');
+        eventManager.removeOnceEventListener(tracklistDatabase, 'transitionend', 'endSmoothMoving');
+        eventManager.removeOnceEventListener(player, 'transitionend', 'endSmoothMoving');
         [].slice.call(tracklistDatabase.children).forEach(elem => {
             eventManager.clearEventHandlers(elem, 'transitionstart');
             eventManager.clearEventHandlers(elem, 'transitionend');
@@ -3119,7 +3146,12 @@ function tracklistDatabaseAction() {
             }
 
             if (i == n - 1) {
-                setAnimationEnd(tracklistDtbsElems[i], checkPendingSettingsAction);
+                setAnimationEnd(tracklistDtbsElems[i], () => {
+                    tracklistDtbsBtn.classList.remove('waiting');
+                    tracklistDtbsBtn.classList.add('enabled');
+
+                    checkPendingSettingsAction();
+                });
             }
         }
 
@@ -3151,6 +3183,9 @@ function tracklistDatabaseAction() {
                     if (isTracklistDtbsStickedLeft) {
                         movePlayer();
                     } else {
+                        tracklistDtbsBtn.classList.remove('waiting');
+                        tracklistDtbsBtn.classList.remove('enabled');
+
                         tracklistDatabase.classList.remove('enabled');
                     }
                 }
@@ -3236,13 +3271,13 @@ function showSettings() {
     settingsArea.setAttribute('data-showed', '');
     settingsArea.removeAttribute('data-wait-running-hide-settings');
 
-    if (!canAutoChangeWidth) eventManager.clearEventHandlers(player, 'animationend');
+    if (!canAutoChangeWidth) eventManager.clearEventHandlers(player, 'transitionend');
     if (hasScrollend) eventManager.removeOnceEventListener(document, 'scrollend', 'runHideSettings');
 
     if (tracklistDatabase.classList.contains('sticked-left') && !canAutoChangeWidth) {
         if ((
                 tracklistDatabase.hasAttribute('data-animate') || // Tracklists are showing/hiding
-                tracklistDatabase.classList.contains('smooth-moving') // Tracklists are moving
+                tracklistDatabase.hasAttribute('data-moving') // Tracklists are moving
             ) &&
             !settingsArea.hasAttribute('data-run-action') // No running pending action
         ) {
@@ -3256,18 +3291,22 @@ function showSettings() {
             console.log('+2');
     
             animateReducingTracklistDtbsWidth();
-        } else if (
-            playerContainer.dataset.windowWidth === 'below-justify-right-min' ||
-            playerContainer.dataset.windowWidth === 'between-justify-right-min-max' ||
-            player.classList.contains('smooth-moving')
-        ) {
-            console.log('+3 moving player');
-
-            animateMovingPlayer();
         } else {
-            console.log('+4');
+            let playerMoveInfo = JSON.parse(player.getAttribute('data-move-info'));
 
-            runShowSettings();
+            if (
+                playerContainer.dataset.windowWidth === 'below-justify-right-min' ||
+                playerContainer.dataset.windowWidth === 'between-justify-right-min-max' ||
+                (playerMoveInfo && playerMoveInfo.moving)
+            ) {
+                console.log('+3 moving player');
+    
+                animateMovingPlayer();
+            } else {
+                console.log('+4');
+    
+                runShowSettings();
+            }
         }
     } else {
         console.log('+5');
@@ -3279,10 +3318,8 @@ function showSettings() {
         let docWidth = calcDocWidth();
         let playerRight = player.getBoundingClientRect().right + window.scrollX;
         let restDocWidth = docWidth - playerRight;
-        let requiredDocWidth = globalLateralMargin + settingsAreaWidth;
-        let tracklistDtbsCompStyle = getComputedStyle(tracklistDatabase);
-        let curTracklistDtbsWidth = parseFloat(tracklistDtbsCompStyle.width);
-        let minTracklistDtbsWidth = parseInt(tracklistDtbsCompStyle.minWidth);
+        let requiredDocWidth = globLateralMargin * 2 + settingsAreaWidth;
+        let curTracklistDtbsWidth = parseFloat(getComputedStyle(tracklistDatabase).width);
     
         if (
             requiredDocWidth > restDocWidth &&
@@ -3323,28 +3360,24 @@ function showSettings() {
     }
 
     function animateMovingPlayer() {
-        settingsArea.setAttribute('data-move-player', '');
+        player.setAttribute('data-move-info', '{"moving": true, "trigger": "settingsArea"}');
 
-        let playerLeft = player.getBoundingClientRect().left + window.scrollX;
-
-        player.classList.remove('smooth-moving');
-        player.style.marginLeft = playerLeft + 'px';
-        player.offsetWidth; // Causes a reflow
         player.classList.add('smooth-moving');
 
         if (playerContainer.dataset.windowWidth !== 'above-justify-right-max') {
-            let winWidth = isTouchDevice ? window.innerWidth : document.documentElement.clientWidth;
-            let minWinWidth = player.offsetWidth + globalLateralMargin + settingsAreaWidth;
-            let animationEndPoint = winWidth - minWinWidth;
-            player.style.setProperty('--animation-end-point', animationEndPoint + 'px');
+            let winWidth = calcWinWidth();
+            let minWinWidth = player.offsetWidth + globLateralMargin * 2 + settingsAreaWidth;
+            let transitionEndPoint = winWidth - minWinWidth;
+            player.style.marginLeft = transitionEndPoint + 'px';
+        } else {
+            player.style.marginLeft = '';
         }
 
-        eventManager.addOnceEventListener(player, 'animationend', function() {
+        eventManager.addOnceEventListener(player, 'transitionend', function() {
             console.log('+ end moving player (show settings)');
 
-            settingsArea.removeAttribute('data-move-player');
+            player.removeAttribute('data-move-info');
             player.style.marginLeft = '';
-            player.style.removeProperty('--animation-end-point');
             player.classList.remove('smooth-moving');
 
             runShowSettings();
@@ -3356,7 +3389,7 @@ function showSettings() {
         settingsArea.hidden = false;
         settingsArea.removeAttribute('data-wait-action');
         settingsArea.removeAttribute('data-run-action');
-        settingsArea.parentElement.classList.add('settings-enabled');
+        settingsArea.parentElement.classList.add('justify-space-between');
 
         setScrollbarYWidth();
         checkPlayerContentJustify();
@@ -3394,7 +3427,7 @@ function hideSettings() {
     settingsArea.setAttribute('data-wait-running-hide-settings', '');
     settingsArea.classList.remove('active');
 
-    if (!canAutoChangeWidth) eventManager.clearEventHandlers(player, 'animationend');
+    if (!canAutoChangeWidth) eventManager.clearEventHandlers(player, 'transitionend');
 
     if (highlightActiveElem) {
         if (highlightActiveElem.closest('#settings-area')) {
@@ -3410,17 +3443,15 @@ function hideSettings() {
         console.log('-|1');
 
         setTimeout(() => eventManager.addOnceEventListener(document, 'scrollend', runHideSettings));
-        //eventManager.addOnceEventListener(document, 'scrollend', runHideSettings);
     } else if (!settingsArea.hidden) { // Hide settings after opasity == 0
         console.log('-|2');
 
         let settingsAreaCompStyle = getComputedStyle(settingsArea);
-        let transTime = parseFloat(settingsAreaCompStyle.transitionDuration) * 1000;
         let curSettingsAreaOpacity = parseFloat(settingsAreaCompStyle.opacity);
-
+        let transTime = parseFloat(settingsAreaCompStyle.transitionDuration) * 1000;
         transTime *= curSettingsAreaOpacity;
-        setTimeout(() => promiseChange(settingsBtn, 'KeyF', transTime, runHideSettings));
-        //promiseChange(settingsBtn, 'KeyF', transTime, runHideSettings);
+
+        promiseChange(settingsBtn, 'KeyF', transTime, runHideSettings);
     } else {
         console.log('-|3');
 
@@ -3434,7 +3465,7 @@ function hideSettings() {
             if (
                 (
                     tracklistDatabase.hasAttribute('data-animate') || // Tracklists are showing/hiding
-                    tracklistDatabase.classList.contains('smooth-moving') // Tracklists are moving
+                    tracklistDatabase.hasAttribute('data-moving') // Tracklists are moving
                 ) &&
                 !settingsArea.hasAttribute('data-run-action')// No running pending action
             ) {
@@ -3448,21 +3479,25 @@ function hideSettings() {
                 console.log('-2');
         
                 animateIncreasingTracklistDtbsWidth();
-            } else if (
-                (
-                    playerContainer.dataset.windowWidth === 'between-justify-right-min-max' ||
-                    player.classList.contains('smooth-moving')
-                ) &&
-                !settingsArea.hasAttribute('data-run-action')
-            ) {
-                console.log('-3');
-    
-                animateMovingPlayer();
             } else {
-                console.log('-4');
-    
-                endHideSettings();
-                checkTracklistDtbsAction();
+                let playerMoveInfo = JSON.parse(player.getAttribute('data-move-info'));
+
+                if (
+                    (
+                        playerContainer.dataset.windowWidth === 'between-justify-right-min-max' ||
+                        (playerMoveInfo && playerMoveInfo.moving)
+                    ) &&
+                    !settingsArea.hasAttribute('data-run-action')
+                ) {
+                    console.log('-3');
+        
+                    animateMovingPlayer();
+                } else {
+                    console.log('-4');
+        
+                    endHideSettings();
+                    checkTracklistDtbsAction();
+                }
             }
         } else {
             console.log('-5');
@@ -3472,16 +3507,14 @@ function hideSettings() {
         }
     
         function animateIncreasingTracklistDtbsWidth() {
-            let tracklistDtbsCompStyle = getComputedStyle(tracklistDatabase);
-            let curTracklistDtbsWidth = parseFloat(tracklistDtbsCompStyle.width);
+            let curTracklistDtbsWidth = parseFloat(getComputedStyle(tracklistDatabase).width);
     
             tracklistDatabase.style.width = curTracklistDtbsWidth + 'px';
             
             endHideSettings();
     
-            let minTracklistDtbsWidth = parseInt(tracklistDtbsCompStyle.minWidth);
             let docScrollArrowContainerWidth = docScrollArrowContainer.offsetWidth;
-            let requiredDocWidth = globalLateralMargin * 2 + minTracklistDtbsWidth + player.offsetWidth +
+            let requiredDocWidth = globLateralMargin * 2 + minTracklistDtbsWidth + player.offsetWidth +
                 docScrollArrowContainerWidth;
             let docWidth = calcDocWidth();
         
@@ -3527,28 +3560,27 @@ function hideSettings() {
         function animateMovingPlayer() {
             console.log('-3 moving player');
 
-            settingsArea.setAttribute('data-move-player', '');
+            player.setAttribute('data-move-info', '{"moving": true, "trigger": "settingsArea"}');
 
-            let playerLeft = player.getBoundingClientRect().left + window.scrollX;
+            if (!settingsArea.hidden) {
+                let playerLeft = player.getBoundingClientRect().left + window.scrollX;
 
-            //console.log(playerLeft);
-
+                endHideSettings();
+    
+                player.classList.remove('smooth-moving');
+                player.style.marginLeft = playerLeft + 'px';
+                player.offsetWidth; // Causes a reflow
+                player.classList.add('smooth-moving');
+            } else {
+                checkGlobalStates();
+            }
+            
             player.style.marginLeft = '';
-            player.style.removeProperty('--animation-end-point');
-            player.classList.remove('smooth-moving');
 
-            endHideSettings();
-
-            //console.log(getComputedStyle(player).marginLeft);
-
-            player.style.marginLeft = playerLeft + 'px';
-            player.classList.add('smooth-moving');
-
-            eventManager.addOnceEventListener(player, 'animationend', function() {
+            eventManager.addOnceEventListener(player, 'transitionend', function() {
                 console.log('+ end moving player (hide settings)');
 
-                settingsArea.removeAttribute('data-move-player');
-                player.style.marginLeft = '';
+                player.removeAttribute('data-move-info');
                 player.classList.remove('smooth-moving');
 
                 checkTracklistDtbsAction();
@@ -3561,7 +3593,7 @@ function hideSettings() {
             settingsArea.hidden = true;
             settingsArea.removeAttribute('data-wait-action');
             settingsArea.removeAttribute('data-run-action');
-            settingsArea.parentElement.classList.remove('settings-enabled');
+            settingsArea.parentElement.classList.remove('justify-space-between');
     
             checkGlobalStates();
         }
@@ -3585,9 +3617,10 @@ function checkTracklistDtbsAction() {
 }
 
 function checkPlayerContentJustify() {
-    let winWidth = isTouchDevice ? window.innerWidth : document.documentElement.clientWidth;
-    let maxWinWidthForSettings = (globalLateralMargin + settingsAreaWidth) * 2 + player.offsetWidth + curScrollbarYWidth;
-    let minWinWidthForSettings = player.offsetWidth + globalLateralMargin + settingsAreaWidth;
+    let winWidth = calcWinWidth();
+    let maxWinWidthForSettings = (globLateralMargin * 2 + settingsAreaWidth) * 2 + player.offsetWidth +
+        curScrollbarYWidth;
+    let minWinWidthForSettings = player.offsetWidth + globLateralMargin + settingsAreaWidth;
 
     if (winWidth < minWinWidthForSettings) {
         playerContainer.setAttribute('data-window-width', 'below-justify-right-min');
@@ -3606,7 +3639,9 @@ function checkPlayerContentJustify() {
     } else {
         playerContainer.classList.remove('justify-right');
 
-        if ( // Works when the window width has changed or the settings are shown in a small window
+        // Works when the window width has changed or
+        // the settings are shown with window width == 'below-justify-right-min'
+        if (
             winWidth < minWinWidthForSettings &&
             !tracklistDatabase.classList.contains('enabled') &&
             !settingsArea.hidden
@@ -3790,8 +3825,18 @@ function calcDocHeight() {
     );
 }
 
-function checkDocHeight() {
-    let winHeight = isTouchDevice ? window.innerHeight : document.documentElement.clientHeight;
+// Checking window sizes
+function calcWinWidth() {
+    return isTouchDevice ? window.innerWidth : document.documentElement.clientWidth;
+}
+
+function calcWinHeight() {
+    return isTouchDevice ? window.innerHeight : document.documentElement.clientHeight;
+}
+
+// Check Y-scrollbar
+function isDocScrollbarCheck() {
+    let winHeight = calcWinHeight();
     let docHeight = calcDocHeight();
 
     return (docHeight > winHeight) ? true : false;
@@ -3811,7 +3856,7 @@ function scrollDoc(direction, behavior = 'auto') {
     
     if (direction === 'right') {
         let docWidth = calcDocWidth();
-        let winWidth = isTouchDevice ? window.innerWidth : document.documentElement.clientWidth;
+        let winWidth = calcWinWidth();
         let restDocWidth = docWidth - winWidth - window.scrollX;
         if (!restDocWidth) return false;
 
@@ -3850,7 +3895,7 @@ document.addEventListener('click', (event) => {
 
         // Continuing scrolling the playlist if there is no doc scrollbar and active elem == body
         setTimeout(() => {
-            let isDocScrollbar = checkDocHeight();
+            let isDocScrollbar = isDocScrollbarCheck();
             if (!accelerateScrolling || isDocScrollbar) return;
 
             let key = Array.from(activeScrollKeys)[activeScrollKeys.size - 1];
@@ -3940,7 +3985,7 @@ function connectFocusHandler(elem) {
         if (accelerateScrolling) {
             if (!scrollablePlaylist) return;
 
-            let isDocScrollbar = checkDocHeight();
+            let isDocScrollbar = isDocScrollbarCheck();
             let key = Array.from(activeScrollKeys)[activeScrollKeys.size - 1];
             let direction = scrollingKeysData[key].direction;
             let isReachingLimits = checkReachingPlaylistBoundaries(direction);
@@ -4011,7 +4056,7 @@ visPlaylistArea.addEventListener('keydown', function(event) {
 
     if (!isPlaylistInView) {
         let selTrackRect = selTrack.getBoundingClientRect();
-        let winHeight = isTouchDevice ? window.innerHeight : document.documentElement.clientHeight;
+        let winHeight = calcWinHeight();
         let y;
 
         if (selTrackRect.top < playlistScrollArrowBoxHeight) {
@@ -4245,7 +4290,7 @@ window.addEventListener('resize', () => {
 function checkScrollElemsVisibility() {
     let playlistContainerRect = playlistContainer.getBoundingClientRect();
     let playlistLimRect = playlistLim.getBoundingClientRect();
-    let winHeight = isTouchDevice ? window.innerHeight : document.documentElement.clientHeight;
+    let winHeight = calcWinHeight();
     let isPlaylistInView = checkPlaylistInViewport();
     let heightShift = (isPlaylistInView || scrollablePlaylist) ? 0 : playlistScrollArrowBoxHeight;
     let docScrollArrowUpBox = docScrollArrowUp.parentElement;
@@ -4292,7 +4337,7 @@ function checkScrollElemsVisibility() {
 
 function checkPlaylistInViewport() {
     let playlistContainerRect = playlistContainer.getBoundingClientRect();
-    let winHeight = isTouchDevice ? window.innerHeight : document.documentElement.clientHeight;
+    let winHeight = calcWinHeight();
 
     if (playlistContainerRect.top < 0) return false;
     if (playlistContainerRect.bottom > winHeight) return false;
@@ -4303,7 +4348,7 @@ function checkPlaylistInViewport() {
 function setScrollbarYWidth() {
     if (!scrollbarWidth) return;
 
-    let isDocScrollbar = checkDocHeight();
+    let isDocScrollbar = isDocScrollbarCheck();
     curScrollbarYWidth = isDocScrollbar ? scrollbarWidth : 0;
 
     cssRoot.style.setProperty('--scrollbar-y-width', curScrollbarYWidth + 'px');
@@ -4520,7 +4565,7 @@ function changeNumberOfVisibleTracks(value) {
     scrollDoc('right', 'instant');
 
     if (accelerateScrolling) {
-        let isDocScrollbar = checkDocHeight();
+        let isDocScrollbar = isDocScrollbarCheck();
 
         if (isDocScrollbar) {
             stopScrolling(KEY_SCROLLING_TIME);
@@ -4886,7 +4931,7 @@ function addTracklistToPlaylist(tracklistSection, clearPlaylist) {
 }
 
 function checkTracklistDatabasePosition() {
-    let maxWinWidthForTracklistsDtbs = (globalLateralMargin * 2 + maxTracklistDtbsWidth) * 2 + player.offsetWidth;
+    let maxWinWidthForTracklistsDtbs = (globLateralMargin * 2 + maxTracklistDtbsWidth) * 2 + player.offsetWidth;
 
     if (window.innerWidth <= maxWinWidthForTracklistsDtbs) {
         tracklistDatabase.classList.add('sticked-left');
@@ -5314,7 +5359,7 @@ function hidePreload() {
                 createPlaylist(curTracklist, true);
     
                 setTimeout(() => {
-                    tracklistDatabaseAction();
+                    //tracklistDatabaseAction();
                     connectKeyHandlers();
         
                     setTimeout(showLastPlayedTrackInfo, 1200);
