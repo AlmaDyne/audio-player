@@ -5315,60 +5315,6 @@ function saveLastPlayedAudioInfo(audio) {
     document.cookie = `${lastPlayDate}; path=/; expires=${dateExpires}`;
 }
 
-////////////////////////////////////
-// Run initials and window onload //
-////////////////////////////////////
-
-runInitials();
-
-function runInitials() {
-    initVisibleTracksCheckbox();
-    initAddOptionsCheckbox();
-    initFocusHandlerConnections();
-    initCheckboxEnterKeyDownConnections();
-    initTooltipHoverIntentConnections();
-    initPlayerChanges();
-    createTracklistDatabase(tracklistObjData);
-
-    function initPlayerChanges() {
-        changeConfig(configsBank.indexOf(config));
-        changeNumberOfVisibleTracks(numOfVisTracks);
-        changePlayerColor(playerColorsBank.indexOf(playerColor) );
-        changePlaylistStyle(playlistStylesBank.indexOf(playlistStyle));
-        changeInitialVolume(settedVolume);
-        changeScrollElemsOpacity(scrollElemsOpacity);
-        changeWheelScrollStep(wheelScrollStep);
-    }
-}
-
-eventManager.addOnceEventListener(window, 'load', hidePreload);
-
-function hidePreload() {
-    setTimeout(() => {
-        document.body.classList.remove('loading');
-        preloader.classList.remove('active');
-    
-        eventManager.addOnceEventListener(preloader, 'transitionend', () => {
-            preloader.remove();
-            player.classList.add('show');
-
-            eventManager.addOnceEventListener(player, 'animationend', () => {
-                player.classList.remove('show');
-                player.classList.add('active');
-
-                createPlaylist(curTracklist, true);
-    
-                setTimeout(() => {
-                    //tracklistDatabaseAction();
-                    connectKeyHandlers();
-        
-                    setTimeout(showLastPlayedTrackInfo, 1200);
-                }, 750);
-            });
-        });
-    }, 0);
-}
-
 //////////////////
 // Key handlers //
 //////////////////
@@ -5581,4 +5527,58 @@ function connectKeyHandlers() {
             console.log(eventManager.eventTypesByElement);
         }
     });
+}
+
+//////////////////////////////////
+// Run initials and window load //
+//////////////////////////////////
+
+runInitials();
+
+function runInitials() {
+    initVisibleTracksCheckbox();
+    initAddOptionsCheckbox();
+    initFocusHandlerConnections();
+    initCheckboxEnterKeyDownConnections();
+    initTooltipHoverIntentConnections();
+    initPlayerChanges();
+    createTracklistDatabase(tracklistObjData);
+
+    function initPlayerChanges() {
+        changeConfig(configsBank.indexOf(config));
+        changeNumberOfVisibleTracks(numOfVisTracks);
+        changePlayerColor(playerColorsBank.indexOf(playerColor) );
+        changePlaylistStyle(playlistStylesBank.indexOf(playlistStyle));
+        changeInitialVolume(settedVolume);
+        changeScrollElemsOpacity(scrollElemsOpacity);
+        changeWheelScrollStep(wheelScrollStep);
+    }
+}
+
+eventManager.addOnceEventListener(window, 'load', hidePreload);
+
+function hidePreload() {
+    setTimeout(() => {
+        document.body.classList.remove('loading');
+        preloader.classList.remove('active');
+    
+        eventManager.addOnceEventListener(preloader, 'transitionend', () => {
+            preloader.remove();
+            player.classList.add('show');
+
+            eventManager.addOnceEventListener(player, 'animationend', () => {
+                player.classList.remove('show');
+                player.classList.add('active');
+
+                createPlaylist(curTracklist, true);
+    
+                setTimeout(() => {
+                    tracklistDatabaseAction();
+                    connectKeyHandlers();
+        
+                    setTimeout(showLastPlayedTrackInfo, 1200);
+                }, 750);
+            });
+        });
+    }, 0);
 }

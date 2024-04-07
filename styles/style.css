@@ -471,16 +471,21 @@ i {
 }
 #player.show {
     transform-origin: 50% 0%;
-    animation: show-player 0.2s cubic-bezier(0.3,1,0.5,1.45) forwards;
+    animation: show-player 1.8s cubic-bezier(0.3,1,0.5,1.4) forwards;
 }
 @keyframes show-player {
     0% {
         transform: perspective(1200px) rotate3d(1, 0.75, 0.5, -90deg) scale(50%);
     }
-    50% {
+    45% {
         transform: perspective(1200px) rotate3d(1, 0.75, 0.5, 0) scale(50%);
         opacity: 1;
-        animation-timing-function: cubic-bezier(.6,-0.25,.4,1.25);
+        animation-timing-function: ease-out;
+    }
+    60% {
+        transform: perspective(1200px) rotate3d(1, 0.5, 0.1, -25deg) scale(50%);
+        opacity: 1;
+        animation-timing-function: cubic-bezier(.6,0,.4,1.35);
     }
     100% {
         transform: none;
