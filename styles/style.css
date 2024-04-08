@@ -1230,6 +1230,7 @@ player-controls #volume-bar.active {
     color: rgb(var(--player-color-emphase));
 }
 #tracklist-database-button.waiting > i {
+    color: rgb(var(--player-color-emphase));
     animation: rotate-arrow var(--transition-time-moving) linear infinite;
 }
 @keyframes rotate-arrow {
