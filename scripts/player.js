@@ -5558,6 +5558,10 @@ function runInitials() {
 eventManager.addOnceEventListener(window, 'load', hidePreload);
 
 function hidePreload() {
+    console.log(performance.now());
+
+    let hidePreloadDelay = (performance.now() < 500) ? (500 - performance.now()) : 0;
+
     setTimeout(() => {
         document.body.classList.remove('loading');
         preloader.classList.remove('active');
@@ -5580,5 +5584,5 @@ function hidePreload() {
                 }, 750);
             });
         });
-    }, 0);
+    }, hidePreloadDelay);
 }

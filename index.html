@@ -16,7 +16,13 @@
                 console.error(`${message}\nВ ${line}:${col} на ${url}`);
             };
         </script>
-        <div id="preloader" class="active"></div>
+        <div id="preloader" class="modal-container active"
+            ><div class="box">
+                <div class="central-point">
+                    <span class="symbol">&#119070;</span>
+                </div>
+            </div>
+        </div>
         <header></header>
         <main id="player-container" data-initial>
             <aside id="tracklist-database">
@@ -172,7 +178,7 @@
                         <i id="playlist-style" class="icon-align-center" data-tooltip="Playlist style"></i>
                     </div>
                     <div class="center-col">
-                        <span class="version">v1.1.22</span>
+                        <span class="version">v1.1.23</span>
                     </div>
                     <div class="right-col">
                         <i id="settings" class="icon-cog-circled" data-tooltip="Settings"></i>
