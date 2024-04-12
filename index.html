@@ -28,53 +28,59 @@
             <aside id="tracklist-database">
                 <h3 class="database-title"><span>Tracklists:</span></h3>
                 
-                <!-- Example tracklist-section tree
+                <div id="tracklists-container">
+                    <!-- Example tracklist-section tree
 
-                <section class="tracklist-section" tabindex="0">
-                    <div class="tracklist-menu">
-                        <div class="buttons-box left">
-                            <i class="icon-cancel delete-tracklist-tracks" data-tooltip="Delete tracks from the tracklist"></i>
-                        </div>
-                        <div class="tracklist-title-box">
-                            <h4><span class="tracklist-title" data-tooltip="Expand for details">Tracklist Title</span></h4>
-                        </div>
-                        <div class="buttons-box right">
-                            <i class="icon-list" data-tooltip="Replace playlist" data-clear></i>
-                            <i class="icon-list-add" data-tooltip="Add to playlist"></i>
-                        </div>
-                    </div>
-                    <div class="tracklist-details">
-                        <header>
-                            <p>
-                                <input id="checkbox-tracklist[1]-all" type="checkbox" checked
-                                ><label for="checkbox-tracklist[1]-all" class="designed-checkbox"></label
-                                ><label for="checkbox-tracklist[1]-all"><span>Check/uncheck all tracks</span></label>
-                            </p>
-                        </header>
-                        <main class="details-main">
-                            <div class="cover-box">
-                                <img src="" alt="Tracklist Title Cover">
+                    <section class="tracklist-section" tabindex="0">
+                        <div class="tracklist-menu">
+                            <div class="buttons-box left">
+                                <i class="icon-cancel delete-tracklist-tracks" data-tooltip="Delete tracks from the tracklist"></i>
                             </div>
-                            <ul class="list">
-                                <li data-src="">
-                                    <input id="checkbox-tracklist[1]-track[1]" type="checkbox" checked
-                                    ><label for="checkbox-tracklist[1]-track[1]" class="designed-checkbox"></label
-                                    ><label for="checkbox-tracklist[1]-track[1]"
-                                        ><div class="order"><span>1.</span></div
-                                        ><span class="track-artist">Artist</span
-                                        ><span> &ndash; </span
-                                        ><span class="track-title">Track Title</span>
-                                    </label>
-                                </li>
-                            </ul>
-                        </main>
-                    </div>
+                            <div class="tracklist-title-box">
+                                <h4><span class="tracklist-title" data-tooltip="Expand for details">Tracklist Title</span></h4>
+                            </div>
+                            <div class="buttons-box right">
+                                <i class="icon-list tracklist-to-playlist" data-tooltip="Replace playlist" data-clear></i>
+                                <i class="icon-list-add tracklist-to-playlist" data-tooltip="Add to playlist"></i>
+                            </div>
+                        </div>
+                        <div class="tracklist-details"> data-id="trlDetails[1]"
+                            <header>
+                                <p>
+                                    <input id="checkbox-tracklist[1]-all" type="checkbox" checked
+                                    ><label for="checkbox-tracklist[1]-all" class="designed-checkbox"></label
+                                    ><label for="checkbox-tracklist[1]-all"><span>Check/uncheck all tracks</span></label>
+                                </p>
+                            </header>
+                            <main class="details-main">
+                                <div class="cover-box">
+                                    <img src="" alt="Tracklist Title Cover">
+                                </div>
+                                <ul class="list">
+                                    <li data-src="">
+                                        <input id="checkbox-tracklist[1]-track[1]" type="checkbox" checked
+                                        ><label for="checkbox-tracklist[1]-track[1]" class="designed-checkbox"></label
+                                        ><label for="checkbox-tracklist[1]-track[1]"
+                                            ><div class="order"><span>1.</span></div
+                                            ><span class="track-artist">Artist</span
+                                            ><span> &ndash; </span
+                                            ><span class="track-title">Track Title</span>
+                                        </label>
+                                    </li>
+                                </ul>
+                            </main>
+                        </div>
+                    </section>
+                    -->
+                </div>
+                
+                <section class="add-controls">
+                    <i id="expand-all-tracklist-details" class="icon-plus-squared-alt add-controls-button" data-tooltip="Expand all tracklist details"></i
+                    ><i id="collapse-all-tracklist-details" class="icon-minus-squared-alt add-controls-button" data-tooltip="Collapse all tracklist details"></i
+                    ><button id="clear-playlist" class="add-controls-button" data-tooltip="Clear playlist">
+                        <img src="img/icons/clear.png" alt="Clear">
+                    </button>
                 </section>
-                -->
-
-                <button id="clear-playlist" data-tooltip="Clear playlist">
-                    <img src="img/icons/clear.png" alt="Clear">
-                </button>
             </aside>
 
             <div id="player">
@@ -201,7 +207,7 @@
                     <section class="setting-section">
                         <input id="visible-tracks-checkbox" type="checkbox">
                         <label for="">Set own number of visible tracks (0-999)</label>
-                        <input id="visible-tracks-input" type="number" min="0" max="999" disabled>
+                        <input id="visible-tracks-input" type="number" min="0" max="999" value="7">
                     </section>
                     <section class="setting-section">
                         <label for="scroll-elements-opacity-input">Playlist scroll elements opacity (0-100)</label>
@@ -221,7 +227,7 @@
                     <button id="close-settings" class="close-block"><i class="icon-cancel"></i></button>
                 </div>
 
-                <div id="document-scroll-arrows-container">
+                <div id="document-scroll-arrows-container" hidden>
                     <div class="box" hidden>
                         <i id="document-scroll-arrow-up" class="icon-up-circled scroll-arrow"></i>
                     </div>

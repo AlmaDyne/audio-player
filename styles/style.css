@@ -1,6 +1,6 @@
 :root {
     --scrollbar-y-width: 0px;
-    --page-footer-height: 50px;
+    --site-footer-height: 50px;
     --site-color-main: #fafafa;
     --site-shadow-hover: 0 0 12px rgba(240, 240, 240, 0.5);
     --transition-time-main: 120ms;
@@ -30,6 +30,28 @@ body {
     font: 12pt/1.25 'Inter', 'Times New Roman', Times, serif;
     font-weight: normal;
     font-style: normal;
+}
+body.loading {
+    overflow-x: hidden;
+}
+
+h1 {
+    font-family: 'Garet';
+    font-size: 55pt;
+    text-transform: uppercase;
+}
+h2 {
+    font-size: 28pt;
+    font-weight: normal;
+}
+i {
+    display: inline-block;
+    border-radius: 50%;
+    cursor: pointer;
+    transition:
+        color var(--transition-time-main),
+        text-shadow var(--transition-time-main)
+    ;
 }
 
 .modal-container {
@@ -80,7 +102,7 @@ body {
     #preloader > .box > .central-point {
         /* Альтернативная анимация, если offset-path не поддерживается */
         top: 24%;
-        animation: linear-move-in-eight 4s linear infinite;
+        animation: linear-move-in-eight 5s linear infinite;
     }
 }
 @keyframes curved-move-in-eight {
@@ -142,25 +164,6 @@ body {
     }
 }
 
-h1 {
-    font-family: 'Garet';
-    font-size: 55pt;
-    text-transform: uppercase;
-}
-h2 {
-    font-size: 28pt;
-    font-weight: normal;
-}
-i {
-    display: inline-block;
-    border-radius: 50%;
-    cursor: pointer;
-    transition:
-        color var(--transition-time-main),
-        text-shadow var(--transition-time-main)
-    ;
-}
-
 #player-container {
     --global-lateral-margin: 3px;
     --global-border-radius: 36px;
@@ -169,8 +172,12 @@ i {
     --player-width: 550px;
     --player-lateral-padding: 20px;
     --scroll-elements-opacity: 0;
+    min-height: 100%;
     display: flex;
-    padding: 50px 0 calc(50px + var(--page-footer-height));
+    padding: 50px 0 calc(50px + var(--site-footer-height));
+
+    outline: 1px solid #f0e006;
+    box-sizing: border-box;
 }
 #player-container.justify-right {
     justify-content: flex-end;
@@ -225,7 +232,7 @@ i {
     text-align: center;
     transition: width var(--transition-time-moving) ease-in-out;
 
-    /*outline: 1px solid;*/
+    outline: 1px solid;
 }
 #tracklist-database.enabled {
     display: block;
@@ -258,6 +265,8 @@ i {
         top var(--database-title-active-transition),
         opacity var(--database-title-active-transition)
     ;
+
+    outline: 1px solid;
 }
 #tracklist-database.active h3.database-title{
     --database-title-timing-function: cubic-bezier(.18,.52,.5,1.7);
@@ -306,13 +315,22 @@ i {
     }
 }
 
-#tracklist-database .tracklist-section {
+#tracklists-container {
+    max-height: 100%;
+    overflow: auto;
+
+    outline: 1px solid #0ea109;
+}
+#tracklists-container.scrollable {
+    padding-right: 3px;
+}
+#tracklists-container > .tracklist-section {
     --symmetrical-padding: 6px;
     --tracklist-section-timing-function: ease-out;
     --tracklist-section-active-transition: 0.2s var(--tracklist-section-timing-function);
     position: relative;
-    left: calc((-1)*var(--tracklist-database-max-width));
-    margin: 50px 0;
+    left: -100%;
+    margin-top: 50px;
     background: var(--player-background-color-gradient);
     border-radius: 20px;
     overflow: hidden;
@@ -322,10 +340,13 @@ i {
         opacity var(--tracklist-section-active-transition)
     ;
 }
-#tracklist-database.active .tracklist-section{
+#tracklists-container > .tracklist-section:first-child {
+    margin-top: 0;
+}
+#tracklist-database.active #tracklists-container > .tracklist-section{
     --tracklist-section-timing-function: ease-in;
 }
-#tracklist-database .tracklist-section.show {
+#tracklists-container > .tracklist-section.show {
     left: 0;
     opacity: 1;
 }
@@ -340,6 +361,7 @@ i {
     vertical-align: middle;
     padding: 4px var(--symmetrical-padding);
     text-align: right;
+    overflow-wrap: anywhere;
 }
 .tracklist-menu .tracklist-title {
     font-size: 13pt;
@@ -387,7 +409,7 @@ i {
 
 .tracklist-details {
     --cover-width: 120px;
-    height: 0;
+    height: 0px;
     font-size: 11pt;
     transition: height 350ms ease-out;
 }
@@ -513,10 +535,16 @@ i {
     padding: 0 4px;
 }
 
-#tracklist-database #clear-playlist {
+.add-controls {
+    margin-top: 50px;
+
+    outline: 1px solid;
+}
+.add-controls > .add-controls-button {
     --clear-playlist-timing-function: cubic-bezier(.5,-0.7,.82,.48);
     --clear-playlist-active-transition: 0.3s var(--clear-playlist-timing-function);
-    padding: 9px;
+    margin-right: 20px;
+    vertical-align: bottom;
     border-radius: 50%;
     color: var(--player-color-main);
     background: var(--player-background-color-gradient);
@@ -529,7 +557,19 @@ i {
         transform var(--clear-playlist-active-transition)
     ;
 }
-#tracklist-database #clear-playlist > img {
+.add-controls > i {
+    --i-padding: 3px;
+    padding: var(--i-padding);
+    width: calc(1.25em + var(--i-padding));
+    height: calc(1.25em + var(--i-padding));
+    line-height: calc(1.25em + var(--i-padding));
+    font-size: 24pt;
+}
+.add-controls > #clear-playlist.add-controls-button {
+    margin-right: 0;
+    padding: 9px;
+}
+.add-controls > #clear-playlist.add-controls-button > img {
     width: 32px;
     height: 32px;
     vertical-align: middle; /* Убрать нижний отступ */
@@ -540,13 +580,10 @@ i {
     transition: filter var(--transition-time-main);
     pointer-events: none;
 }
-#tracklist-database #clear-playlist:hover {
-    box-shadow: var(--site-shadow-hover);
-}
-#tracklist-database.active #clear-playlist{
+#tracklist-database.active > .add-controls > .add-controls-button{
     --clear-playlist-timing-function: cubic-bezier(.18,.52,.5,1.7);
 }
-#tracklist-database #clear-playlist.show {
+.add-controls > .add-controls-button.show {
     transform: scale(1, 1);
 }
 
@@ -565,7 +602,7 @@ i {
 }
 #player.show {
     transform-origin: 50% 0%;
-    animation: show-player 1.8s cubic-bezier(0.3,1,0.5,1.4) forwards;
+    animation: show-player 0.18s cubic-bezier(0.3,1,0.5,1.4) forwards;
 }
 @keyframes show-player {
     0% {
@@ -1062,19 +1099,6 @@ player-controls #volume-bar.active {
     ;
 }
 
-@media (hover: hover) { /* For desktop */
-    #playlist > .track > .track-title-limiter > .track-title:hover {
-        text-shadow: var(--player-shadow-hover);
-        background-image: var(--player-background-hover1);
-    }
-}
-@media (hover: none) { /* For mobile */
-    #playlist > .track > .track-title-limiter > .track-title:active {
-        text-shadow: var(--player-shadow-hover);
-        background-image: var(--player-background-hover1);
-    }
-}
-
 #playlist > .track > .load-info {
     position: relative;
     padding-left: 7px;
@@ -1210,10 +1234,7 @@ player-controls #volume-bar.active {
     top: calc(50% - 0.625em + 0.5px);
     font-size: 15pt;
     transform-origin: calc(50% + 0.5px) 45%;
-    transition:
-        text-shadow var(--transition-time-main),
-        transform /*var(--transition-time-main)*/10s
-    ;
+    transition: text-shadow var(--transition-time-main);
 }
 #tracklist-database-button.enabled > i {
     transform: rotateY(180deg);
@@ -1235,7 +1256,7 @@ player-controls #volume-bar.active {
 }
 @keyframes rotate-arrow {
     100% {
-        transform: scale(80%) rotateZ(1turn);
+        transform: scale(80%) rotateY(0) rotateZ(1turn);
     }
 }
 
@@ -1244,6 +1265,8 @@ player-controls #volume-bar.active {
     flex-direction: column;
     justify-content: flex-end;
     position: relative;
+
+    border: 1px solid;
 }
 .container-right-side.justify-space-between {
     justify-content: space-between;
@@ -1253,6 +1276,7 @@ player-controls #volume-bar.active {
     position: sticky;
     top: 0;
     margin: 0 var(--global-lateral-margin);
+    /*padding: 0 3px;*/
     color: var(--site-color-main);
     text-align: center;
     text-transform: none;
@@ -1260,7 +1284,7 @@ player-controls #volume-bar.active {
     opacity: 0;
     transition: opacity var(--transition-time-main);
 
-    /*border: 1px solid;*/
+    border: 1px solid;
 }
 #settings-area.active {
     opacity: 1;
@@ -1321,15 +1345,18 @@ player-controls #volume-bar.active {
     width: max-content;
     z-index: 1;
 
-    /*border: 1px solid;*/
+    outline: 1px solid;
+}
+#document-scroll-arrows-container.fixed-height {
+    padding-bottom: calc(20pt*1.25 + 6px*2 + 8px);
+}
+#document-scroll-arrows-container.fixed-width {
+    width: calc(20pt*1.25 + 6px*2 + 8px*2);
 }
 #document-scroll-arrows-container .box {
     margin: 8px;
 
-    /*outline: 1px solid #0ea109;*/
-}
-#document-scroll-arrows-container .box.increased-margin-bottom {
-    margin-bottom: calc(20pt*1.25 + 6px*2 + 8px*2); /* Размер внешней стрелки с полями и отступами */
+    outline: 1px solid #0ea109;
 }
 #document-scroll-arrows-container i.scroll-arrow {
     padding: 6px;
@@ -1338,9 +1365,6 @@ player-controls #volume-bar.active {
     cursor: pointer;
     opacity: var(--scroll-elements-opacity);
     transition: background-color var(--transition-time-main);
-}
-#document-scroll-arrows-container i.scroll-arrow:hover {
-    background-color: var(--player-color-main-invert);
 }
 
 .keys-info {
@@ -1499,7 +1523,7 @@ player-controls #volume-bar.active {
 }
 
 #player-container i:not(.icon-fast-forward, .icon-fast-backward, .icon-left-open):active,
-#clear-playlist:active,
+.add-controls-button:active,
 .key-pressed:not(#tracklist-database-button) {
     outline: 1px solid currentColor;
 }
@@ -1553,10 +1577,35 @@ footer {
     left: 0;
     bottom: 0;
     width: 100%;
-    height: var(--page-footer-height);
+    height: var(--site-footer-height);
     text-align: center;
     font-size: 10pt;
     line-height: 1.5em;
+}
+
+@media (hover: hover) { /* For desktop */
+    .add-controls > .add-controls-button:hover {
+        box-shadow: var(--site-shadow-hover);
+    }
+    #document-scroll-arrows-container i.scroll-arrow:hover {
+        background-color: var(--player-color-main-invert);
+    }
+    #playlist > .track > .track-title-limiter > .track-title:hover {
+        text-shadow: var(--player-shadow-hover);
+        background-image: var(--player-background-hover1);
+    }
+}
+@media (hover: none) { /* For mobile */
+    .add-controls > .add-controls-button:active {
+        box-shadow: var(--site-shadow-hover);
+    }
+    #document-scroll-arrows-container i.scroll-arrow:active {
+        background-color: var(--player-color-main-invert);
+    }
+    #playlist > .track > .track-title-limiter > .track-title:active {
+        text-shadow: var(--player-shadow-hover);
+        background-image: var(--player-background-hover1);
+    }
 }
 
 @media screen and (orientation: portrait) {

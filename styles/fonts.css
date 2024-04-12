@@ -19,13 +19,14 @@
          url('../fonts/fontello/fontello.svg?78838771#fontello') format('svg');
 }
 [class^="icon-"]:before, [class*=" icon-"]:before {
+    /*--default-padding: 0;*/
     font-family: 'fontello';
     font-weight: normal;
     font-style: normal;
     display: inline-block;
-    width: 1.25em;
-    height: 1.25em;
-    line-height: 1.25;
+    width: 1.25em; /* calc(1.25em + var(--default-padding)) */
+    height: 1.25em; /* calc(1.25em + var(--default-padding)) */
+    line-height: 1.25; /* calc(1.25em + var(--default-padding)) */
     text-decoration: inherit;
     text-align: center;
     font-variant: normal;
@@ -59,6 +60,8 @@
 .icon-up-circled:before { content: '\e816'; } /* '' */
 .icon-down-circled:before { content: '\e817'; } /* '' */
 .icon-left-open:before { content: '\e819'; } /* '' */
+.icon-minus-squared-alt:before { content: '\f147'; } /* '' */
+.icon-plus-squared-alt:before { content: '\f196'; } /* '' */
 .icon-brush:before { content: '\f1fc'; } /* '' */
 .icon-envelope-open:before { content: '\f2b6'; } /* '' */
 .icon-facebook-squared:before { content: '\f308'; } /* '' */
