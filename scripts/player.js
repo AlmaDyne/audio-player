@@ -3003,11 +3003,10 @@ function tracklistDatabaseAction() {
     if (!tracklistDatabase.classList.contains('enabled')) { // Move/show tracklists
         tracklistDatabase.classList.add('enabled');
 
-        checkGlobalStates();
         calcTracklistsTextIndent();
-        calcTracklistsContainerMaxHeight();
         checkPlayerContentJustify();
-        setScrollbarYWidth();
+        calcTracklistsContainerMaxHeight();
+        checkGlobalStates();
 
         let tracklistDtbsLeft = playerLeft - tracklistDatabase.offsetWidth;
         let noSpaceForMoving = (tracklistDtbsLeft === 0) ? true : false;
@@ -4897,18 +4896,11 @@ function toggleTracklistDetails(tracklistSection, targetState = null) {
 
     eventManager.addOnceEventListener(tracklistDetails, 'transitionend', endHeightChanging);
 
-    let isDocScrollbarStart = isDocScrollbarCheck();
-
     trlDetailsAnimationFrameIds[trlDetailsId] = requestAnimationFrame(function checkScrollbarY() {
+        setScrollbarYWidth();
         checkTracklistsContainerScrollability();
-
-        let isDocScrollbarCurrent = isDocScrollbarCheck();
-
-        if (isDocScrollbarCurrent !== isDocScrollbarStart) {
-            setScrollbarYWidth();
-        } else {
-            trlDetailsAnimationFrameIds[trlDetailsId] = requestAnimationFrame(checkScrollbarY);
-        }
+        
+        trlDetailsAnimationFrameIds[trlDetailsId] = requestAnimationFrame(checkScrollbarY);
     });
 
     function endHeightChanging() {

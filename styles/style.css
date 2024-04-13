@@ -176,6 +176,7 @@ i {
     min-height: 100%;
     display: flex;
     padding: 50px 0 calc(50px + var(--site-footer-height));
+    box-sizing: border-box;
 
     /*outline: 1px solid #f0e006;*/
 }
@@ -332,6 +333,7 @@ i {
     /*outline: 1px solid #0ea109;*/
 }
 #tracklists-container.scrollable {
+    margin-right: 0;
     padding-right: var(--common-spacing);
 }
 
@@ -569,12 +571,12 @@ i {
     ;
 }
 .add-controls > i {
-    --i-padding: 3px;
+    --i-padding: 4px;
     padding: var(--i-padding);
     width: calc(1.25em + var(--i-padding));
     height: calc(1.25em + var(--i-padding));
     line-height: calc(1.25em + var(--i-padding));
-    font-size: 24pt;
+    font-size: 23pt;
 }
 .add-controls > #clear-playlist.add-controls-button {
     margin-right: 0;
