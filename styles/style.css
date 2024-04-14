@@ -1,5 +1,5 @@
 :root {
-    --scrollbar-y-width: 0px;
+    --document-scrollbar-y-width: 0px;
     --site-footer-height: 50px;
     --site-color-main: #fafafa;
     --site-shadow-hover: 0 0 12px rgba(240, 240, 240, 0.5);
@@ -232,7 +232,8 @@ i {
     max-width: var(--tracklist-database-max-width);
     height: 100%;
     margin-left: calc(
-        50% - var(--tracklist-database-max-offset-width) - var(--player-offset-width)/2 + var(--scrollbar-y-width)*0.5
+        50% - var(--tracklist-database-max-offset-width) - var(--player-offset-width)/2 +
+        var(--document-scrollbar-y-width)*0.5
     );
     padding: 0 var(--common-spacing);
     color: var(--player-color-main);
@@ -248,8 +249,9 @@ i {
     margin-left: 0;
 }
 #tracklist-database.sticked-left.smooth-moving {
+    will-change: margin-left, width;
     transition:
-        margin var(--transition-time-moving) ease-in-out,
+        margin-left var(--transition-time-moving) ease-in-out,
         width var(--transition-time-moving) ease-in-out
     ;
 }
@@ -335,6 +337,9 @@ i {
 #tracklists-container.scrollable {
     margin-right: 0;
     padding-right: var(--common-spacing);
+}
+#tracklists-container.no-animation * {
+    transition: none !important;
 }
 
 #tracklists-container > .tracklist-section {
@@ -604,7 +609,7 @@ i {
     position: relative;
     height: 100%;
     width: var(--player-width);
-    margin-left: calc(50% - var(--player-offset-width)/2 + var(--scrollbar-y-width)*0.5);
+    margin-left: calc(50% - var(--player-offset-width)/2 + var(--document-scrollbar-y-width)*0.5);
     padding: 26px var(--player-lateral-padding) 0;
     text-align: center;
     text-transform: uppercase;
@@ -643,7 +648,8 @@ i {
     margin-left: 0;
 }
 #player.smooth-moving {
-    transition: margin var(--transition-time-moving) ease-in-out;
+    will-change: margin-left;
+    transition: margin-left var(--transition-time-moving) ease-in-out;
 }
 
 .selected-track {
