@@ -24,7 +24,7 @@ export const tracklistObjData = {
                 src: 'music/Experiments and Parodies/04. Zmicier M. - First Snow (feat. ATD).mp3'
             },
             {
-                artist: 'Extra-MEGA Internet Band Collaboration',
+                artist: 'Extra-MEGA Internet Band Collaboration with Limited Capabilities, But Unlimited Inspiration',
                 title: 'New Year 2020 Experiment (Super Apocalyptic Remix and Extremely Cool Job by ATD)',
                 src: 'music/Experiments and Parodies/05. Extra-MEGA Internet Band Collaboration - New Year 2020 Experiment (Super Apocalyptic Remix and Extremely Cool Job by ATD).mp3'
             },
@@ -201,19 +201,23 @@ export const tracklistObjData = {
     }*/
 };
 
-for (let i = 1; i <= 100; i++) {
-    tracklistObjData['Test Tracklist ' + i] = new TestTracklist();
-}
+createTestTracklist(0);
 
-function TestTracklist() {
-    this.cover = '';
-    this.tracks = new Array();
-
-    for (let j = 1; j <= 10; j++) {
-        this.tracks.push({
-            artist: 'Artist ' + j,
-            title: 'Title ' + j,
-            src: '#'
-        });
+function createTestTracklist(n) {
+    for (let i = 1; i <= n; i++) {
+        tracklistObjData['Test Tracklist ' + i] = new TestTracklist();
+    }
+    
+    function TestTracklist() {
+        this.cover = '';
+        this.tracks = new Array();
+    
+        for (let j = 1; j <= 10; j++) {
+            this.tracks.push({
+                artist: 'Artist ' + j,
+                title: 'Title ' + j,
+                src: '#'
+            });
+        }
     }
 }

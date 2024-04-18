@@ -16,35 +16,38 @@
                 console.error(`${message}\nВ ${line}:${col} на ${url}`);
             };
         </script>
-        <div id="preloader" class="modal-container active"
-            ><div class="box">
+
+        <div id="preloader" class="modal-overlay active"
+            ><div class="movement-area">
                 <div class="central-point">
                     <span class="symbol">&#119070;</span>
                 </div>
             </div>
         </div>
+
         <header></header>
-        <main id="player-container" data-initial>
-            <aside id="tracklist-database" class="container-left-side">
-                <h3 class="database-title"><span>Tracklists:</span></h3>
+        
+        <main id="player-container" aria-label="Player" data-initial>
+            <aside id="tracklist-database" class="container-left-side" aria-labelledby="tracklist-database-title">
+                <h3 id="tracklist-database-title"><span class="sheen-fx">Tracklists</span></h3>
                 
                 <div id="tracklists-container">
                     <!-- Example tracklist-section tree
 
-                    <section class="tracklist-section" tabindex="0">
+                    <section class="tracklist-section" aria-labelledby="tracklist[1]-title" tabindex="0">
                         <div class="tracklist-menu">
                             <div class="buttons-box left">
                                 <i class="icon-cancel delete-tracklist-tracks" data-tooltip="Delete tracks from the tracklist"></i>
                             </div>
                             <div class="tracklist-title-box">
-                                <h4><span class="tracklist-title" data-tooltip="Expand for details">Tracklist Title</span></h4>
+                                <h4><span id="tracklist[1]-title" class="tracklist-title" data-tooltip="Expand for details">Tracklist Title</span></h4>
                             </div>
                             <div class="buttons-box right">
                                 <i class="icon-list tracklist-to-playlist" data-tooltip="Replace playlist" data-clear></i>
                                 <i class="icon-list-add tracklist-to-playlist" data-tooltip="Add to playlist"></i>
                             </div>
                         </div>
-                        <div class="tracklist-details"> data-id="trlDetails[1]"
+                        <div class="tracklist-details" data-id="trlDetails[1]">
                             <header>
                                 <p>
                                     <input id="checkbox-tracklist[1]-all" type="checkbox" checked
@@ -57,7 +60,7 @@
                                     <img src="" alt="Tracklist Title Cover">
                                 </div>
                                 <ul class="list">
-                                    <li data-src="">
+                                    <li data-src="...">
                                         <input id="checkbox-tracklist[1]-track[1]" type="checkbox" checked
                                         ><label for="checkbox-tracklist[1]-track[1]" class="designed-checkbox"></label
                                         ><label for="checkbox-tracklist[1]-track[1]"
@@ -75,15 +78,19 @@
                 </div>
                 
                 <section class="add-controls">
-                    <i id="expand-all-tracklist-details" class="icon-plus-squared-alt add-controls-button" data-tooltip="Expand all tracklist details"></i
-                    ><i id="collapse-all-tracklist-details" class="icon-minus-squared-alt add-controls-button" data-tooltip="Collapse all tracklist details"></i
+                    <button id="expand-all-tracklist-details" class="add-controls-button" data-tooltip="Expand all tracklist details">
+                        <i class="icon-plus-squared-alt"></i>
+                    </button
+                    ><button id="collapse-all-tracklist-details" class="add-controls-button" data-tooltip="Collapse all tracklist details">
+                        <i class="icon-minus-squared-alt"></i>
+                    </button
                     ><button id="clear-playlist" class="add-controls-button" data-tooltip="Clear playlist">
                         <img src="img/icons/clear.png" alt="Clear">
                     </button>
                 </section>
             </aside>
 
-            <div id="player">
+            <div id="player" role="application">
                 <div class="selected-track">
                     <div id="display-info" hidden></div>
                     <div><span id="display-title" class="display"></span></div>
@@ -184,7 +191,7 @@
                         <i id="playlist-style" class="icon-align-center" data-tooltip="Playlist style"></i>
                     </div>
                     <div class="center-col">
-                        <span class="version">v1.2.2</span>
+                        <span class="version">v1.2.3</span>
                     </div>
                     <div class="right-col">
                         <i id="settings" class="icon-cog-circled" data-tooltip="Settings"></i>
@@ -202,8 +209,11 @@
             <div id="tooltip"></div>
     
             <div class="container-right-side">
-                <div id="settings-area" hidden>
+                <div id="settings-area" role="region" aria-labelledby="settings-title" hidden>
+                    <h3 id="settings-title"><span class="sheen-fx">Settings</span></h3>
+
                     <textarea id="current-playlist" cols="50" readonly></textarea>
+
                     <section class="setting-section">
                         <input id="visible-tracks-checkbox" type="checkbox">
                         <label for="">Set own number of visible tracks (0-999)</label>
@@ -223,24 +233,25 @@
                             <input id="additional-options-checkbox" type="checkbox">
                         </span>
                     </section>
-                    <button id="default-settings"><i class="icon-wrench"></i> Reset to default</button>
-                    <button id="close-settings" class="close-block"><i class="icon-cancel"></i></button>
+
+                    <button class="default-settings"><i class="icon-wrench"></i> Reset to default</button>
+                    <button class="close-button"><i class="icon-cancel"></i></button>
                 </div>
 
                 <div id="document-scroll-arrows-container" hidden>
-                    <div class="box" hidden>
+                    <div class="arrow-box" hidden>
                         <i id="document-scroll-arrow-up" class="icon-up-circled scroll-arrow"></i>
                     </div>
-                    <div class="box" hidden>
+                    <div class="arrow-box" hidden>
                         <i id="document-scroll-arrow-down" class="icon-down-circled scroll-arrow"></i>
                     </div>
                 </div>
             </div>
 
-            <div id="keys-info-area" class="modal-container" hidden
+            <div id="keys-info-area" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="keys-info-title" hidden
                 ><article class="keys-info">
                     <div class="inner-scroll" tabindex="0">
-                        <h2>Assigned Keys</h2>
+                        <h2 id="keys-info-title">Assigned Keys</h2>
 
                         <!--Play/Pause-->
                         <section>
@@ -887,11 +898,38 @@
                         </section>
                     </div>
                     
-                    <button id="close-keys-info" class="close-block"><i class="icon-cancel"></i></button>
+                    <button class="close-button"><i class="icon-cancel"></i></button>
                 </article>
             </div>
+            
+            <div id="tracklist-deletion-confirmation" class="modal-overlay" role="dialog" aria-labelledby="confirm-title"
+                aria-describedby="confirm-description" hidden
+                ><div class="dialog-box">
+                    <h3 id="confirm-title">Tracklist Deletion Confirmation</h3>
+                    <p id="confirm-description">
+                        <span class="deleting-tracks-number"></span> track<span class="plural-suffix"></span>
+                        will be permanently deleted from the tracklist
+                        <span class="target-tracklist"></span
+                    ></p>
+                    <ul class="deleting-tracks"></ul>
+                    <p class="tracklist-removal-confirm" hidden>
+                        <label>
+                            <input type="checkbox" checked> Completely remove the tracklist from the database
+                        </label>
+                    </p>
+                    <p class="empty-tracklist-removal-confirm" hidden>Delete the empty tracklist from the database?</p>
+                    <h4 class="warning-info"><span>&#9888;</span> Attention! This action cannot be undone!</h3>
+                    <div class="buttons-box">
+                        <button class="button-ok"><span>&#10004;</span> ОК</button>
+                        <button class="button-cancel"><span>&#10060;</span> Cancel</button>
+                    </div>
+                    <button class="close-button"><i class="icon-cancel"></i></button>
+                </div>
+            </div>
+            
             <script src="scripts/player.js" type="module"></script>
         </main>
+
         <footer>
             <p>All rights reserved<br>&#169; <time><script>document.write(new Date().getFullYear());</script></time></p>
         </footer>
