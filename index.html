@@ -34,7 +34,7 @@
                 <div id="tracklists-container">
                     <!-- Example tracklist-section tree
 
-                    <section class="tracklist-section" aria-labelledby="tracklist[1]-title" tabindex="0">
+                    <section class="tracklist-section" aria-labelledby="tracklist[1]-title" aria-expanded="false" aria-controls="trlDetails[1]" tabindex="0">
                         <div class="tracklist-menu">
                             <div class="buttons-box left">
                                 <i class="icon-cancel delete-tracklist-tracks" data-tooltip="Delete tracks from the tracklist"></i>
@@ -43,11 +43,11 @@
                                 <h4><span id="tracklist[1]-title" class="tracklist-title" data-tooltip="Expand for details">Tracklist Title</span></h4>
                             </div>
                             <div class="buttons-box right">
-                                <i class="icon-list tracklist-to-playlist" data-tooltip="Replace playlist" data-clear></i>
-                                <i class="icon-list-add tracklist-to-playlist" data-tooltip="Add to playlist"></i>
+                                <i class="icon-list tracklist-to-playlist-replace" data-tooltip="Replace playlist" data-clear></i>
+                                <i class="icon-list-add tracklist-to-playlist-add" data-tooltip="Add to playlist"></i>
                             </div>
                         </div>
-                        <div class="tracklist-details" data-id="trlDetails[1]">
+                        <div id="trlDetails[1] class="tracklist-details"">
                             <header>
                                 <p>
                                     <input id="checkbox-tracklist[1]-all" type="checkbox" checked
@@ -85,7 +85,7 @@
                         <i class="icon-minus-squared-alt"></i>
                     </button
                     ><button id="clear-playlist" class="add-controls-button" data-tooltip="Clear playlist">
-                        <img src="img/icons/clear.png" alt="Clear">
+                        <img src="img/icons/clear.png" class="clear-playlist-img" alt="Clear">
                     </button>
                 </section>
             </aside>
@@ -191,7 +191,7 @@
                         <i id="playlist-style" class="icon-align-center" data-tooltip="Playlist style"></i>
                     </div>
                     <div class="center-col">
-                        <span class="version">v1.2.3</span>
+                        <span class="version">v1.2.5</span>
                     </div>
                     <div class="right-col">
                         <i id="settings" class="icon-cog-circled" data-tooltip="Settings"></i>
@@ -200,7 +200,7 @@
                 </div>
 
                 <div class="tracklist-database-button-container">
-                    <div id="tracklist-database-button" data-tooltip="Tracklist database">
+                    <div id="tracklist-database-button" class="tracklist-database-button" data-tooltip="Tracklist database">
                         <i class="icon-left-open"></i>
                     </div>
                 </div>
@@ -449,7 +449,7 @@
                             <div class="assigned-keys">
                                 <img src="img/keyboard_keys/r.png" alt="Key R">
                                 /
-                                <img src="img/keyboard_keys/m.png" alt="Key M">
+                                <img src="img/keyboard_keys/v.png" alt="Key V">
                             </div>
                             <div class="relevant-functions">
                                 <div class="row">
@@ -458,8 +458,8 @@
                                     </div>
                                     <div class="description">
                                         <p>
-                                            The <span class="emphase-1">volume</span> key/button turns the sound 
-                                            <span class="emphase-1">on and off</span>. When <span class="emphase-3">
+                                            The <span class="emphase-1">volume</span> key/button <span class="emphase-1">turns</span>
+                                            the sound <span class="emphase-1">on and off</span>. When <span class="emphase-3">
                                             on</span>, the <span class="emphase-2">last non-zero</span> volume value 
                                             <span class="emphase-1">is applied</span>.
                                         </p>
@@ -472,7 +472,7 @@
                         <section>
                             <div class="assigned-keys">
                                 <img src="img/keyboard_keys/shift-2.png" alt="Key Shift"
-                                >+<img src="img/keyboard_keys/r.png" alt="Key R">
+                                >+<img src="img/keyboard_keys/arrow-3.png" alt="Key Up">
                                 /
                                 <img src="img/keyboard_keys/symbol-5.png" alt="Key Period (>)">
                             </div>
@@ -493,7 +493,7 @@
                         <section>
                             <div class="assigned-keys">
                                 <img src="img/keyboard_keys/shift-2.png" alt="Key Shift"
-                                >+<img src="img/keyboard_keys/f.png" alt="Key F">
+                                >+<img src="img/keyboard_keys/arrow-2.png" alt="Key Down">
                                 /
                                 <img src="img/keyboard_keys/symbol-4.png" alt="Key Comma (<)">
                             </div>
@@ -730,9 +730,36 @@
                                     </div>
                                     <div class="description">
                                         <p>
-                                            The <span class="emphase-1">keys information</span> key/button is used to get 
-                                            acquainted with the <span class="emphase-1">keys</span> assigned to the audio 
-                                            player buttons.
+                                            The <span class="emphase-1">information</span> key/button is used to get 
+                                            acquainted with the <span class="emphase-1">keys assigned</span> to the audio 
+                                            player <span class="emphase-1">buttons</span>.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!--Tracklist Database-->
+                        <section>
+                            <div class="assigned-keys">
+                                <img src="img/keyboard_keys/t.png" alt="Key T">
+                            </div>
+                            <div class="relevant-functions">
+                                <div class="row">
+                                    <div class="icon">
+                                        <div class="icon-background">
+                                            <div class="tracklist-database-button-container">
+                                                <div class="tracklist-database-button">
+                                                    <i class="icon-left-open"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="description">
+                                        <p>
+                                            The <span class="emphase-1">tracklist database</span> key/button is utilized to
+                                            <span class="emphase-1">toggle</span> the display of available tracklists
+                                            <span class="emphase-1">on and off</span>.
                                         </p>
                                     </div>
                                 </div>
@@ -751,8 +778,8 @@
                                     </div>
                                     <div class="description">
                                         <p>
-                                            The <span class="emphase-1">close</span> key/button closes the settings or 
-                                            keys information.
+                                            The <span class="emphase-1">close</span> key/button <span class="emphase-1">closes</span>
+                                            the active section/window.
                                         </p>
                                     </div>
                                 </div>
@@ -843,9 +870,10 @@
                         <!--Clear playlist and add tracks to playlist-->
                         <section>
                             <div class="assigned-keys">
-                                <img src="img/keyboard_keys/insert.png" alt="Key Insert">
+                                <img src="img/keyboard_keys/alt.png" alt="Key Alt"
+                                >+(<img src="img/keyboard_keys/insert.png" alt="Key Insert">
                                 /
-                                <img src="img/keyboard_keys/plus.png" alt="Key NumpadAdd">
+                                <img src="img/keyboard_keys/plus.png" alt="Key NumpadAdd">)
                             </div>
                             <div class="relevant-functions">
                                 <div class="row">
@@ -857,7 +885,7 @@
                                             When the database <span class="emphase-2">tracklist</span> has <span class="emphase-3">
                                             focus</span> this <span class="emphase-3">key</span> <span class="emphase-1">clears</span> 
                                             the playlist and <span class="emphase-1">adds</span> <span class="emphase-2">selected</span> 
-                                            tracks from that <span class="emphase-3">tracklist</span> to the player's 
+                                            tracks from <span class="emphase-3">that tracklist</span> to the player's 
                                             <span class="emphase-3">playlist</span>.
                                         </p>
                                         <p>
@@ -885,12 +913,78 @@
                                         <p>
                                             When the database <span class="emphase-2">tracklist</span> has <span class="emphase-3">
                                             focus</span> this <span class="emphase-3">key</span> <span class="emphase-1">adds</span> 
-                                            <span class="emphase-2">selected</span> tracks from that <span class="emphase-3">
+                                            <span class="emphase-2">selected</span> tracks from <span class="emphase-3">that
                                             tracklist</span> to the player's <span class="emphase-3">playlist</span>
                                             <span class="emphase-1">without clearing</span> it.
                                         </p>
                                         <p>
                                             The <span class="emphase-3">button</span> works without tracklist focus.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!--Expand all tracklist details-->
+                        <section>
+                            <div class="assigned-keys">
+                                <img src="img/keyboard_keys/plus.png" alt="Key NumpadAdd">
+                            </div>
+                            <div class="relevant-functions">
+                                <div class="row">
+                                    <div class="icon">
+                                        <div class="icon-background"><i class="icon-plus-squared-alt"></i></div>
+                                    </div>
+                                    <div class="description">
+                                        <p>
+                                            The <span class="emphase-1">expand details</span> key/button is designed to
+                                            <span class="emphase-1">unveil</span> the <span class="emphase-3">full details</span> of
+                                            <span class="emphase-2">each</span> tracklist.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!--Collapse all tracklist details-->
+                        <section>
+                            <div class="assigned-keys">
+                                <img src="img/keyboard_keys/symbol-11.png" alt="Key NumpadSubtract">
+                            </div>
+                            <div class="relevant-functions">
+                                <div class="row">
+                                    <div class="icon">
+                                        <div class="icon-background"><i class="icon-minus-squared-alt"></i></div>
+                                    </div>
+                                    <div class="description">
+                                        <p>
+                                            The <span class="emphase-1">collapse details</span> key/button is crafted to
+                                            <span class="emphase-1">hide</span> the <span class="emphase-3">extended information</span> of
+                                            <span class="emphase-2">each</span> tracklist, ensuring a tidy and concise overview.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!--Clear Playlist-->
+                        <section>
+                            <div class="assigned-keys">
+                                <img src="img/keyboard_keys/backspace.png" alt="Key Backspace">
+                            </div>
+                            <div class="relevant-functions">
+                                <div class="row">
+                                    <div class="icon">
+                                        <div class="icon-background">
+                                            <img src="img/icons/clear.png" class="clear-playlist-img" alt="Clear">
+                                        </div>
+                                    </div>
+                                    <div class="description">
+                                        <p>
+                                            The <span class="emphase-1">clear playlist</span> key/button swiftly
+                                            <span class="emphase-1">removes</span> <span class="emphase-2">all</span> tracks from the
+                                            <span class="emphase-3">current playlist</span>, resetting it to a blank state for new
+                                            selections.
                                         </p>
                                     </div>
                                 </div>
@@ -902,11 +996,11 @@
                 </article>
             </div>
             
-            <div id="tracklist-deletion-confirmation" class="modal-overlay" role="dialog" aria-labelledby="confirm-title"
-                aria-describedby="confirm-description" hidden
+            <div id="tracklist-deletion-confirmation" class="modal-overlay" role="dialog" aria-labelledby="deletion-confirm-title"
+                aria-describedby="deletion-confirm-description" hidden
                 ><div class="dialog-box">
-                    <h3 id="confirm-title">Tracklist Deletion Confirmation</h3>
-                    <p id="confirm-description">
+                    <h3 id="deletion-confirm-title">Tracklist Deletion Confirmation</h3>
+                    <p id="deletion-confirm-description">
                         <span class="deleting-tracks-number"></span> track<span class="plural-suffix"></span>
                         will be permanently deleted from the tracklist
                         <span class="target-tracklist"></span
