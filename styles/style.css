@@ -858,8 +858,8 @@ player-controls #volume-bar.active {
     margin-top: 10px;
     z-index: 1;
 }
-#playlist-container.scrollable-playlist {
-    --scroll-arrow-box-height: 0px;
+#playlist-container.scrollable {
+    --scroll-arrow-box-height: 0;
 }
 #playlist-container .playlist-scroll-arrow-box {
     position: sticky;

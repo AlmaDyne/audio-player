@@ -2862,7 +2862,7 @@ function checkPlaylistScrollability() {
         if (scrollablePlaylist) return;
 
         scrollablePlaylist = true;
-        playlistContainer.classList.add('scrollable-playlist');
+        playlistContainer.classList.add('scrollable');
 
         activateScrollArrows();
         checkReachingPlaylistBoundaries('all');
@@ -2871,7 +2871,7 @@ function checkPlaylistScrollability() {
         if (!scrollablePlaylist) return;
 
         scrollablePlaylist = false;
-        playlistContainer.classList.remove('scrollable-playlist');
+        playlistContainer.classList.remove('scrollable');
 
         checkReachingPlaylistBoundaries('all');
 
@@ -2984,21 +2984,21 @@ function calcTracklistDtbsBtnPosition() {
 tracklistDtbsBtn.onclick = tracklistDatabaseAction;
 
 function tracklistDatabaseAction() {
-    let playerMoveInfo = JSON.parse(player.getAttribute('data-move-info'));
+    let playerMoveInfo;
 
     if (
         tracklistDatabase.hasAttribute('data-resizing') ||
         settingsArea.hasAttribute('data-await-run-hide-settings') ||
         settingsArea.hasAttribute('data-waiting-action') ||
-        (playerMoveInfo && playerMoveInfo.moving && playerMoveInfo.trigger === 'settingsArea') ||
-        tracklistsContainer.hasAttribute('data-toggle-tracklist-details')
+        tracklistsContainer.hasAttribute('data-toggle-tracklist-details') ||
+        (
+            playerMoveInfo = JSON.parse(player.getAttribute('data-move-info')),
+            playerMoveInfo && playerMoveInfo.moving && playerMoveInfo.trigger === 'settingsArea'
+        )
     ) {
         tracklistDatabase.setAttribute('data-waiting-action', '');
         return;
     }
-
-    tracklistDtbsBtn.classList.remove('enabled');
-    tracklistDtbsBtn.classList.add('waiting');
 
     let isTracklistDtbsStickedLeft = tracklistDatabase.classList.contains('sticked-left');
     let isTracklistDtbsMoved = tracklistDatabase.hasAttribute('data-moving');
@@ -3007,32 +3007,43 @@ function tracklistDatabaseAction() {
     resetTracklistDtbsAndPlayerStates();
     scrollDoc('left', 'smooth');
 
-    if (!tracklistDatabase.classList.contains('enabled')) { // Move/show tracklists
-        tracklistDatabase.classList.add('enabled');
+    tracklistDtbsBtn.classList.remove('enabled');
 
-        calcTracklistsTextIndent();
-        checkPlayerContainertJustify();
-        calcTracklistsContainerMaxHeight();
-        disableTracklistsContainerScroll();
-        checkGlobalStates();
+    if (tracklistDtbsBtn.classList.contains('waiting')) {
+        runTracklistDatabaseAction();
+    } else {
+        tracklistDtbsBtn.classList.add('waiting');
+        requestAnimationFrame(() => setTimeout(runTracklistDatabaseAction));
+    }
 
-        let tracklistDtbsLeft = playerLeft - tracklistDatabase.offsetWidth;
-        let noSpaceForMoving = (tracklistDtbsLeft === 0) ? true : false;
+    function runTracklistDatabaseAction() {
+        if (!tracklistDatabase.classList.contains('enabled')) { // Move/show tracklists
+            tracklistDatabase.classList.add('enabled');
 
-        if (isTracklistDtbsStickedLeft && !noSpaceForMoving) { // Move tracklists
-            moveTracklistDatabase();
-        } else { // Show tracklists
-            toggleTracklistDtbsAnimation('show');
-        }
-    } else { // Hide tracklists/move player
-        if (tracklistDatabase.classList.contains('active')) { // Hide tracklists
+            calcTracklistsTextIndent();
+            calcTracklistsContainerMaxHeight();
+            checkPlayerContainertJustify();
             disableTracklistsContainerScroll();
-            toggleTracklistDtbsAnimation('hide');
-        } else {
-            if (isTracklistDtbsMoved) { // Cancel tracklists moving animation (move player)
-                movePlayer();
-            } else { // Cancel tracklists hiding animation (show tracklists)
+            checkGlobalStates();
+    
+            let tracklistDtbsLeft = playerLeft - tracklistDatabase.offsetWidth;
+            let noSpaceForMoving = (tracklistDtbsLeft === 0) ? true : false;
+    
+            if (isTracklistDtbsStickedLeft && !noSpaceForMoving) { // Move tracklists
+                moveTracklistDatabase();
+            } else { // Show tracklists
                 toggleTracklistDtbsAnimation('show');
+            }
+        } else { // Hide tracklists/move player
+            if (tracklistDatabase.classList.contains('active')) { // Hide tracklists
+                disableTracklistsContainerScroll();
+                toggleTracklistDtbsAnimation('hide');
+            } else {
+                if (isTracklistDtbsMoved) { // Cancel tracklists moving animation (move player)
+                    movePlayer();
+                } else { // Cancel tracklists hiding animation (show tracklists)
+                    toggleTracklistDtbsAnimation('show');
+                }
             }
         }
     }
@@ -3047,7 +3058,7 @@ function tracklistDatabaseAction() {
         tracklistDatabase.style.marginLeft = tracklistDtbsLeft + 'px';
         tracklistDatabase.offsetWidth; // Causes a reflow
         tracklistDatabase.classList.add('smooth-moving');
-        tracklistDatabase.style.marginLeft = '';
+        setTimeout(() => tracklistDatabase.style.marginLeft = '');
 
         eventManager.addOnceEventListener(tracklistDatabase, 'transitionend', endSmoothMoving);
     }
@@ -3076,8 +3087,8 @@ function tracklistDatabaseAction() {
             tracklistDatabase.removeAttribute('data-moving');
 
             scrollDoc('left', 'smooth');
-            toggleTracklistDtbsAnimation('show');
             checkPendingSettingsAction();
+            toggleTracklistDtbsAnimation('show');
         } else { // Player ends moving => End animations
             tracklistDtbsBtn.classList.remove('waiting');
             tracklistDtbsBtn.classList.remove('enabled');
@@ -3241,12 +3252,58 @@ function tracklistDatabaseAction() {
         return false;
     }
 
-    function toggleShowClassWithoutAnimation(animationAction) {
-        tracklistsContainer.classList.add('no-animation');
-        tracklistsContainer.offsetHeight; // Causes a reflow 
-        [].forEach.call(tracklistsContainer.children, (section) => toggleShowClass(section, animationAction));
-        tracklistsContainer.offsetHeight; // Causes a reflow
-        tracklistsContainer.classList.remove('no-animation');
+    async function toggleShowClassWithoutAnimation(animationAction) {
+        let totalTracklists = tracklistsContainer.children.length;
+        let batchSize = 25;
+
+        return (totalTracklists < batchSize) ? true : await new Promise((resolve, reject) => {
+            tracklistDatabase.setAttribute('data-optimizing', '');
+
+            let startActiveState = tracklistDatabase.classList.contains('active');
+            let i = 0;
+
+            disableTransitionAnimations();
+            optimizeClassChange();
+    
+            function optimizeClassChange() {
+                if (i < totalTracklists - batchSize) {
+                    setTimeout(() => {
+                        let curActiveState = tracklistDatabase.classList.contains('active');
+    
+                        if (curActiveState == startActiveState) {
+                            optimizeClassChange();
+                        } else {
+                            tracklistDatabase.removeAttribute('data-optimizing');
+                            enableTransitionAnimations();
+                            reject();
+                        }
+                    });
+                }
+
+                do {
+                    toggleShowClass(tracklistsContainer.children[i++], animationAction);
+                } while (i % batchSize != 0 && i < totalTracklists);
+    
+                if (i >= totalTracklists) {
+                    tracklistDatabase.removeAttribute('data-optimizing');
+                    enableTransitionAnimations();
+                    resolve();
+                }
+            }
+
+            function disableTransitionAnimations() {
+                tracklistsContainer.classList.add('no-animation');
+                tracklistsContainer.offsetHeight; // Causes a reflow 
+            }
+
+            function enableTransitionAnimations() {
+                tracklistsContainer.offsetHeight; // Causes a reflow
+                tracklistsContainer.classList.remove('no-animation');
+            }
+        }).then(
+            () => true,
+            () => false
+        );
     }
 
     function setAnimationStart(elem) {
@@ -3264,18 +3321,20 @@ function tracklistDatabaseAction() {
         });
     }
 
-    function endShowAnimation(animationAction) {
-        toggleShowClassWithoutAnimation(animationAction);
-        enableTracklistsContainerScroll();
+    async function endShowAnimation(animationAction) {
+        let isFinished = await toggleShowClassWithoutAnimation(animationAction);
+        if (!isFinished) return;
 
         tracklistDtbsBtn.classList.remove('waiting');
         tracklistDtbsBtn.classList.add('enabled');
 
+        enableTracklistsContainerScroll();
         checkPendingSettingsAction();
     }
 
-    function endHideAnimation(animationAction) {
-        toggleShowClassWithoutAnimation(animationAction);
+    async function endHideAnimation(animationAction) {
+        let isFinished = await toggleShowClassWithoutAnimation(animationAction);
+        if (!isFinished) return;
 
         if (tracklistDatabase.offsetHeight > player.offsetHeight && window.scrollY) {
             window.scrollTo({
@@ -3286,7 +3345,7 @@ function tracklistDatabaseAction() {
 
             eventManager.addOnceEventListener(document, 'scrollend', runEndHideAnimation);
         } else {
-            setTimeout(runEndHideAnimation);
+            runEndHideAnimation();
         }
 
         function runEndHideAnimation() {
@@ -3359,7 +3418,8 @@ function showSettings() {
     if (tracklistDatabase.classList.contains('sticked-left')) {
         if ((
                 tracklistDatabase.hasAttribute('data-animating') || // Tracklists are showing/hiding
-                tracklistDatabase.hasAttribute('data-moving') // Tracklists are moving
+                tracklistDatabase.hasAttribute('data-moving') || // Tracklists are moving
+                tracklistDatabase.hasAttribute('data-optimizing')
             ) &&
             !settingsArea.hasAttribute('data-running-action') // No running pending action
         ) {
@@ -3528,7 +3588,8 @@ function hideSettings() {
             if (
                 (
                     tracklistDatabase.hasAttribute('data-animating') || // Tracklists are showing/hiding
-                    tracklistDatabase.hasAttribute('data-moving') // Tracklists are moving
+                    tracklistDatabase.hasAttribute('data-moving') || // Tracklists are moving
+                    tracklistDatabase.hasAttribute('data-optimizing')
                 ) &&
                 !settingsArea.hasAttribute('data-running-action')// No running pending action
             ) {
