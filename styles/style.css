@@ -1212,8 +1212,6 @@ player-controls #volume-bar.active {
     left: 0;
     top: var(--common-border-radius);
     overflow: hidden;
-
-    /*outline: 1px solid #0ea109;*/
 }
 .keys-info .tracklist-database-button-container {
     --default-width: 24px;
@@ -1232,6 +1230,7 @@ player-controls #volume-bar.active {
     border-bottom-right-radius: var(--default-width);
     cursor: pointer;
     user-select: none;
+    transition: background-color var(--transition-time-primary);
 }
 .tracklist-database-button > i {
     position: absolute;
@@ -1240,6 +1239,12 @@ player-controls #volume-bar.active {
     font-size: 15pt;
     transform-origin: calc(50% + 0.5px) 45%;
     transition: text-shadow var(--transition-time-primary);
+}
+#player.changing-color .tracklist-database-button > i {
+    transition:
+        color var(--transition-time-primary),
+        text-shadow var(--transition-time-primary)
+    ;
 }
 .keys-info .tracklist-database-button > i {
     left: 9px;

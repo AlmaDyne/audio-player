@@ -201,7 +201,7 @@ export const tracklistObjData = {
     }*/
 };
 
-createTestTracklist(300);
+createTestTracklist(30);
 
 function createTestTracklist(n) {
     for (let i = 1; i <= n; i++) {
