@@ -96,6 +96,7 @@ i {
     top: 52%;
     offset-path: path('M 0 0 C -112 -112, 112 -112, 0 0 C -112 112, 112 112, 0 0');
     offset-rotate: 0deg;
+    will-change: transform;
     animation: curved-move-in-eight 5s linear infinite;
 }
 @supports not (offset-path: path('M 0 0')) {
@@ -637,7 +638,7 @@ i {
     overflow: hidden;
     transition: color var(--transition-time-primary);
 }
-.selected-track > #display-info {
+.selected-track > #start-info-display {
     position: absolute;
     width: 100%;
     height: inherit;
@@ -649,14 +650,14 @@ i {
     transition: opacity 750ms, color var(--transition-time-primary);
     scroll-behavior: smooth;
 }
-.selected-track > #display-info > .track {
+.selected-track > #start-info-display > .track {
     color: rgb(var(--color-emphase));
     transition: color var(--transition-time-primary);
 }
-.selected-track > #display-info > .time {
+.selected-track > #start-info-display > .time {
     color: var(--common-color-emphase);
 }
-.selected-track > #display-info.finish-playlist {
+.selected-track > #start-info-display.finish-playlist {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -667,11 +668,11 @@ i {
     position: relative;
     white-space: nowrap;
 }
-.selected-track #display-title {
+.selected-track #title-display {
     padding-bottom: 6px;
     font-size: 20pt;
 }
-.selected-track #display-artist {
+.selected-track #artist-display {
     font-size: 11pt;
 }
 
@@ -1598,9 +1599,15 @@ player-controls #volume-bar.active {
     text-align: left;
     list-style-type: none;
 }
+#tracklist-deletion-confirmation ul.deleting-tracks > li {
+    position: relative;
+    padding-left: 27px;
+}
 #tracklist-deletion-confirmation ul.deleting-tracks > li:before {
     content: "\26D4";
-    margin-right: 8px;
+    position: absolute;
+    left: 0;
+    top: 0;
 }
 #tracklist-deletion-confirmation .warning-info {
     margin-top: calc(var(--dialog-box-space)*1.8);
