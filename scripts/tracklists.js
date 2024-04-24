@@ -6,7 +6,7 @@ export const tracklistObjData = {
             {
                 artist: 'Zmicier M.',
                 title: 'Cold Lights (Metal Mix by ATD)',
-                src: 'music/Experiments and Parodies/01. Zmicier M. - Cold Lights (Metal Mix by ATD).mp3'
+                src: 'https://almadyne.github.io/audio-player/music/Experiments and Parodies/01. Zmicier M. - Cold Lights (Metal Mix by ATD).mp3'
             },
             {
                 artist: 'Zmicier M.',

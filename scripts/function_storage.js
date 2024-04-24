@@ -117,7 +117,7 @@ const eventManager = {
             }
 
             let handleAndRemove = (function(event) {
-                if (element !== window && event.target !== element) return;
+                if (element !== window && element !== document && event.target !== element) return;
 
                 handler.call(element, event);
                 this.removeOnceEventListener(element, eventType, handlerName);
