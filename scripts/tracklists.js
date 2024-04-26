@@ -6,17 +6,20 @@ export const tracklistObjData = {
             {
                 artist: 'Zmicier M.',
                 title: 'Cold Lights (Metal Mix by ATD)',
-                src: 'https://almadyne.github.io/audio-player/music/Experiments and Parodies/01. Zmicier M. - Cold Lights (Metal Mix by ATD).mp3'
+                src: 'music/Experiments and Parodies/01. Zmicier M. - Cold Lights (Metal Mix by ATD).mp3'
+                //src: 'https://almadyne.github.io/audio-player/music/Experiments and Parodies/01. Zmicier M. - Cold Lights (Metal Mix by ATD).mp3'
             },
             {
                 artist: 'Zmicier M.',
                 title: 'Silent Minds (feat. ATD)',
                 src: 'music/Experiments and Parodies/02. Zmicier M. - Silent Minds (feat. ATD).mp3'
+                //src: 'https://almadyne.github.io/audio-player/music/Experiments and Parodies/02. Zmicier M. - Silent Minds (feat. ATD).mp3'
             },
             {
                 artist: 'Zmicier M.',
                 title: 'Classical TechnoDub (feat. ATD)',
                 src: 'music/Experiments and Parodies/03. Zmicier M. - Classical TechnoDub (feat. ATD).mp3'
+                //src: 'https://almadyne.github.io/audio-player/music/Experiments and Parodies/03. Zmicier M. - Classical TechnoDub (feat. ATD).mp3'
             },
             {
                 artist: 'Zmicier M.',

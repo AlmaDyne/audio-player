@@ -55,12 +55,13 @@ i {
 }
 
 .modal-overlay {
+    --modal-padding: 50px;
     position: fixed;
     left: 0;
     top: 0;
     width: 100%;
     height: 100%;
-    padding: 50px;
+    padding: var(--modal-padding);
     box-sizing: border-box;
     text-align: center;
     white-space: nowrap;
@@ -537,12 +538,12 @@ i {
     padding: 0 4px;
 }
 
-.add-controls {
+#tracklist-database > .add-controls {
     margin-top: calc(50px - var(--common-spacing));
 
     /*outline: 1px solid;*/
 }
-.add-controls > .add-controls-button {
+#tracklist-database > .add-controls > .add-controls-button {
     --clear-playlist-timing-function: cubic-bezier(.5,-0.7,.82,.48);
     --clear-playlist-active-transition: 0.3s var(--clear-playlist-timing-function);
     width: 50px;
@@ -561,15 +562,15 @@ i {
         transform var(--clear-playlist-active-transition)
     ;
 }
-.add-controls > .add-controls-button > i {
+#tracklist-database > .add-controls > .add-controls-button > i {
     font-size: 24pt;
     transform: translateY(1px);
     pointer-events: none;
 }
-.add-controls > .add-controls-button:last-of-type {
+#tracklist-database > .add-controls > .add-controls-button:last-of-type {
     margin-right: 0;
 }
-.add-controls .clear-playlist-img,
+#tracklist-database > .add-controls .clear-playlist-img,
 .keys-info .clear-playlist-img {
     width: 32px;
     height: 32px;
@@ -580,10 +581,10 @@ i {
     transition: filter var(--transition-time-primary);
     pointer-events: none;
 }
-.add-controls .clear-playlist-img {
+#tracklist-database > .add-controls .clear-playlist-img {
     transform: translate(-2px, 2px);
 }
-.add-controls > .add-controls-button.show {
+#tracklist-database > .add-controls > .add-controls-button.show {
     --clear-playlist-timing-function: cubic-bezier(.18,.52,.5,1.7);
     transform: scale(1, 1);
 }
@@ -948,7 +949,6 @@ player-controls #volume-bar.active {
 
     /*border: 1px solid #914e59;
     box-sizing: border-box;*/
-    /*outline: 1px solid #914e59;*/
 }
 #playlist > .track.not-ready {
     height: 0;
@@ -994,7 +994,7 @@ player-controls #volume-bar.active {
 /* Track additionals */
 #playlist > .track > .additionals {
     position: absolute;
-    left: 22px;
+    left: 20px;
     top: 0;
     height: 100%;
     user-select: none;
@@ -1040,6 +1040,12 @@ player-controls #volume-bar.active {
     animation: scaling-load-fig 1.5s ease-in-out infinite;
     visibility: hidden;
 }
+#playlist.smooth > .track > .additionals > .loading-figure {
+    margin-left: 0;
+}
+#playlist.strict > .track > .additionals > .loading-figure {
+    margin-left: var(--common-spacing);
+}
 #playlist > .track.loading > .additionals > .loading-figure {
     visibility: visible;
 }
@@ -1056,7 +1062,7 @@ player-controls #volume-bar.active {
 
 /* Track info box */
 #playlist > .track > .track-info-box {
-    --track-info-box-left: 10%;
+    --track-info-box-left: 10.5%;
     position: absolute;
     left: var(--track-info-box-left);
     right: var(--track-info-box-left);
@@ -1070,7 +1076,7 @@ player-controls #volume-bar.active {
     /*outline: 1px solid #e7e409;*/
 }
 #playlist.smooth > .track.selected > .track-info-box {
-    --track-info-box-left: 8%;
+    --track-info-box-left: 8.5%;
 }
 
 /* Artist name */
@@ -1082,7 +1088,8 @@ player-controls #volume-bar.active {
     padding-left: 8px;
     color: var(--color-static-artist-name);
     font-size: 9pt;
-    font-weight: lighter;
+    font-weight: light;
+    line-height: 17px;
     overflow: hidden;
     z-index: 1;
     transition:
@@ -1094,10 +1101,10 @@ player-controls #volume-bar.active {
 }
 #playlist > .track.selected > .track-info-box > .artist-name-limiter {
     color: var(--color-secondary);
-    /*font-weight: bold;*/
 }
 #playlist.smooth > .track.selected > .track-info-box > .artist-name-limiter {
     font-size: 10pt;
+    line-height: 18px;
 }
 #playlist > .track.loading > .track-info-box > .artist-name-limiter {
     color: var(--color-inactive);
@@ -1112,17 +1119,19 @@ player-controls #volume-bar.active {
 #playlist.strict > .track > .track-info-box > .artist-name-limiter {
     text-overflow: ellipsis;
 }
-#playlist > .track > .track-info-box > .artist-name-limiter.hover {
+#playlist > .track > .track-info-box > .artist-name-limiter.visible {
     mask-image: none;
     overflow: visible;
 }
 #playlist > .track > .track-info-box > .artist-name-limiter > .artist-name {
     padding: 1px 4px;
-    line-height: calc(1.25em + 1px*2);
     background: var(--background-artist-name);
-    border-radius: 5px;
+    border-radius: 4px;
     cursor: pointer;
     transition: text-shadow var(--transition-time-primary);
+}
+#playlist > .track > .track-info-box > .artist-name-limiter > .artist-name.hover {
+    text-shadow: var(--shadow-hover-artist-name);
 }
 #playlist.strict > .track.selected > .track-info-box > .artist-name-limiter > .artist-name {
     box-shadow: inset 0 0 var(--common-spacing) 1px rgba(var(--color-emphase), 0.75);
@@ -1145,6 +1154,7 @@ player-controls #volume-bar.active {
     color: var(--color-static-track-title);
     font-size: 13pt;
     font-weight: normal;
+    line-height: 27px;
     overflow: hidden;
     transition:
         bottom var(--transition-time-primary),
@@ -1161,6 +1171,7 @@ player-controls #volume-bar.active {
 #playlist.smooth > .track.selected > .track-info-box > .track-title-limiter {
     bottom: 3px;
     font-size: 14pt;
+    line-height: 29px;
 }
 #playlist > .track.loading > .track-info-box > .track-title-limiter {
     color: var(--color-inactive);
@@ -1178,16 +1189,19 @@ player-controls #volume-bar.active {
 #playlist.strict > .track > .track-info-box > .track-title-limiter {
     text-overflow: ellipsis;
 }
-#playlist > .track > .track-info-box > .track-title-limiter.hover {
+#playlist > .track > .track-info-box > .track-title-limiter.visible {
     mask-image: none;
     overflow: visible;
 }
 #playlist > .track > .track-info-box > .track-title-limiter > .track-title {
     padding: 3px 5px;
-    line-height: calc(1.25em + 3px*2);
     border-radius: 6px;
     cursor: pointer;
     transition: text-shadow var(--transition-time-primary);
+}
+#playlist > .track > .track-info-box > .track-title-limiter > .track-title.hover {
+    text-shadow: var(--shadow-hover);
+    background-image: var(--background-hover1);
 }
 #playlist.strict > .track.selected > .track-info-box > .track-title-limiter > .track-title {
     outline: 1px solid rgb(var(--color-emphase));
@@ -1266,6 +1280,31 @@ player-controls #volume-bar.active {
     top: -7px;
     background-color: var(--color-secondary);
     transition: background-color var(--transition-time-primary);
+}
+
+/* Track context menu */
+.track-menu {
+    position: absolute;
+    padding: 6px 4px;
+    background-color: var(--color-track-menu);
+    color: var(--color-secondary);
+    text-transform: none;
+    white-space: nowrap;
+    z-index: 3;
+    border-radius: 8px;
+    border-top-left-radius: 0;
+}
+.track-menu > .menu-item {
+    padding: 2px 4px;
+    border-radius: 5px;
+    border-top-left-radius: 0;
+    cursor: pointer;
+    user-select: none;
+}
+.track-menu > .menu-item:hover {
+    background: var(--background-hover2);
+    color: var(--color-primary);
+    opacity: 0.75;
 }
 
 /* Player footer */
@@ -1514,15 +1553,13 @@ player-controls #volume-bar.active {
     transition: background-color var(--transition-time-primary);
 }
 
-.keys-info {
+#keys-info-window > .keys-info {
     --assigned-keys-width: 240px;
     --key-info-padding: 40px;
     display: inline-block;
     position: relative;
-    max-width: 1400px;
     min-width: 300px;
-    min-height: 300px;
-    height: 100%;
+    max-width: 1400px;
     padding: var(--key-info-padding);
     vertical-align: middle;
     box-sizing: border-box;
@@ -1537,10 +1574,10 @@ player-controls #volume-bar.active {
     border-radius: var(--common-border-radius);
     transition: all var(--transition-time-primary);
 }
-.keys-info .inner-scroll {
-    height: 100%;
-    text-align: center;
-    overflow: auto;
+#keys-info-window > .keys-info > .inner-scroll {
+    min-height: 50px;
+    max-height: calc(100vh - var(--modal-padding)*2 - var(--key-info-padding)*2);
+    overflow-y: auto;
 }
 .keys-info h2 {
     margin-bottom: 5px;
@@ -1660,12 +1697,13 @@ player-controls #volume-bar.active {
     filter: invert(100%);
 }
 
-#tracklist-deletion-confirmation > .dialog-box {
-    --dialog-box-space: 20px;
+#tracklist-deletion > .dialog-box {
+    --dialog-box-inner-margin: 20px;
+    --dialog-box-padding: 40px;
     display: inline-block;
     position: relative;
     width: 700px;
-    padding: 40px;
+    padding: var(--dialog-box-padding);
     vertical-align: middle;
     box-sizing: border-box;
     background: var(--background-warning);
@@ -1676,11 +1714,16 @@ player-controls #volume-bar.active {
     border-radius: var(--common-border-radius);
     transition: all var(--transition-time-primary);
 }
-#tracklist-deletion-confirmation > .dialog-box > :nth-child(n):not(:first-child, :last-child) {
-    margin-bottom: var(--dialog-box-space);
+#tracklist-deletion > .dialog-box > .inner-scroll {
+    min-height: 50px;
+    max-height: calc(100vh - var(--modal-padding)*2 - var(--dialog-box-padding)*2);
+    overflow-y: auto;
 }
-#tracklist-deletion-confirmation #deletion-confirm-title {
-    margin-bottom: calc(var(--dialog-box-space)*2);
+#tracklist-deletion .inner-scroll > :nth-child(n):not(:first-child, :last-child) {
+    margin-bottom: var(--dialog-box-inner-margin);
+}
+#tracklist-deletion #tracklist-deletion-title {
+    margin-bottom: calc(var(--dialog-box-inner-margin)*2);
     color: rgb(var(--color-emphase));
     font-size: 16pt;
     text-shadow: 0 0 10px rgba(var(--color-emphase), 0.3);
@@ -1689,31 +1732,31 @@ player-controls #volume-bar.active {
         text-shadow var(--transition-time-primary)
     ;
 }
-#tracklist-deletion-confirmation #deletion-confirm-description::after {
+#tracklist-deletion #tracklist-deletion-description::after {
     content: ':'
 }
-#tracklist-deletion-confirmation #deletion-confirm-description.period::after {
+#tracklist-deletion #tracklist-deletion-description.period::after {
     content: '.'
 }
-#tracklist-deletion-confirmation .deleting-tracks-number {
+#tracklist-deletion .deleting-tracks-number {
     color: rgb(var(--color-emphase));
 }
-#tracklist-deletion-confirmation .target-tracklist {
+#tracklist-deletion .target-tracklist {
     color: rgb(var(--color-emphase));
     font-weight: bold;
 }
-#tracklist-deletion-confirmation .target-tracklist::before {
+#tracklist-deletion .target-tracklist::before {
     content: '«';
 }
-#tracklist-deletion-confirmation .target-tracklist::after {
+#tracklist-deletion .target-tracklist::after {
     content: '»';
 }
-#tracklist-deletion-confirmation .target-tracklist::before,
-#tracklist-deletion-confirmation .target-tracklist::after {
+#tracklist-deletion .target-tracklist::before,
+#tracklist-deletion .target-tracklist::after {
     position: relative;
     bottom: 0.05em;
 }
-#tracklist-deletion-confirmation ul.deleting-tracks {
+#tracklist-deletion ul.deleting-tracks {
     width: 80%;
     margin-left: auto;
     margin-right: auto;
@@ -1722,43 +1765,43 @@ player-controls #volume-bar.active {
     text-align: left;
     list-style-type: none;
 }
-#tracklist-deletion-confirmation ul.deleting-tracks > li {
+#tracklist-deletion ul.deleting-tracks > li {
     position: relative;
     padding-left: 27px;
 }
-#tracklist-deletion-confirmation ul.deleting-tracks > li:before {
+#tracklist-deletion ul.deleting-tracks > li:before {
     content: "\26D4";
     position: absolute;
     left: 0;
     top: 0;
 }
-#tracklist-deletion-confirmation .warning-info {
-    margin-top: calc(var(--dialog-box-space)*1.8);
+#tracklist-deletion .warning-info {
+    margin-top: calc(var(--dialog-box-inner-margin)*1.8);
     color: rgb(var(--common-color-warning));
     font-weight: bold;
 }
-#tracklist-deletion-confirmation .warning-info > span {
+#tracklist-deletion .warning-info > span {
     font-size: 18pt;
     font-weight: lighter;
 }
-#tracklist-deletion-confirmation .buttons-box {
+#tracklist-deletion .buttons-box {
     margin-bottom: 0 !important;
 }
-#tracklist-deletion-confirmation .buttons-box > button {
+#tracklist-deletion .buttons-box > button {
     width: 82px;
     padding: 4px;
     font-weight: bold;
 }
-#tracklist-deletion-confirmation .button-ok > span {
+#tracklist-deletion .button-ok > span {
     color: var(--common-color-emphase);
 }
-#tracklist-deletion-confirmation .button-ok.inactive > span {
+#tracklist-deletion .button-ok.inactive > span {
     color: var(--color-inactive);
 }
-#tracklist-deletion-confirmation .button-cancel > span {
+#tracklist-deletion .button-cancel > span {
     color: rgb(var(--common-color-warning));
 }
-#tracklist-deletion-confirmation .close-button {
+#tracklist-deletion .close-button {
     position: absolute;
     top: 10px;
     right: 10px;
@@ -1780,7 +1823,7 @@ player-controls #volume-bar.active {
 }
 
 #player-container i:not(.icon-fast-forward, .icon-fast-backward, .icon-left-open):active,
-.add-controls-button:active,
+#tracklist-database > .add-controls >  .add-controls-button:active,
 .key-pressed:not(.tracklist-title, #tracklist-database-button) {
     outline: 1px solid currentColor;
 }
@@ -1803,30 +1846,6 @@ player-controls #volume-bar.active {
         margin-top var(--transition-time-primary)
     ;
     pointer-events: none;
-}
-
-.track-menu {
-    position: absolute;
-    padding: 6px 4px;
-    background-color: var(--color-track-menu);
-    color: var(--color-secondary);
-    text-transform: none;
-    white-space: nowrap;
-    z-index: 3;
-    border-radius: 8px;
-    border-top-left-radius: 0;
-}
-.track-menu > .menu-item {
-    padding: 2px 4px;
-    border-radius: 5px;
-    border-top-left-radius: 0;
-    cursor: pointer;
-    user-select: none;
-}
-.track-menu > .menu-item:hover {
-    background: var(--background-hover2);
-    color: var(--color-primary);
-    opacity: 0.75;
 }
 
 .sheen-fx {
@@ -1877,34 +1896,20 @@ footer {
     line-height: 1.5em;
 }
 
-@media (hover: hover) { /* For desktop */
-    .add-controls > .add-controls-button:hover {
+@media (hover: hover) and (pointer: fine) { /* For desktop */
+    #tracklist-database > .add-controls > .add-controls-button:hover {
         box-shadow: var(--site-shadow-hover);
     }
     #document-scroll-arrows-container i.scroll-arrow:hover {
         background-color: var(--color-secondary);
     }
-    #playlist > .track > .track-info-box > .track-title-limiter > .track-title:hover {
-        text-shadow: var(--shadow-hover);
-        background-image: var(--background-hover1);
-    }
-    #playlist > .track > .track-info-box > .artist-name-limiter > .artist-name:hover {
-        text-shadow: var(--shadow-hover-artist-name);
-    }
 }
-@media (hover: none) { /* For mobile */
-    .add-controls > .add-controls-button:active {
+@media (hover: none) and (pointer: coarse) { /* For mobile */
+    #tracklist-database > .add-controls > .add-controls-button:active {
         box-shadow: var(--site-shadow-hover);
     }
     #document-scroll-arrows-container i.scroll-arrow:active {
         background-color: var(--color-secondary);
-    }
-    #playlist > .track > .track-info-box > .track-title-limiter > .track-title:active {
-        text-shadow: var(--shadow-hover);
-        background-image: var(--background-hover1);
-    }
-    #playlist > .track > .track-info-box > .artist-name-limiter > .artist-name:active {
-        text-shadow: var(--shadow-hover-artist-name);
     }
 }
 

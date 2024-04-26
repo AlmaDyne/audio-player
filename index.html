@@ -161,11 +161,11 @@
                                         <i class="icon-cancel remove-track" data-tooltip="Remove track"></i>
                                     </div>
                                     <div class="track-info-box">
-                                        <div class="track-title-limiter">
-                                            <span class="track-title" data-actionable></span>
-                                        </div>
                                         <div class="artist-name-limiter">
                                             <span class="artist-name" data-actionable></span>
+                                        </div>
+                                        <div class="track-title-limiter">
+                                            <span class="track-title" data-actionable></span>
                                         </div>
                                         <div class="load-info">
                                             <div class="progress">
@@ -196,7 +196,7 @@
                         <i id="playlist-style" class="icon-align-center" data-tooltip="Playlist style"></i>
                     </div>
                     <div class="center-col">
-                        <span class="version">v1.3.3</span>
+                        <span class="version">v1.3.4</span>
                     </div>
                     <div class="right-col">
                         <i id="settings" class="icon-cog-circled" data-tooltip="Settings"></i>
@@ -210,8 +210,6 @@
                     </div>
                 </div>
             </div>
-
-            <div id="tooltip"></div>
     
             <div class="container-right-side">
                 <div id="settings-area" role="region" aria-labelledby="settings-title" hidden>
@@ -253,7 +251,9 @@
                 </div>
             </div>
 
-            <div id="keys-info-area" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="keys-info-title" hidden
+            <div id="tooltip"></div>
+
+            <div id="keys-info-window" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="keys-info-title" hidden
                 ><article class="keys-info">
                     <div class="inner-scroll" tabindex="0">
                         <h2 id="keys-info-title">Assigned Keys</h2>
@@ -1001,27 +1001,49 @@
                 </article>
             </div>
             
-            <div id="tracklist-deletion-confirmation" class="modal-overlay" role="dialog" aria-labelledby="deletion-confirm-title"
-                aria-describedby="deletion-confirm-description" hidden
+            <div id="tracklist-deletion" class="modal-overlay" role="dialog" aria-labelledby="tracklist-deletion-title"
+                aria-describedby="tracklist-deletion-description" hidden
                 ><div class="dialog-box">
-                    <h3 id="deletion-confirm-title">Tracklist Deletion Confirmation</h3>
-                    <p id="deletion-confirm-description">
-                        <span class="deleting-tracks-number"></span> track<span class="plural-suffix"></span>
-                        will be permanently deleted from the tracklist<br>
-                        <span class="target-tracklist"></span
-                    ></p>
-                    <ul class="deleting-tracks"></ul>
-                    <p class="tracklist-removal-confirm" hidden>
-                        <label>
-                            <input type="checkbox" checked> Completely remove the tracklist from the database
-                        </label>
-                    </p>
-                    <p class="empty-tracklist-removal-confirm" hidden>Delete the empty tracklist from the database?</p>
-                    <h4 class="warning-info"><span>&#9888;</span> Attention! This action cannot be undone!</h3>
-                    <div class="buttons-box">
-                        <button class="button-ok"><span>&#10004;</span> ОК</button>
-                        <button class="button-cancel"><span>&#10060;</span> Cancel</button>
+                    <div class="inner-scroll" tabindex="0">
+                        <h3 id="tracklist-deletion-title">Tracklist Deletion Confirmation</h3>
+                        <p id="tracklist-deletion-description">
+                            <span class="deleting-tracks-number"></span> track<span class="plural-suffix"></span>
+                            will be permanently deleted from the tracklist<br>
+                            <span class="target-tracklist"></span
+                        ></p>
+                        <ul class="deleting-tracks"></ul>
+                        <p class="tracklist-removal-confirm" hidden>
+                            <label>
+                                <input type="checkbox" checked> Completely remove the tracklist from the database
+                            </label>
+                        </p>
+                        <p class="empty-tracklist-removal-confirm" hidden>Delete the empty tracklist from the database?</p>
+                        <h4 class="warning-info"><span>&#9888;</span> Attention! This action cannot be undone!</h3>
+                        <div class="buttons-box">
+                            <button class="button-ok"><span>&#10004;</span> ОК</button>
+                            <button class="button-cancel"><span>&#10060;</span> Cancel</button>
+                        </div>
                     </div>
+
+                    <button class="close-button"><i class="icon-cancel"></i></button>
+                </div>
+            </div>
+
+            <div id="tracklist-management" class="modal-overlay" role="dialog" aria-labelledby="tracklist-management-title"
+                aria-describedby="tracklist-management-description" hidden
+                ><div class="dialog-box">
+                    <div class="inner-scroll" tabindex="0">
+                        <h3 id="tracklist-management-title">Tracklist Creation</h3>
+                        <p id="tracklist-management-description">
+                            
+                        </p>
+                        <ul class="loading-tracks"></ul>
+                        <div class="buttons-box">
+                            <button class="button-ok"><span>&#10004;</span> ОК</button>
+                            <button class="button-cancel"><span>&#10060;</span> Cancel</button>
+                        </div>
+                    </div>
+
                     <button class="close-button"><i class="icon-cancel"></i></button>
                 </div>
             </div>

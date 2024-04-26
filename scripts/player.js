@@ -59,8 +59,8 @@ const curPlaylist = document.getElementById('current-playlist');
 const docScrollArrowsContainer = document.getElementById('document-scroll-arrows-container');
 const docScrollArrowUp = document.getElementById('document-scroll-arrow-up');
 const docScrollArrowDown = document.getElementById('document-scroll-arrow-down');
-const keysInfoArea = document.getElementById('keys-info-area');
-const tracklistDelConfirm = document.getElementById('tracklist-deletion-confirmation');
+const keysInfoWin = document.getElementById('keys-info-window');
+const tracklistDelWin = document.getElementById('tracklist-deletion');
 
 // Calculated and transformed constants
 const 
@@ -78,6 +78,7 @@ const
     timelineMrgnLeft = Math.abs(parseInt(getComputedStyle(timeline).marginLeft)), 
     trackHeight = parseInt(getComputedStyle(playlistLim).getPropertyValue('--track-height')),
     scrollbarWidth = getScrollbarWidth(),
+    origDocWidth = getDocWidth(),
     hasScrollend = 'onscrollend' in window
 ;
 
@@ -1627,30 +1628,52 @@ function calcVolumeTooltip() {
 visPlaylistArea.onpointerover = (event) => {
     if (!event.target.hasAttribute('data-actionable')) return;
 
-    let activeTrackInfo = event.target;
-    let activeTrackInfoLim = activeTrackInfo.parentElement;
-    
-    activeTrackInfoLim.classList.add('hover');
-    adjustPlaylistLimiterWidth(activeTrackInfo);
-    
-    activeTrackInfo.onpointerleave = () => {
-        activeTrackInfoLim.classList.remove('hover');
+    let track = event.target.closest('.track');
+    let relTarget = event.relatedTarget;
+    if (track.contains(relTarget) && relTarget.hasAttribute('data-actionable')) return;
+
+    let actionableElems = Array.from(track.querySelectorAll('.artist-name, .track-title'));
+
+    playlist.hoveredTrackInfo = actionableElems;
+
+    actionableElems.forEach(elem => {
+        elem.classList.add('hover');
+        elem.parentElement.classList.add('visible');
+    });
+
+    adjustTrackInfoLimitersWidth(actionableElems);
+
+    track.addEventListener('pointerout', function removeHovers(event) {
+        let relTarget = event.relatedTarget;
+        if (actionableElems.includes(relTarget)) return;
+        
+        actionableElems.forEach(elem => {
+            elem.classList.remove('hover');
+            elem.parentElement.classList.remove('visible');
+        });
+
         if (!removingTracksNum) playlistLim.style.width = '';
 
-        activeTrackInfo.onpointerleave = () => false;
-    };
+        delete playlist.hoveredTrackInfo;
+
+        track.removeEventListener('pointerout', removeHovers);
+    });
 };
 
-function adjustPlaylistLimiterWidth(activeTrackInfo) {
+function adjustTrackInfoLimitersWidth(actionableElems) {
     if (removingTracksNum) return;
+
+    let maxTrackInfo = actionableElems.reduce(
+        (maxElem, elem) => maxElem.offsetWidth > elem.offsetWidth ? maxElem : elem
+    );
     
-    let activeTrackInfoLeft = activeTrackInfo.getBoundingClientRect().left + window.scrollX;
+    let maxTrackInfoLeft = maxTrackInfo.getBoundingClientRect().left + window.scrollX;
     let playlistLimLeft = playlistLim.getBoundingClientRect().left + window.scrollX;
-    let activeTrackInfoLim = activeTrackInfo.parentElement;
-    let activeTrackInfoWidth = activeTrackInfo.offsetWidth;
+    let maxTrackInfoLim = maxTrackInfo.parentElement;
+    let maxTrackInfoWidth = maxTrackInfo.offsetWidth;
     let playlistWidth = playlist.offsetWidth;
 
-    if (activeTrackInfoLeft - playlistLimLeft + activeTrackInfoWidth + commonSpacing <= playlistWidth) {
+    if (maxTrackInfoLeft - playlistLimLeft + maxTrackInfoWidth + commonSpacing <= playlistWidth) {
         playlistLim.style.width = '';
         return;
     }
@@ -1658,14 +1681,12 @@ function adjustPlaylistLimiterWidth(activeTrackInfo) {
     let docWidth = getDocWidth();
     let shift = isTouchDevice ? 1 : 0; // Bug on some mobile devices
 
-    if (activeTrackInfoLim.hasAttribute('data-animating')) {
+    if (maxTrackInfoLim.hasAttribute('data-animating')) {
         playlistLim.style.width = docWidth - playlistLimLeft - shift + 'px';
 
-        eventManager.addOnceEventListener(activeTrackInfoLim, 'transitionend', () => {
-            activeTrackInfoLim.removeAttribute('data-animating');
-
-            if (activeTrackInfo.matches(':hover')) {
-                if (activeTrackInfoLim.classList.contains('hover')) {
+        eventManager.addOnceEventListener(maxTrackInfoLim, 'transitionend', () => {
+            if (maxTrackInfo.classList.contains('hover')) {
+                if (maxTrackInfoLim.classList.contains('visible')) {
                     extendWidth();
                 } else { // Works on touchscreen
                     playlistLim.style.width = '';
@@ -1677,13 +1698,13 @@ function adjustPlaylistLimiterWidth(activeTrackInfo) {
     }
 
     function extendWidth() {
-        activeTrackInfoLeft = activeTrackInfo.getBoundingClientRect().left + window.scrollX;
-        activeTrackInfoWidth = activeTrackInfo.offsetWidth;
+        maxTrackInfoLeft = maxTrackInfo.getBoundingClientRect().left + window.scrollX;
+        maxTrackInfoWidth = maxTrackInfo.offsetWidth;
 
-        if (activeTrackInfoLeft - playlistLimLeft + activeTrackInfoWidth + commonSpacing > playlistWidth) {
-            playlistLim.style.width = activeTrackInfoLeft - playlistLimLeft + activeTrackInfoWidth + commonSpacing + 'px';
+        if (maxTrackInfoLeft - playlistLimLeft + maxTrackInfoWidth + commonSpacing > playlistWidth) {
+            playlistLim.style.width = maxTrackInfoLeft - playlistLimLeft + maxTrackInfoWidth + commonSpacing + 'px';
         }
-        if (activeTrackInfoLeft + activeTrackInfoWidth + commonSpacing > docWidth) {
+        if (maxTrackInfoLeft + maxTrackInfoWidth + commonSpacing > docWidth) {
             playlistLim.style.width = docWidth - playlistLimLeft - shift + 'px';
         }
     }
@@ -1710,10 +1731,10 @@ visPlaylistArea.addEventListener('pointerdown', function (event) {
 
             // Prohibiting text selection on the touchscreen
             if (isTouchDevice && event.isPrimary && event.target.hasAttribute('data-actionable')) {
-                let activeTrackInfo = event.target;
-                activeTrackInfo.style.userSelect = 'none';
+                let maxTrackInfo = event.target;
+                maxTrackInfo.style.userSelect = 'none';
 
-                document.addEventListener('pointerup', () => activeTrackInfo.style.userSelect = '', {once: true});
+                document.addEventListener('pointerup', () => maxTrackInfo.style.userSelect = '', {once: true});
             }
         } else { // Focus handling
             if (document.activeElement == trackInfoBox) {
@@ -1924,11 +1945,8 @@ function removeTrackFromPlaylist(track, eventType = null) {
             localStorage.setItem('current_tracklist', JSON.stringify(curTracklist));
 
             // Change the playlist limiter width to default value
-            let hoveredActiveTrackInfoLim = playlist.querySelector('.track-title-limiter.hover') ||
-                playlist.querySelector('.artist-name-limiter.hover');
-            if (hoveredActiveTrackInfoLim) {
-                let hoveredActiveTrackInfo = hoveredActiveTrackInfoLim.firstElementChild;
-                adjustPlaylistLimiterWidth(hoveredActiveTrackInfo);
+            if (playlist.hoveredTrackInfo) {
+                adjustTrackInfoLimitersWidth(playlist.hoveredTrackInfo);
             } else {
                 playlistLim.style.width = '';
             }
@@ -1952,8 +1970,6 @@ visPlaylistArea.oncontextmenu = function(event) {
     if (!event.target.hasAttribute('data-actionable')) return;
 
     event.preventDefault();
-
-    //console.log(document.getSelection().toString());
 
     document.getSelection().empty();
 
@@ -2929,22 +2945,20 @@ function removeSelected(audio) {
 
 function checkAnimatedTransition(track) {
     if (playlistStyle === 'smooth') {
-        let artistName = track.querySelector('.artist-name');
-        let trackTitle = track.querySelector('.track-title');
+        let actionableElems = Array.from(track.querySelectorAll('.artist-name, .track-title'));
+        let isHovered = false;
 
-        for (let activeTrackInfo of [artistName, trackTitle]) {
-            let activeTrackInfoLim = activeTrackInfo.parentElement;
-
-            activeTrackInfoLim.setAttribute('data-animating', '');
+        actionableElems.forEach(trackInfo => {
+            let trackInfoLim = trackInfo.parentElement;
+            trackInfoLim.setAttribute('data-animating', '');
+            if (!isHovered && trackInfo.classList.contains('hover')) isHovered = true;
     
-            eventManager.addOnceEventListener(activeTrackInfoLim, 'transitionend', () => {
-                activeTrackInfoLim.removeAttribute('data-animating');
+            eventManager.addOnceEventListener(trackInfoLim, 'transitionend', () => {
+                trackInfoLim.removeAttribute('data-animating');
             });
-    
-            if (activeTrackInfo.matches(':hover')) {
-                adjustPlaylistLimiterWidth(activeTrackInfo);
-            }
-        }
+        });
+
+        if (isHovered) adjustTrackInfoLimitersWidth(actionableElems);
     }
 }
 
@@ -3049,9 +3063,8 @@ function tracklistDatabaseAction() {
 
             checkGlobalStates();
             calcTracklistsTextIndent();
-            disableTracklistsContainerScroll();
-            //calcTracklistsContainerMaxHeight();
             calcTracklistsContainerMaxHeight();
+            disableTracklistsContainerScroll();
             checkPlayerContainertJustify();
     
             let tracklistDtbsLeft = playerLeft - tracklistDatabase.offsetWidth;
@@ -3102,7 +3115,9 @@ function tracklistDatabaseAction() {
         player.style.marginLeft = playerLeft + 'px';
         player.offsetWidth; // Causes a reflow
         player.classList.add('smooth-moving');
-        player.style.marginLeft = (canAutoChangeWidth && !settingsArea.hidden) ? 0 : '';
+        player.style.marginLeft = (canAutoChangeWidth && !settingsArea.hidden) ?
+            origDocWidth - settingsAreaWidth - player.offsetWidth + 'px' :
+            '';
 
         eventManager.addOnceEventListener(player, 'transitionend', endSmoothMoving);
     }
@@ -3788,7 +3803,7 @@ function highlightSelected(audio) {
     if (!audio) return;
     if (audio.hasAttribute('data-removed')) return;
     if (!settingsArea.classList.contains('active')) return;
-    if (keysInfoArea.classList.contains('active')) return;
+    if (keysInfoWin.classList.contains('active')) return;
 
     //console.log('+ highlight');
 
@@ -3888,7 +3903,7 @@ function resetSettings() {
 //////////////////////
 
 function keysInfoAction() {
-    if (!keysInfoArea.classList.contains('active')) {
+    if (!keysInfoWin.classList.contains('active')) {
         showKeysInfo();
     } else {
         hideKeysInfo();
@@ -3896,9 +3911,9 @@ function keysInfoAction() {
 }
 
 function showKeysInfo() {
-    keysInfoArea.hidden = false;
-    keysInfoArea.offsetWidth;  // Causes a reflow
-    keysInfoArea.classList.add('active');
+    keysInfoWin.hidden = false;
+    keysInfoWin.offsetWidth;  // Causes a reflow
+    keysInfoWin.classList.add('active');
 
     keysInfoAction.savedActiveElem = document.activeElement;
 
@@ -3908,10 +3923,10 @@ function showKeysInfo() {
 }
 
 function hideKeysInfo() {
-    keysInfoArea.classList.remove('active');
+    keysInfoWin.classList.remove('active');
 
-    promiseChange(keysInfoArea, 'transition', 'opacity', keysInfoBtn, 'KeyI', () => {
-        keysInfoArea.hidden = true;
+    promiseChange(keysInfoWin, 'transition', 'opacity', keysInfoBtn, 'KeyI', () => {
+        keysInfoWin.hidden = true;
 
         tracklistDatabase.removeAttribute('inert');
         player.removeAttribute('inert');
@@ -3925,7 +3940,7 @@ function hideKeysInfo() {
 }
 
 // Closing key info by clicking
-keysInfoArea.onclick = (event) => {
+keysInfoWin.onclick = (event) => {
     if (event.target == keysInfoBtn) return;
     if (event.target.closest('.keys-info') && !event.target.closest('.close-button')) return;
 
@@ -4032,7 +4047,7 @@ document.addEventListener('click', (event) => {
     }
 
     if (event.target.closest('#settings-area')) return;
-    if (event.target.closest('#keys-info-area')) return;
+    if (event.target.closest('#keys-info-window')) return;
     if (event.target.closest('#visible-playlist-area')) return;
     if (event.target.closest('i')) return;
     if (event.target.closest(`
@@ -5118,11 +5133,11 @@ function showTracklistDeletionConfirmation(tracklistSection) {
 
     if (listLength) {
         if (noTracksChecked) {
-            const okBtn = tracklistDelConfirm.querySelector('.button-ok');
+            const okBtn = tracklistDelWin.querySelector('.button-ok');
             okBtn.classList.add('inactive');
             okBtn.disabled = true;
         } else {
-            const delTracks = tracklistDelConfirm.querySelector('.deleting-tracks');
+            const delTracks = tracklistDelWin.querySelector('.deleting-tracks');
     
             for (let trackInTracklist of list.children) {
                 let isChecked = trackInTracklist.querySelector('input[type="checkbox"]').checked;
@@ -5139,33 +5154,34 @@ function showTracklistDeletionConfirmation(tracklistSection) {
 
     let delListLength = deletingList.length;
     let delTracksInfo = !delListLength ? 'No' : (delListLength < listLength) ? delListLength : 'All';
-    tracklistDelConfirm.querySelector('.deleting-tracks-number').textContent = delTracksInfo;
-    tracklistDelConfirm.querySelector('.plural-suffix').textContent = (delListLength === 1) ? '' : 's';
-    tracklistDelConfirm.querySelector('.target-tracklist').textContent = tracklistTitle;
+    tracklistDelWin.querySelector('.deleting-tracks-number').textContent = delTracksInfo;
+    tracklistDelWin.querySelector('.plural-suffix').textContent = (delListLength === 1) ? '' : 's';
+    tracklistDelWin.querySelector('.target-tracklist').textContent = tracklistTitle;
 
     if (delTracksInfo === 'No') {
-        tracklistDelConfirm.querySelector('#deletion-confirm-description').classList.add('period');
+        tracklistDelWin.querySelector('#tracklist-deletion-description').classList.add('period');
 
         if (listLength) {
-            tracklistDelConfirm.querySelector('.warning-info').hidden = true;
+            tracklistDelWin.querySelector('.warning-info').hidden = true;
         } else {
-            tracklistDelConfirm.querySelector('.empty-tracklist-removal-confirm').hidden = false;
+            tracklistDelWin.querySelector('.empty-tracklist-removal-confirm').hidden = false;
         }
     } else if (delTracksInfo === 'All') {
-        tracklistDelConfirm.querySelector('.tracklist-removal-confirm').hidden = false;
+        tracklistDelWin.querySelector('.tracklist-removal-confirm').hidden = false;
     }
 
-    tracklistDelConfirm.hidden = false;
-    tracklistDelConfirm.offsetWidth;  // Causes a reflow
-    tracklistDelConfirm.classList.add('active');
+    tracklistDelWin.hidden = false;
+    tracklistDelWin.offsetWidth;  // Causes a reflow
+    tracklistDelWin.classList.add('active');
 
     showTracklistDeletionConfirmation.savedActiveElem = document.activeElement;
 
     tracklistDatabase.setAttribute('inert', '');
     player.setAttribute('inert', '');
     settingsArea.parentElement.setAttribute('inert', '');
+    keysInfoWin.setAttribute('inert', '');
 
-    tracklistDelConfirm.onclick = (event) => {
+    tracklistDelWin.onclick = (event) => {
         if (event.target.closest('.button-ok')) {
             if (delListLength) {
                 confirmTracksDeletion();
@@ -5189,8 +5205,8 @@ function showTracklistDeletionConfirmation(tracklistSection) {
             background-color: rgba(196, 13, 43, 0.9);
         `);
 
-        let shouldDeleteTrlSection = !tracklistDelConfirm.querySelector('.tracklist-removal-confirm').hidden &&
-            tracklistDelConfirm.querySelector('.tracklist-removal-confirm input[type="checkbox"]').checked;
+        let shouldDeleteTrlSection = !tracklistDelWin.querySelector('.tracklist-removal-confirm').hidden &&
+            tracklistDelWin.querySelector('.tracklist-removal-confirm input[type="checkbox"]').checked;
         let liHeight = getComputedStyle(list.firstElementChild).height;
         let deleteSrcSet = new Set();
     
@@ -5261,7 +5277,7 @@ function showTracklistDeletionConfirmation(tracklistSection) {
 
         eventManager.addOnceEventListener(tracklistSection, 'transitionend', runDeleteTracklistSection);
 
-        if (tracklistDelConfirm.classList.contains('active')) hideTracklistDeletionConfirmation();
+        if (tracklistDelWin.classList.contains('active')) hideTracklistDeletionConfirmation();
 
         function runDeleteTracklistSection() {
             let tracklistSectionStyle = getComputedStyle(tracklistSection);
@@ -5289,27 +5305,33 @@ function showTracklistDeletionConfirmation(tracklistSection) {
 }
 
 function hideTracklistDeletionConfirmation() {
-    tracklistDelConfirm.onclick = () => false;
+    tracklistDelWin.onclick = () => false;
 
-    tracklistDelConfirm.classList.remove('active');
+    tracklistDelWin.classList.remove('active');
 
-    eventManager.addOnceEventListener(tracklistDelConfirm, 'transitionend', () => {
-        tracklistDelConfirm.hidden = true;
+    eventManager.addOnceEventListener(tracklistDelWin, 'transitionend', () => {
+        tracklistDelWin.hidden = true;
 
-        tracklistDelConfirm.querySelector('#deletion-confirm-description').classList.remove('period');
-        tracklistDelConfirm.querySelector('.deleting-tracks-number').textContent = '';
-        tracklistDelConfirm.querySelector('.target-tracklist').textContent = '';
-        tracklistDelConfirm.querySelector('.deleting-tracks').textContent = '';
-        tracklistDelConfirm.querySelector('.tracklist-removal-confirm').hidden = true;
-        tracklistDelConfirm.querySelector('.tracklist-removal-confirm input[type="checkbox"]').checked = true;
-        tracklistDelConfirm.querySelector('.empty-tracklist-removal-confirm').hidden = true;
-        tracklistDelConfirm.querySelector('.warning-info').hidden = false;
-        tracklistDelConfirm.querySelector('.button-ok').classList.remove('inactive');
-        tracklistDelConfirm.querySelector('.button-ok').disabled = false;
+        tracklistDelWin.querySelector('#tracklist-deletion-description').classList.remove('period');
+        tracklistDelWin.querySelector('.deleting-tracks-number').textContent = '';
+        tracklistDelWin.querySelector('.target-tracklist').textContent = '';
+        tracklistDelWin.querySelector('.deleting-tracks').textContent = '';
+        tracklistDelWin.querySelector('.tracklist-removal-confirm').hidden = true;
+        tracklistDelWin.querySelector('.tracklist-removal-confirm input[type="checkbox"]').checked = true;
+        tracklistDelWin.querySelector('.empty-tracklist-removal-confirm').hidden = true;
+        tracklistDelWin.querySelector('.warning-info').hidden = false;
+        tracklistDelWin.querySelector('.button-ok').classList.remove('inactive');
+        tracklistDelWin.querySelector('.button-ok').disabled = false;
 
-        tracklistDatabase.removeAttribute('inert');
-        player.removeAttribute('inert');
-        settingsArea.parentElement.removeAttribute('inert');
+        keysInfoWin.removeAttribute('inert');
+
+        if (keysInfoWin.hidden) {
+            tracklistDatabase.removeAttribute('inert');
+            player.removeAttribute('inert');
+            settingsArea.parentElement.removeAttribute('inert');
+        } else {
+            keysInfoAction.savedActiveElem = showTracklistDeletionConfirmation.savedActiveElem;
+        }
 
         showTracklistDeletionConfirmation.savedActiveElem?.focus();
         delete showTracklistDeletionConfirmation.savedActiveElem;
@@ -5920,8 +5942,8 @@ function connectKeyHandlers() {
         // Closing keys info and settings by keypressing "Escape"
         if (event.code == 'Escape') {
             const areas = [
-                { element: tracklistDelConfirm, action: hideTracklistDeletionConfirmation },
-                { element: keysInfoArea, action: hideKeysInfo },
+                { element: tracklistDelWin, action: hideTracklistDeletionConfirmation },
+                { element: keysInfoWin, action: hideKeysInfo },
                 { element: settingsArea, action: hideSettings }
             ];
             
