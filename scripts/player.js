@@ -3061,11 +3061,11 @@ function tracklistDatabaseAction() {
         if (!tracklistDatabase.classList.contains('enabled')) { // Move/show tracklists
             tracklistDatabase.classList.add('enabled');
 
-            checkGlobalStates();
             calcTracklistsTextIndent();
             calcTracklistsContainerMaxHeight();
             disableTracklistsContainerScroll();
-            checkPlayerContainertJustify();
+            checkPlayerContainerJustify();
+            checkGlobalStates();
     
             let tracklistDtbsLeft = playerLeft - tracklistDatabase.offsetWidth;
             let noSpaceForMoving = (tracklistDtbsLeft === 0) ? true : false;
@@ -3159,7 +3159,7 @@ function tracklistDatabaseAction() {
     
             setTimeout(window[actionFunc]);
         } else {
-            checkPlayerContainertJustify();
+            checkPlayerContainerJustify();
         }
     }
 
@@ -3187,7 +3187,7 @@ function tracklistDatabaseAction() {
         tracklistDatabase.classList.toggle('active', animationAction === 'show');
         
         let visTracklistSections = filterVisibleTracklistSections();
-        let addControlsBtns = Array.from(tracklistDtbsAddControls.children);
+        let addControlsBtns = Array.from(tracklistDtbsAddControls.querySelectorAll('.add-controls-button'));
         let animatedElems = [].concat(tracklistDtbsTitle, visTracklistSections, addControlsBtns);
         if (animationAction === 'hide') animatedElems.reverse();
         let animElemsNum = animatedElems.length;
@@ -3388,6 +3388,7 @@ function tracklistDatabaseAction() {
                 tracklistDtbsBtn.classList.remove('enabled');
 
                 playerContainer.style.minHeight = '';
+
                 checkGlobalStates();
                 checkStartInfoDisplaying();
             }
@@ -3565,7 +3566,7 @@ function showSettings() {
 
         calcTracklistsContainerMaxHeight();
         setDocScrollbarYWidth();
-        checkPlayerContainertJustify();
+        checkPlayerContainerJustify();
         checkScrollElemsVisibility();
         calcTracklistDtbsBtnPosition();
         scrollDoc('right', 'smooth');
@@ -3750,7 +3751,7 @@ function hideSettings() {
     function checkGlobalStates() {
         calcTracklistsContainerMaxHeight();
         setDocScrollbarYWidth();
-        checkPlayerContainertJustify(); // Causes a reflow
+        checkPlayerContainerJustify(); // Causes a reflow
         checkScrollElemsVisibility();
         calcTracklistDtbsBtnPosition();
     }
@@ -3763,7 +3764,7 @@ function checkTracklistDtbsAction() {
     tracklistDatabaseAction();
 }
 
-function checkPlayerContainertJustify() {
+function checkPlayerContainerJustify() {
     let winWidth = getWinWidth();
     let isDocScrollbar = isDocScrollbarCheck();
     let curScrollbarYWidth = isDocScrollbar ? scrollbarWidth : 0;
@@ -4108,6 +4109,21 @@ function connectCheckboxEnterKeyDown(elem) {
     });
 }
 
+// Remove elem activity if elem is NOT in focus
+document.addEventListener('pointerdown', (event) => {
+    if (event.target.matches('input[type="number"]')) return;
+    if (event.target.tagName == 'TEXTAREA') return;
+
+    let initActiveElem = document.activeElement;
+
+    document.addEventListener('pointerup', () => {
+        setTimeout(() => {
+            let curActiveElem = document.activeElement;
+            if (curActiveElem != initActiveElem) curActiveElem.blur();
+        });
+    }, {once: true});
+});
+
 // Document blur
 document.body.onblur = () => {
     setTimeout(() => {
@@ -4438,7 +4454,7 @@ window.addEventListener('resize', () => {
         requestAnimationFrame(function () {
             calcTracklistsContainerMaxHeight();
             setDocScrollbarYWidth();
-            checkPlayerContainertJustify();
+            checkPlayerContainerJustify();
             checkScrollElemsVisibility();
             checkTracklistDatabasePositionX();
             calcTracklistDtbsBtnPosition();
@@ -4526,15 +4542,14 @@ function isPlaylistInViewCheck(playlistContainerRect) {
 }
 
 function setDocScrollbarYWidth() {
-    if (document.body.classList.contains('loading')) return;
     if (!scrollbarWidth) return;
 
     let isDocScrollbar = isDocScrollbarCheck();
-    let curScrollbarYWidth = isDocScrollbar ? scrollbarWidth : 0;
-    let savedScrollbarYWidth = parseInt(cssRoot.style.getPropertyValue('--document-scrollbar-y-width'));
+    let curScrollbarYWidth = (isDocScrollbar ? scrollbarWidth : 0) + 'px';
+    let savedScrollbarYWidth = cssRoot.style.getPropertyValue('--document-scrollbar-y-width');
 
     if (curScrollbarYWidth !== savedScrollbarYWidth) {
-        cssRoot.style.setProperty('--document-scrollbar-y-width', curScrollbarYWidth + 'px');
+        cssRoot.style.setProperty('--document-scrollbar-y-width', curScrollbarYWidth);
     }
 }
 
@@ -4741,13 +4756,13 @@ function changeNumberOfVisibleTracks(value) {
     localStorage.setItem('number_of_visible_tracks', numOfVisTracks);
     localStorage.setItem('visible_tracks_checkbox_checked', visibleTracksCheckbox.checked);
 
+    scrollDoc('right', 'instant');
     calcTracklistsContainerMaxHeight();
     setDocScrollbarYWidth();
-    checkPlayerContainertJustify();
+    checkPlayerContainerJustify();
     checkPlaylistScrollability();
     checkScrollElemsVisibility();
     calcTracklistDtbsBtnPosition();
-    scrollDoc('right', 'instant');
 
     if (accelerateScrolling) {
         let isDocScrollbar = isDocScrollbarCheck();
@@ -4935,8 +4950,7 @@ function changeAddOptionsDisplaying(isChecked) {
     calcTracklistsTextIndent();
 }
 
-async function calcTracklistsTextIndent(list = null) {
-    if (document.body.classList.contains('loading')) return;
+function calcTracklistsTextIndent(list = null) {
     if (!tracklistDatabase.classList.contains('enabled')) return;
 
     if (list) {
@@ -4974,14 +4988,17 @@ async function calcTracklistsTextIndent(list = null) {
     }
 }
 
-// Remove elem activity if elem is NOT in focus
-tracklistDatabase.addEventListener('pointerdown', () => {
-    let activeElem = document.activeElement;
+// Highlight the button element when pressing the label element
+tracklistDatabase.addEventListener('pointerdown', (event) => {
+    let manageTrklLabel = event.target.closest('label[for^="manage-tracklist"]');
 
-    tracklistDatabase.addEventListener('pointerup', (event) => {
-        const tracklistDtbsElem = event.target.closest('.tracklist-section, .add-controls-button');
-        if (tracklistDtbsElem && tracklistDtbsElem != activeElem) tracklistDtbsElem.blur();
-    }, {once: true});
+    if (manageTrklLabel) {
+        manageTrklLabel.previousElementSibling.classList.add('key-pressed');
+
+        tracklistDatabase.addEventListener('pointerup', () => {
+            manageTrklLabel.previousElementSibling.classList.remove('key-pressed');
+        }, {once: true});
+    }
 });
 
 tracklistDatabase.onclick = (event) => {
@@ -5064,7 +5081,7 @@ function toggleTracklistDetails(tracklistSection, targetState = null) {
     eventManager.addOnceEventListener(tracklistDetails, 'transitionend', endHeightChanging);
     trlDetailsAnimationFrameIds[trlDetailsId] = requestAnimationFrame(checkScrollabilities);
 
-    connectCheckboxLabelsFocus(tracklistDetails);
+    connectFocus(tracklistDetails);
     setCheckboxChangeHandlers(tracklistDetails);
 
     function endHeightChanging() {
@@ -5094,7 +5111,7 @@ function addTracklistToPlaylist(tracklistSection, clearPlaylist) {
 
     console.log('playlist changed');
     
-    const checkboxAll = tracklistSection.querySelector('header input[type="checkbox"]');
+    const checkboxAll = tracklistSection.querySelector('header.strip input[type="checkbox"]');
     const list = tracklistSection.querySelector('.list');
     let listLength = list.children.length;
     let noTracksChecked = !listLength || (!checkboxAll.checked && !checkboxAll.classList.contains('partial-list'));
@@ -5126,7 +5143,7 @@ function showTracklistDeletionConfirmation(tracklistSection) {
     const tracklistTitle = tracklistSection.querySelector('.tracklist-title').textContent;
     const tracklistDetails = tracklistSection.querySelector('.tracklist-details');
     const list = tracklistDetails.querySelector('.list');
-    const checkboxAll = tracklistDetails.querySelector('header input[type="checkbox"]');
+    const checkboxAll = tracklistDetails.querySelector('header.strip input[type="checkbox"]');
     let listLength = list.children.length;
     let noTracksChecked = !checkboxAll.checked && !checkboxAll.classList.contains('partial-list');
     let deletingList = [];
@@ -5260,7 +5277,7 @@ function showTracklistDeletionConfirmation(tracklistSection) {
 
                 if (tracklistDetails.style.height !== '0px') {
                     calcTracklistsTextIndent(list);
-                    connectCheckboxLabelsFocus(tracklistDetails);
+                    connectFocus(tracklistDetails);
                     setCheckboxChangeHandlers(tracklistDetails);
                 }
             }
@@ -5340,13 +5357,13 @@ function hideTracklistDeletionConfirmation() {
     });
 }
 
-function connectCheckboxLabelsFocus(tracklistDetails) {
-    const checkboxLabels = tracklistDetails.querySelectorAll('label.designed-checkbox');
-    checkboxLabels.forEach(label => label.tabIndex = (tracklistDetails.style.height !== '0px') ? 0 : -1);
+function connectFocus(tracklistDetails) {
+    const focusableElems = tracklistDetails.querySelectorAll('label.designed-checkbox, button');
+    focusableElems.forEach(elem => elem.tabIndex = (tracklistDetails.style.height !== '0px') ? 0 : -1);
 }
 
 function setCheckboxChangeHandlers(tracklistDetails) {
-    const checkboxAll = tracklistDetails.querySelector('header input[type="checkbox"]');
+    const checkboxAll = tracklistDetails.querySelector('header.strip input[type="checkbox"]');
     const listCheckboxes = tracklistDetails.querySelectorAll('.list input[type="checkbox"]');
 
     if (tracklistDetails.style.height !== '0px') {
@@ -5389,10 +5406,10 @@ function checkTracklistDatabasePositionX() {
 }
 
 function calcTracklistsContainerMaxHeight() {
-    if (document.body.classList.contains('loading')) return;
     if (!tracklistDatabase.classList.contains('enabled')) return;
 
     playerContainer.style.minHeight = '';
+    //tracklistsContainer.style.maxHeight = '';
 
     let winHeight = getWinHeight();
     let tracklistDtbsTop = Math.max(tracklistDatabase.getBoundingClientRect().top, 0);
@@ -5489,6 +5506,7 @@ function createTracklistSection(tracklistTitle, tracklist) {
     tracklistSection.appendChild(details);
 
     let header = document.createElement('header');
+    header.className = 'strip';
     header.innerHTML = `
         <p>
             <input id="checkbox-tracklist[${tracklistNum}]-all" type="checkbox" checked
@@ -5511,8 +5529,8 @@ function createTracklistSection(tracklistTitle, tracklist) {
         coverBox.className = 'cover-box';
         coverBox.innerHTML = `<img src="${tracklist.cover}" alt="${tracklistTitle} Cover">`;
         detailsMain.appendChild(coverBox);
-
-        details.classList.add('is-cover');
+    } else {
+        details.classList.add('no-cover');
     }
 
     let list = document.createElement('ul');
@@ -5552,10 +5570,44 @@ function createTracklistSection(tracklistTitle, tracklist) {
         connectCheckboxEnterKeyDown(liCheckboxLabel);
     });
 
+    let footer = document.createElement('footer');
+    footer.className = 'strip';
+    footer.innerHTML = `
+        <p>
+            <button id="manage-tracklist[${tracklistNum}]" tabindex="-1">
+                <svg class="manage-tracklist-svg" version="1.1" xmlns="http://www.w3.org/2000/svg"
+                    width="120.000000pt" height="81.000000pt" viewBox="0 0 120.000000 81.000000"
+                    preserveAspectRatio="xMidYMid meet">
+
+                    <g transform="translate(0.000000,81.000000) scale(0.100000,-0.100000)"
+                        fill="currentColor" stroke="none">
+                        <path d="M20 790 c-27 -27 -25 -62 3 -88 23 -22 28 -22 361 -22 l337 0 24 25
+                            c30 29 31 45 4 79 l-20 26 -345 0 c-331 0 -345 -1 -364 -20z"/>
+                        <path d="M16 528 c-21 -30 -20 -61 2 -81 17 -15 57 -17 370 -17 l352 0 15 24
+                            c19 29 11 72 -15 86 -11 6 -159 10 -364 10 l-345 0 -15 -22z"/>
+                        <path d="M1055 510 l-29 -30 54 -56 55 -55 34 37 33 36 -48 49 c-27 27 -53 49
+                            -59 49 -6 0 -24 -14 -40 -30z"/>
+                        <path d="M827 282 l-157 -157 0 -58 0 -57 53 0 52 0 165 165 165 165 -50 50
+                            c-27 27 -54 50 -60 50 -6 0 -81 -71 -168 -158z"/>
+                        <path d="M17 272 c-21 -23 -22 -51 -1 -80 15 -22 19 -22 238 -22 203 0 224 2
+                            239 18 22 24 21 65 -1 85 -16 15 -48 17 -239 17 -200 0 -221 -2 -236 -18z"/>
+                    </g>
+                </svg>
+            </button
+            ><label for="manage-tracklist[${tracklistNum}]">Manage tracklist</label>
+        </p>
+    `;
+    details.appendChild(footer);
+
+    let manageTrklBtn = footer.querySelector('button[id^="manage-tracklist"]');
+    connectFocusHandler(manageTrklBtn);
+
     // When creating a new tracklist in the database
-    calcTracklistsTextIndent(list);
-    calcTracklistsContainerMaxHeight();
-    setDocScrollbarYWidth();
+    if (!document.body.classList.contains('loading')) {
+        calcTracklistsTextIndent(list);
+        calcTracklistsContainerMaxHeight();
+        setDocScrollbarYWidth();
+    }
 }
 
 ///////////////////////
@@ -6072,9 +6124,9 @@ function connectKeyHandlers() {
     document.addEventListener('keydown', (event) => {
         if (event.shiftKey || event.ctrlKey || event.altKey || event.metaKey || event.repeat) return;
         if (event.code == 'KeyG') {
-            //console.log(document.activeElement);
+            console.log(document.activeElement);
             //console.log(highlightActiveElem);
-            console.log(eventManager.eventTypesByElement);
+            //console.log(eventManager.eventTypesByElement);
         }
     });
 }

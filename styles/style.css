@@ -54,6 +54,7 @@ i {
     ;
 }
 
+/* Modal window container */
 .modal-overlay {
     --modal-padding: 50px;
     position: fixed;
@@ -80,6 +81,7 @@ i {
     opacity: 1;
 }
 
+/* Preloader */
 #preloader {
     background: #050505;
     transition-duration: 300ms;
@@ -166,6 +168,7 @@ i {
     }
 }
 
+/* Player container */
 #player-container {
     --common-spacing: 3px;
     --common-border-radius: 36px;
@@ -224,6 +227,7 @@ i {
     --img-invert-filter: 0.95;
 }
 
+/* Tracklist database (container left side) */
 #tracklist-database.container-left-side {
     --tracklist-database-max-width: 480px;
     --tracklist-database-min-width: 330px;
@@ -259,6 +263,7 @@ i {
     transition: width var(--transition-time-moving) ease-in-out;
 }
 
+/* Tracklist database title */
 #tracklist-database h3#tracklist-database-title {
     --database-title-timing-function: cubic-bezier(.5,-0.7,.82,.48);
     --database-title-active-transition: 0.3s var(--database-title-timing-function);
@@ -291,6 +296,7 @@ i {
     text-decoration: underline;
 }
 
+/* Tracklists container */
 #tracklists-container {
     position: relative;
     max-height: 0;
@@ -309,6 +315,7 @@ i {
     transition: none !important;
 }
 
+/* Tracklist section */
 #tracklists-container > .tracklist-section {
     --tracklist-section-symmetrical-spacing: 6px;
     --tracklist-section-timing-function: ease-out;
@@ -346,6 +353,7 @@ i {
     }
 }
 
+/* Tracklist menu */
 .tracklist-menu {
     display: table;
     width: 100%;
@@ -402,29 +410,39 @@ i {
     text-shadow: 0 0 12px rgba(var(--common-color-warning), 0.5);
 }
 
+/* Tracklist details */
 .tracklist-details {
     --cover-width: 120px;
     height: 0px;
     font-size: 11pt;
     transition: height 350ms ease-out;
 }
-.tracklist-details header {
+.tracklist-details .strip {
     margin: 0 var(--tracklist-section-symmetrical-spacing);
     background-color: rgba(var(--color-emphase), 0.3);
     text-align: left;
-    border-top: 1px solid rgb(var(--color-emphase));
     transition:
         color var(--transition-time-primary),
         background-color var(--transition-time-primary),
         border-color var(--transition-time-primary)
     ;
 }
-.tracklist-details header > p {
+.tracklist-details header.strip {
+    border-top: 1px solid rgb(var(--color-emphase));
+}
+.tracklist-details footer.strip {
+    margin-bottom: var(--tracklist-section-symmetrical-spacing);
+    border-bottom: 1px solid rgb(var(--color-emphase));
+    border-bottom-right-radius: 15px;
+    border-bottom-left-radius: 15px;
+}
+.tracklist-details .strip > p {
     display: none;
+    margin-left: calc(var(--cover-width) + var(--tracklist-section-symmetrical-spacing));
     padding: 3px 0;
 }
-.tracklist-details.is-cover header > p {
-    margin-left: calc(var(--cover-width) + var(--tracklist-section-symmetrical-spacing));
+.tracklist-details.no-cover .strip > p {
+    margin-left: var(--tracklist-section-symmetrical-spacing);
 }
 .tracklist-details input[type="checkbox"] {
     display: none;
@@ -443,14 +461,10 @@ i {
 .tracklist-details input[type="checkbox"]:checked + label {
     background-color: rgb(var(--color-emphase));
 }
-.tracklist-details header label:hover,
-.tracklist-details header label:hover + label {
-    text-decoration: underline;
-}
-.tracklist-details header input[type="checkbox"] + label {
+.tracklist-details header.strip input[type="checkbox"] + label {
     position: relative;
 }
-.tracklist-details header input[type="checkbox"] + label::before {
+.tracklist-details header.strip input[type="checkbox"] + label::before {
     content: '';
     display: inline-block;
     width: 7px;
@@ -460,29 +474,63 @@ i {
     top: calc(50% - 7px/2);
     transition: background-color var(--transition-time-primary);
 }
-.tracklist-details header input[type="checkbox"].partial-list + label::before {
+.tracklist-details header.strip input[type="checkbox"].partial-list + label::before {
     background-color: var(--color-neutral);
 }
-.tracklist-details header label > span {
+.tracklist-details footer.strip button {
+    width: 20px;
+    height: 20px;
+    background: var(--color-secondary);
+    background: var(--color-primary);
+    background: rgb(var(--color-emphase));
+    border: none;
+    border: 1px solid var(--color-primary);
+    /*border-radius: 50%;*/
+    transform: translateY(0px);
+    cursor: pointer;
+}
+.tracklist-details footer.strip button:active,
+.tracklist-details footer.strip button.key-pressed {
+    border: 1px solid var(--color-secondary);
+}
+.tracklist-details footer.strip .manage-tracklist-svg {
+    width: 90%;
+    height: auto;
+    vertical-align: middle;
+    color: rgb(var(--color-emphase));
+    color: var(--color-primary);
+    /*border-radius: 6%;
+    transform: translateX(1px);*/
+}
+.tracklist-details header.strip label > span,
+.tracklist-details footer.strip button + label {
     padding-left: 4px;
 }
+.tracklist-details header.strip label:hover,
+.tracklist-details header.strip label:hover + label,
+.tracklist-details footer.strip label:hover,
+.tracklist-details footer.strip button:hover + label {
+    text-decoration: underline;
+}
+
+/* Tracklist details - main block */
 .tracklist-details .details-main {
     display: flex;
     padding: var(--tracklist-section-symmetrical-spacing);
 }
 .tracklist-details .cover-box {
     flex: 0 0 var(--cover-width);
-    margin-right: var(--tracklist-section-symmetrical-spacing);
     overflow: hidden;
 }
 .tracklist-details .cover-box > img {
     width: var(--cover-width);
+    vertical-align: middle;
 }
 .tracklist-details .list {
     --list-text-indent: 0px;
     --order-width: 0px;
     flex: 0 1 auto;
-    margin-left: var(--list-text-indent);
+    margin-left: calc(var(--tracklist-section-symmetrical-spacing) + var(--list-text-indent));
     list-style-type: none;
     text-align: left;
     text-indent: calc((-1)*var(--list-text-indent));
@@ -513,11 +561,84 @@ i {
     padding-right: 4px;
 }
 
+/* Tracklist database additional contols */
+#tracklist-database > .add-controls {
+    display: flex;
+    margin-top: calc(50px - var(--common-spacing));
+
+    /*outline: 1px solid;*/
+}
+#tracklist-database > .add-controls > .left-col {
+    flex: 0 1 auto;
+}
+#tracklist-database > .add-controls > .right-col {
+    flex: 1 1 auto;
+}
+#tracklist-database > .add-controls .add-controls-button {
+    --clear-playlist-timing-function: cubic-bezier(.5,-0.7,.82,.48);
+    --clear-playlist-active-transition: 0.3s var(--clear-playlist-timing-function);
+    width: 50px;
+    height: 50px;
+    margin-right: 4%;
+    vertical-align: bottom;
+    border-radius: 50%;
+    border: none;
+    color: var(--color-primary);
+    background: var(--background-player);
+    cursor: pointer;
+    user-select: none;
+    transform: scale(0, 0);
+    transition:
+        box-shadow var(--transition-time-primary),
+        transform var(--clear-playlist-active-transition)
+    ;
+}
+#tracklist-database > .add-controls > .left-col > .add-controls-button {
+    display: none;
+    margin-left: 1px;
+}
+#tracklist-database > .add-controls .add-controls-button > i {
+    font-size: 25pt;
+    transform: translate(0.5px, 2px);
+    pointer-events: none;
+}
+#tracklist-database > .add-controls .add-controls-button:last-of-type {
+    margin-right: 0;
+}
+#tracklist-database > .add-controls .clear-playlist-img,
+.keys-info .clear-playlist-img {
+    width: 32px;
+    vertical-align: middle; /* Убрать нижний отступ */
+    border-radius: 50%;
+    border-top-right-radius: 12%;
+    filter: invert(calc(0.95 - var(--img-invert-filter)));
+    transition: filter var(--transition-time-primary);
+    pointer-events: none;
+}
+#tracklist-database > .add-controls .clear-playlist-img {
+    transform: translate(-2px, 2px);
+}
+#tracklist-database > .add-controls .create-tracklist-svg,
+.keys-info .create-tracklist-svg {
+    width: 70%;
+    height: auto;
+    vertical-align: middle;
+    transform: translate(1px, 1px);
+    border-radius: 6%;
+    color: rgb(var(--color-emphase));
+    transition: color var(--transition-time-primary);
+}
+#tracklist-database > .add-controls .add-controls-button.show {
+    --clear-playlist-timing-function: cubic-bezier(.18,.52,.5,1.7);
+    transform: scale(1, 1);
+}
+
+/* Additional options are active for tracklist database */
 #player-container.add-options-active .tracklist-menu i.delete-tracklist-tracks,
 .keys-info i.delete-tracklist-tracks {
     display: inline;
 }
-#player-container.add-options-active .tracklist-details header > p {
+#player-container.add-options-active .tracklist-details .strip > p {
     display: block;
 }
 #player-container.add-options-active .tracklist-details .list > li {
@@ -537,58 +658,11 @@ i {
 #player-container.add-options-active .tracklist-details .list .order > span {
     padding: 0 4px;
 }
-
-#tracklist-database > .add-controls {
-    margin-top: calc(50px - var(--common-spacing));
-
-    /*outline: 1px solid;*/
-}
-#tracklist-database > .add-controls > .add-controls-button {
-    --clear-playlist-timing-function: cubic-bezier(.5,-0.7,.82,.48);
-    --clear-playlist-active-transition: 0.3s var(--clear-playlist-timing-function);
-    width: 50px;
-    height: 50px;
-    margin-right: 20px;
-    vertical-align: bottom;
-    border-radius: 50%;
-    color: var(--color-primary);
-    background: var(--background-player);
-    border: none;
-    cursor: pointer;
-    user-select: none;
-    transform: scale(0, 0);
-    transition:
-        box-shadow var(--transition-time-primary),
-        transform var(--clear-playlist-active-transition)
-    ;
-}
-#tracklist-database > .add-controls > .add-controls-button > i {
-    font-size: 24pt;
-    transform: translateY(1px);
-    pointer-events: none;
-}
-#tracklist-database > .add-controls > .add-controls-button:last-of-type {
-    margin-right: 0;
-}
-#tracklist-database > .add-controls .clear-playlist-img,
-.keys-info .clear-playlist-img {
-    width: 32px;
-    height: 32px;
-    vertical-align: middle; /* Убрать нижний отступ */
-    border-radius: 50%;
-    border-top-right-radius: 12%;
-    filter: invert(calc(0.95 - var(--img-invert-filter)));
-    transition: filter var(--transition-time-primary);
-    pointer-events: none;
-}
-#tracklist-database > .add-controls .clear-playlist-img {
-    transform: translate(-2px, 2px);
-}
-#tracklist-database > .add-controls > .add-controls-button.show {
-    --clear-playlist-timing-function: cubic-bezier(.18,.52,.5,1.7);
-    transform: scale(1, 1);
+#player-container.add-options-active #tracklist-database > .add-controls > .left-col > .add-controls-button {
+    display: inline-block;
 }
 
+/* Player */
 #player {
     --player-lateral-padding: 20px;
     position: relative;
@@ -1823,7 +1897,7 @@ player-controls #volume-bar.active {
 }
 
 #player-container i:not(.icon-fast-forward, .icon-fast-backward, .icon-left-open):active,
-#tracklist-database > .add-controls >  .add-controls-button:active,
+#tracklist-database > .add-controls .add-controls-button:active,
 .key-pressed:not(.tracklist-title, #tracklist-database-button) {
     outline: 1px solid currentColor;
 }
@@ -1885,7 +1959,7 @@ player-controls #volume-bar.active {
     }
 }
 
-footer {
+footer.page-footer {
     position: absolute;
     left: 0;
     bottom: 0;
@@ -1897,7 +1971,7 @@ footer {
 }
 
 @media (hover: hover) and (pointer: fine) { /* For desktop */
-    #tracklist-database > .add-controls > .add-controls-button:hover {
+    #tracklist-database > .add-controls .add-controls-button:hover {
         box-shadow: var(--site-shadow-hover);
     }
     #document-scroll-arrows-container i.scroll-arrow:hover {
@@ -1905,7 +1979,7 @@ footer {
     }
 }
 @media (hover: none) and (pointer: coarse) { /* For mobile */
-    #tracklist-database > .add-controls > .add-controls-button:active {
+    #tracklist-database > .add-controls .add-controls-button:active {
         box-shadow: var(--site-shadow-hover);
     }
     #document-scroll-arrows-container i.scroll-arrow:active {
