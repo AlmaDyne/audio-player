@@ -509,12 +509,14 @@ i {
     background: rgb(var(--color-emphase));
     border: 1px solid var(--color-primary);
     border-radius: 2px;
+    box-sizing: border-box;
     overflow: hidden;
     cursor: pointer;
 }
 .tracklist-details footer.strip label.design-proxy:active,
 .tracklist-details footer.strip label.design-proxy.key-pressed {
     border: 1px solid var(--color-secondary);
+    outline: 1px solid var(--color-primary);
 }
 
 .tracklist-details footer.strip .edit-tracklist-svg {
@@ -1946,7 +1948,7 @@ player-controls #volume-bar.active {
 #tracklist-manager .tracklist-form {
     width: 82%;
     margin: auto;
-    padding: 4px;
+    padding: 5px 8px;
     text-align: left;
     border-radius: 8px;
     box-sizing: border-box;
@@ -2008,6 +2010,7 @@ player-controls #volume-bar.active {
 }
 #tracklist-manager .track-forms > li > .content-box {
     --content-box-height: 0px;
+    width: 100%;
     transform-origin: 50% 0;
 }
 #tracklist-manager .track-forms > li > .content-box.collapse {
@@ -2250,7 +2253,10 @@ player-controls #volume-bar.active {
     text-shadow: 0 0 6px var(--color-secondary);
 }
 #tracklist-manager .delete-info {
+    padding: 5px 8px;
     background: rgba(var(--common-color-warning), 0.25);
+    border: 2px solid rgba(var(--common-color-warning), 0);
+    border-radius: 8px;
     box-sizing: border-box;
 }
 #tracklist-manager .delete-info .target-text {
@@ -2287,11 +2293,18 @@ player-controls #volume-bar.active {
 /* Tracklist form success/error */
 #tracklist-manager .tracklist-form.success {
     background: rgba(var(--common-color-emphase), 0.1);
-    outline: 1px solid rgb(var(--common-color-emphase));
+    outline: 2px solid rgb(var(--common-color-emphase));
+}
+#tracklist-manager .tracklist-form.deleting {
+    background: rgba(var(--common-color-warning), 0.2);
+}
+#tracklist-manager .tracklist-form.success-deleted {
+    background: rgba(var(--common-color-warning), 0.2);
+    outline: 2px solid rgb(var(--common-color-emphase));
 }
 #tracklist-manager .tracklist-form.error {
-    background: rgba(var(--common-color-warning), 0.1);
-    outline: 1px solid rgb(var(--common-color-warning));
+    background: rgba(var(--common-color-warning), 0.2);
+    outline: 2px solid rgb(var(--common-color-warning));
 }
 
 /* Track form success/error */
@@ -2304,7 +2317,7 @@ player-controls #volume-bar.active {
     color: rgb(var(--common-color-emphase));
 }
 #tracklist-manager .track-forms > li.success .delete-info {
-    border: 1px solid rgb(var(--common-color-emphase));
+    border: 2px solid rgb(var(--common-color-emphase));
     box-sizing: border-box;
 }
 #tracklist-manager .track-forms > li.success .delete-info > .status-text {
@@ -2319,7 +2332,7 @@ player-controls #volume-bar.active {
     color: rgb(var(--common-color-warning));
 }
 #tracklist-manager .track-forms > li.error .delete-info {
-    border: 1px solid rgb(var(--common-color-warning));
+    border: 2px solid rgb(var(--common-color-warning));
 }
 #tracklist-manager .track-forms > li.error .delete-info > .status-text {
     color: rgb(var(--common-color-warning));

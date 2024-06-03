@@ -5037,7 +5037,6 @@ tracklistDatabase.onclick = (event) => {
     }
     // Manage current tracklist
     if (target = event.target.closest('[id^="edit-tracklist"]')) {
-        console.log('+ manage');
         const tracklistSection = target.closest('.tracklist-section');
         showTracklistManager(tracklistSection);
         return;
@@ -5760,7 +5759,7 @@ function showTracklistManager(tracklistSection = null) {
             }
 
             if (event.target.matches('.restore-button')) {
-                restoreTrackFormItemFieldset(event.target);
+                restoreTrackFormItem(event.target);
                 return;
             }
         }
@@ -5782,11 +5781,6 @@ function showTracklistManager(tracklistSection = null) {
             addTrackFormItem(null, null, true);
             return;
         }
-        // Remove new track item
-        if (target = event.target.closest('.remove-track-form-item')) {
-            removeTrackFormItemFieldset(target, event);
-            return;
-        }
         // Check input file (useful if file is not selected)
         if (target = event.target.closest('input[type="file"]')) {
             validateFileSelection(target);
@@ -5802,9 +5796,14 @@ function showTracklistManager(tracklistSection = null) {
             changeTrackFormItemOrder(target);
             return;
         }
+        // Remove new track item
+        if (target = event.target.closest('.remove-track-form-item')) {
+            removeTrackFormItem(target, event);
+            return;
+        }
         // Restore form of the existing track
         if (target = event.target.closest('.restore-button')) {
-            restoreTrackFormItemFieldset(target);
+            restoreTrackFormItem(target);
             return;
         }
         // Cancel and hide tracklist manager
@@ -6017,7 +6016,7 @@ function showTracklistManager(tracklistSection = null) {
         });
     }
 
-    function removeTrackFormItemFieldset(removeBtn) {
+    function removeTrackFormItem(removeBtn) {
         trackFormItemsNum--;
         animationsNum++;
 
@@ -6145,7 +6144,7 @@ function showTracklistManager(tracklistSection = null) {
         }
     }
 
-    function restoreTrackFormItemFieldset(restoreBtn) {
+    function restoreTrackFormItem(restoreBtn) {
         trackFormItemsNum++;
         animationsNum++;
 
@@ -6563,6 +6562,11 @@ function showTracklistManager(tracklistSection = null) {
             if (tracklistMgrWin.hasAttribute('data-waiting')) return;
 
             tracklistMgrWin.setAttribute('data-waiting', '');
+
+            if (shouldDeleteTracklist) {
+                tracklistForm.classList.add('deleting');
+                removeAllTrackFormItems();
+            }
         
             let errorOccurred = await waitAnimationsAndTimersToComplete();
             if (errorOccurred || okBtn.disabled || !tracklistMgrWin.classList.contains('active')) return;
@@ -6578,6 +6582,7 @@ function showTracklistManager(tracklistSection = null) {
 
             dataUpdateStatus = 'preparing';
             prepareUpdating();
+            createUploadProgressIndicators();
             dataUpdateStatus = 'in progress';
 
             const statusUpdater = {
@@ -6647,6 +6652,15 @@ function showTracklistManager(tracklistSection = null) {
 
         // Functions //
 
+        function removeAllTrackFormItems() {
+            [].forEach.call(trackForms.children, trackFormItem => {
+                if (trackFormItem.dataset.status === 'removed') return;
+
+                const removeBtn = trackFormItem.querySelector('.remove-track-form-item');
+                removeTrackFormItem(removeBtn);
+            });
+        }
+
         function waitAnimationsAndTimersToComplete() {
             return new Promise((resolve, reject) => {
                 checkAnimationsAndTimers();
@@ -6674,10 +6688,12 @@ function showTracklistManager(tracklistSection = null) {
             okBtn.disabled = true;
             cancelBtn.disabled = true;
             closeBtn.disabled = true;
+        }
 
+        function createUploadProgressIndicators() {
             for (let [input, file] of fileByFileInput.entries()) {
                 if (input.hasAttribute('data-value-changed') && file instanceof File) {
-                    const uploadFormRow = createUploadProgressIndicator();
+                    const uploadFormRow = createUploadFormRow();
                     input.parentElement.after(uploadFormRow);
                     uploadProgressByUploadFormRow.set(uploadFormRow, 0);
                 }
@@ -6685,7 +6701,7 @@ function showTracklistManager(tracklistSection = null) {
 
             if (uploadProgressByUploadFormRow.size) totalUploadRow.hidden = false;
 
-            function createUploadProgressIndicator() {
+            function createUploadFormRow() {
                 let uploadFormRow = document.createElement('div');
                 uploadFormRow.className = 'form-row upload';
                 uploadFormRow.innerHTML = `
@@ -6716,22 +6732,34 @@ function showTracklistManager(tracklistSection = null) {
                 .then(data => {
                     console.log('Tracklist deletion success:', data);
                     tracklistsMapData = data.tracklistsMapData;
-                    tracklistForm.classList.add('success');
-                    [].forEach.call(trackForms.children, trackFormItem => trackFormItem.classList.add('success'));
+                    tracklistForm.classList.remove('deleting');
+                    tracklistForm.classList.add('success-deleted');
+                    [].forEach.call(trackForms.children, trackFormItem => {
+                        trackFormItem.classList.add('success');
+                        trackFormItem.querySelector('.status-text').textContent = 'has been deleted';
+                    });
                     return true;
                 })
                 .catch(error => {
                     console.error('Tracklist deletion error:', error);
+                    tracklistForm.classList.remove('deleting');
                     tracklistForm.classList.add('error');
-                    [].forEach.call(trackForms.children, trackFormItem => trackFormItem.classList.add('error'));
+                    [].forEach.call(trackForms.children, trackFormItem => {
+                        trackFormItem.classList.add('error');
+                        trackFormItem.querySelector('.status-text').textContent = 'has not been deleted';
+                    });
                     return false;
                 })
             ;*/
     
             // Temporary code
             return new Promise(resolve => setTimeout(() => {
-                tracklistForm.classList.add('success');
-                [].forEach.call(trackForms.children, trackFormItem => trackFormItem.classList.add('success'));
+                tracklistForm.classList.remove('deleting');
+                tracklistForm.classList.add('success-deleted');
+                [].forEach.call(trackForms.children, trackFormItem => {
+                    trackFormItem.classList.add('success');
+                    trackFormItem.querySelector('.status-text').textContent = 'has been deleted';
+                });
                 resolve(true);
             }, 1e3));
         }
@@ -7525,8 +7553,7 @@ function hideTracklistManager() {
         tracklistMgrWin.querySelector('.scrollable-area').removeAttribute('data-inactive');
         tracklistMgrWin.querySelector('#tracklist-manager-title').innerHTML = '';
         tracklistMgrWin.querySelector('#tracklist-manager-description').innerHTML = '';
-        tracklistForm.classList.remove('error');
-        tracklistForm.classList.remove('success');
+        tracklistForm.className = 'tracklist-form';
         tracklistForm.innerHTML = '';
         trackForms.innerHTML = '';
         trackForms.style.removeProperty('--track-form-items-height-difference');
