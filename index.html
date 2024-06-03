@@ -9,11 +9,12 @@
         <link rel="stylesheet" href="styles/fonts.css" type="text/css">
         <link rel="stylesheet" href="styles/style.css" type="text/css">
     </head>
+
     <body class="background-blur loading">
         <script>
             window.onerror = function(message, url, line, col, error) {
                 //alert(`${message}\nВ ${line}:${col} на ${url}`);
-                console.error(`${message}\nВ ${line}:${col} на ${url}`);
+                //console.error(`${message}\nВ ${line}:${col} на ${url}`);
             };
         </script>
 
@@ -25,6 +26,14 @@
             </div>
         </div>
 
+        <script src="https://cdn.jsdelivr.net/npm/jsmediatags"
+            onerror="this.onerror=null; this.src='./scripts/libs/jsmediatags.min.js';">
+        </script>
+        <script src="https://cdn.jsdelivr.net/npm/wicg-inert"
+            onerror="this.onerror=null; this.src='./scripts/libs/inert.min.js';">
+        </script>
+        <script src="./scripts/libs/scrollyfills.umd.js"></script>
+
         <header></header>
         
         <main id="player-container" aria-label="Player" data-initial>
@@ -34,10 +43,11 @@
                 <div id="tracklists-container">
                     <!-- Example tracklist-section tree
 
-                    <section class="tracklist-section" aria-labelledby="tracklist[1]-title" aria-expanded="false" aria-controls="trlDetails[1]" tabindex="0">
+                    <section class="tracklist-section" data-id="" data-number="1"
+                        aria-labelledby="tracklist[1]-title" aria-expanded="false" aria-controls="trlDetails[1]" tabindex="0">
                         <div class="tracklist-menu">
                             <div class="buttons-box left">
-                                <i class="icon-cancel delete-tracklist-tracks" data-tooltip="Delete tracks from the tracklist"></i>
+                                <i class="icon-close delete-tracklist-tracks" data-tooltip="Delete tracks from the tracklist"></i>
                             </div>
                             <div class="tracklist-title-box">
                                 <h4><span id="tracklist[1]-title" class="tracklist-title" data-tooltip="Expand for details">Tracklist Title</span></h4>
@@ -47,22 +57,22 @@
                                 <i class="icon-list-add tracklist-to-playlist-add" data-tooltip="Add to playlist"></i>
                             </div>
                         </div>
-                        <div id="trlDetails[1] class="tracklist-details"">
+                        <div id="trlDetails[1]" class="tracklist-details">
                             <header class="strip">
                                 <p>
                                     <input id="checkbox-tracklist[1]-all" type="checkbox" checked
-                                    ><label for="checkbox-tracklist[1]-all" class="designed-checkbox"></label
-                                    ><label for="checkbox-tracklist[1]-all"><span>Check/uncheck all tracks</span></label>
+                                    ><label for="checkbox-tracklist[1]-all" class="design-proxy"></label
+                                    ><label for="checkbox-tracklist[1]-all"><span>Toggle all tracks</span></label>
                                 </p>
                             </header>
                             <main class="details-main">
                                 <div class="cover-box">
                                     <img src="" alt="Tracklist Title Cover">
                                 </div>
-                                <ul class="list">
-                                    <li data-src="...">
+                                <ul class="list" data-number="1">
+                                    <li data-id="..." data-order="1" data-src="...">
                                         <input id="checkbox-tracklist[1]-track[1]" type="checkbox" checked
-                                        ><label for="checkbox-tracklist[1]-track[1]" class="designed-checkbox"></label
+                                        ><label for="checkbox-tracklist[1]-track[1]" class="design-proxy"></label
                                         ><label for="checkbox-tracklist[1]-track[1]"
                                             ><div class="order"><span>1.</span></div
                                             ><span class="track-artist">Artist</span
@@ -70,12 +80,14 @@
                                             ><span class="track-title">Track Title</span>
                                         </label>
                                     </li>
+                                    ...
                                 </ul>
                             </main>
                             <footer class="strip">
                                 <p>
-                                    <button id="manage-tracklist[1]" tabindex="-1">
-                                        <svg class="manage-tracklist-svg" version="1.1" xmlns="http://www.w3.org/2000/svg"
+                                    <button id="edit-tracklist[1]"></button>
+                                    <label for="edit-tracklist[1]" class="design-proxy">
+                                        <svg class="edit-tracklist-svg" version="1.1" xmlns="http://www.w3.org/2000/svg"
                                             width="120.000000pt" height="81.000000pt" viewBox="0 0 120.000000 81.000000"
                                             preserveAspectRatio="xMidYMid meet">
 
@@ -93,8 +105,8 @@
                                                     239 18 22 24 21 65 -1 85 -16 15 -48 17 -239 17 -200 0 -221 -2 -236 -18z"/>
                                             </g>
                                         </svg>
-                                    </button
-                                    ><label for="manage-tracklist[1]">Manage tracklist</label>
+                                    </label
+                                    ><label for="edit-tracklist[1]">Manage tracklist</label>
                                 </p>
                             </footer>
                         </div>
@@ -104,7 +116,7 @@
                 
                 <section class="add-controls">
                     <div class="left-col">
-                        <button id="create-tracklist" class="add-controls-button" data-tooltip="Create new tracklist">
+                        <button id="create-tracklist" data-tooltip="Create new tracklist">
                             <svg class="create-tracklist-svg" version="1.1" xmlns="http://www.w3.org/2000/svg"
                                 width="128.000000pt" height="89.000000pt" viewBox="0 0 128.000000 89.000000"
                                 preserveAspectRatio="xMidYMid meet">
@@ -126,13 +138,13 @@
                         </button>
                     </div>
                     <div class="right-col">
-                        <button id="expand-all-tracklist-details" class="add-controls-button" data-tooltip="Expand all tracklist details">
+                        <button id="expand-all-tracklist-details" data-tooltip="Expand all tracklist details">
                             <i class="icon-plus-squared-alt"></i>
                         </button
-                        ><button id="collapse-all-tracklist-details" class="add-controls-button" data-tooltip="Collapse all tracklist details">
+                        ><button id="collapse-all-tracklist-details" data-tooltip="Collapse all tracklist details">
                             <i class="icon-minus-squared-alt"></i>
                         </button
-                        ><button id="clear-playlist" class="add-controls-button" data-tooltip="Clear playlist">
+                        ><button id="clear-playlist" data-tooltip="Clear playlist">
                             <img src="img/icons/clear.png" class="clear-playlist-img" alt="Clear">
                         </button>
                     </div>
@@ -173,13 +185,13 @@
                     <i slot="rewind" id="rewind" class="icon-to-start" data-tooltip="Step back/Fast-rewind"></i>
                     <i slot="forward" id="forward" class="icon-to-end" data-tooltip="Step forward/Fast-forward"></i>
                     <div slot="indicator" id="indicator"></div>
-                    <i slot="shuffle" class="btn-img-wrapper" data-tooltip="Shuffle playlist">
-                        <div id="shuffle" class="circle-background">
+                    <i slot="shuffle" id="shuffle" class="btn-img-wrapper" data-tooltip="Shuffle playlist">
+                        <div class="circle-background">
                             <img src="img/icons/shuffle_playlist.png" alt="Shuffle Playlist">
                         </div>
                     </i>
-                    <i slot="repeat" class="btn-img-wrapper" data-tooltip="Repeat playlist/track">
-                        <div id="repeat" class="circle-background" data-repeat="none">
+                    <i slot="repeat" id="repeat" class="btn-img-wrapper" data-repeat="none" data-tooltip="Repeat playlist/track">
+                        <div class="circle-background">
                             <img src="img/icons/repeat_playlist.png" alt="Repeat Playlist">
                         </div>
                     </i>
@@ -201,20 +213,21 @@
                     <div id="visible-playlist-area" tabindex="0">
                         <div id="playlist-limiter">
                             <div id="playlist">
-                                <!-- Example track tree
+                                <!-- Example playlist track tree
 
                                 <div class="track">
-                                    <audio></audio>
+                                    <audio data-id="" data-artist="" data-title="" data-src="" data-dub=""
+                                        src="(data-src)" type="audio/mpeg" preload="auto"></audio>
                                     <div class="additionals">
                                         <div class="loading-figure"></div>
-                                        <i class="icon-cancel remove-track" data-tooltip="Remove track"></i>
+                                        <i class="icon-close remove-track" data-tooltip="Remove track"></i>
                                     </div>
-                                    <div class="track-info-box">
+                                    <div class="track-info-box" tabindex="0">
                                         <div class="artist-name-limiter">
-                                            <span class="artist-name" data-actionable></span>
+                                            <span class="artist-name" data-actionable>Artist</span>
                                         </div>
                                         <div class="track-title-limiter">
-                                            <span class="track-title" data-actionable></span>
+                                            <span class="track-title" data-actionable>Title (data-dub)</span>
                                         </div>
                                         <div class="load-info">
                                             <div class="progress">
@@ -245,7 +258,7 @@
                         <i id="playlist-style" class="icon-align-center" data-tooltip="Playlist style"></i>
                     </div>
                     <div class="center-col">
-                        <span class="version">v1.3.5</span>
+                        <span class="version">v1.3.23</span>
                     </div>
                     <div class="right-col">
                         <i id="settings" class="icon-cog-circled" data-tooltip="Settings"></i>
@@ -287,7 +300,7 @@
                     </section>
 
                     <button class="default-settings"><i class="icon-wrench"></i> Reset to default</button>
-                    <button class="close-button"><i class="icon-cancel"></i></button>
+                    <button class="close-button"><i class="icon-close"></i></button>
                 </div>
 
                 <div id="document-scroll-arrows-container" hidden>
@@ -304,7 +317,7 @@
 
             <div id="keys-info-window" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="keys-info-title" hidden
                 ><article class="keys-info">
-                    <div class="inner-scroll" tabindex="0">
+                    <div class="scrollable-area" tabindex="0">
                         <h2 id="keys-info-title">Assigned Keys</h2>
 
                         <!--Play/Pause-->
@@ -828,7 +841,7 @@
                             <div class="relevant-functions">
                                 <div class="row">
                                     <div class="icon">
-                                        <i class="icon-cancel"></i>
+                                        <i class="icon-close"></i>
                                     </div>
                                     <div class="description">
                                         <p>
@@ -884,7 +897,7 @@
                                 <!--Remove track from playlist-->
                                 <div class="row">
                                     <div class="icon">
-                                        <div class="icon-background small-size"><i class="icon-cancel remove-track"></i></div>
+                                        <div class="icon-background small-size"><i class="icon-close remove-track"></i></div>
                                     </div>
                                     <div class="description">
                                         <p>
@@ -900,7 +913,7 @@
                                 <!--Delete tracks from tracklist-->
                                 <div class="row">
                                     <div class="icon">
-                                        <div class="icon-background"><i class="icon-cancel delete-tracklist-tracks"></i></div>
+                                        <div class="icon-background"><i class="icon-close delete-tracklist-tracks"></i></div>
                                     </div>
                                     <div class="description">
                                         <p>
@@ -925,9 +938,7 @@
                         <section>
                             <div class="assigned-keys">
                                 <img src="img/keyboard_keys/alt.png" alt="Key Alt"
-                                >+(<img src="img/keyboard_keys/insert.png" alt="Key Insert">
-                                /
-                                <img src="img/keyboard_keys/plus.png" alt="Key NumpadAdd">)
+                                >+<img src="img/keyboard_keys/plus.png" alt="Key NumpadAdd">
                             </div>
                             <div class="relevant-functions">
                                 <div class="row">
@@ -954,9 +965,7 @@
                         <section>
                             <div class="assigned-keys">
                                 <img src="img/keyboard_keys/shift-2.png" alt="Key Shift"
-                                >+(<img src="img/keyboard_keys/insert.png" alt="Key Insert">
-                                /
-                                <img src="img/keyboard_keys/plus.png" alt="Key NumpadAdd">)
+                                >+<img src="img/keyboard_keys/plus.png" alt="Key NumpadAdd">
                             </div>
                             <div class="relevant-functions">
                                 <div class="row">
@@ -1046,62 +1055,198 @@
                         </section>
                     </div>
                     
-                    <button class="close-button"><i class="icon-cancel"></i></button>
+                    <button class="close-button"><i class="icon-close"></i></button>
                 </article>
             </div>
             
             <div id="tracklist-deletion" class="modal-overlay" role="dialog" aria-labelledby="tracklist-deletion-title"
                 aria-describedby="tracklist-deletion-description" hidden
                 ><div class="dialog-box">
-                    <div class="inner-scroll" tabindex="0">
+                    <div class="scrollable-area" tabindex="0">
                         <h3 id="tracklist-deletion-title">Tracklist Deletion Confirmation</h3>
                         <p id="tracklist-deletion-description">
                             <span class="deleting-tracks-number"></span> track<span class="plural-suffix"></span>
                             will be permanently deleted from the tracklist<br>
-                            <span class="target-tracklist"></span
+                            <span class="target-tracklist quotes"></span
                         ></p>
                         <ul class="deleting-tracks"></ul>
+                    </div>
+
+                    <div class="static-area">
                         <p class="tracklist-removal-confirm" hidden>
-                            <label>
-                                <input type="checkbox" checked> Completely remove the tracklist from the database
-                            </label>
+                            <label><input type="checkbox" checked> Completely remove the tracklist from the database</label>
                         </p>
                         <p class="empty-tracklist-removal-confirm" hidden>Delete the empty tracklist from the database?</p>
                         <h4 class="warning-info"><span>&#9888;</span> Attention! This action cannot be undone!</h3>
-                        <div class="buttons-box">
-                            <button class="button-ok"><span>&#10004;</span> ОК</button>
-                            <button class="button-cancel"><span>&#10060;</span> Cancel</button>
+                        <div class="dialog-box-buttons">
+                            <button class="ok-button"><span>&#10004;</span> ОК</button>
+                            <button class="cancel-button"><span>&#10060;</span> Cancel</button>
                         </div>
                     </div>
-
-                    <button class="close-button"><i class="icon-cancel"></i></button>
+                    
+                    <button class="close-button"><i class="icon-close"></i></button>
                 </div>
             </div>
 
-            <div id="tracklist-management" class="modal-overlay" role="dialog" aria-labelledby="tracklist-management-title"
-                aria-describedby="tracklist-management-description" hidden
+            <div id="tracklist-manager" class="modal-overlay" role="dialog" aria-labelledby="tracklist-manager-title"
+                aria-describedby="tracklist-manager-description" hidden
                 ><div class="dialog-box">
-                    <div class="inner-scroll" tabindex="0">
-                        <h3 id="tracklist-management-title">Tracklist Creation</h3>
-                        <p id="tracklist-management-description">
-                            
-                        </p>
-                        <ul class="loading-tracks"></ul>
-                        <div class="buttons-box">
-                            <button class="button-ok"><span>&#10004;</span> ОК</button>
-                            <button class="button-cancel"><span>&#10060;</span> Cancel</button>
+                    <div class="scrollable-area" tabindex="0">
+                        <h3 id="tracklist-manager-title"></h3>
+                        <p id="tracklist-manager-description"></p>
+                        <div class="tracklist-form">
+                            <!-- Exabple tracklist form data tree
+
+                            <p class="tracklist-title-edit form-row text">
+                                <label for="input-tracklist-title" class="label-text">Tracklist title:</label
+                                ><input id="input-tracklist-title" name="tracklist-title" type="text" placeholder="Enter tracklist title"
+                                ><button class="reset" tabindex="-1"><i class="icon-ccw"></i></button
+                                ><span class="state">
+                                    <i class="icon-check ok" hidden></i>
+                                    <i class="icon-cancel fail" hidden></i>
+                                </span>
+                            </p>
+                            <p class="tracklist-cover-edit form-row file">
+                                <span class="label-text">Tracklist cover:<br>
+                                    <span class="add-info">(optional, 120x120px)</span>
+                                </span
+                                ><label for="input-tracklist-cover" class="file-name" tabindex="0"></label
+                                ><input id="input-tracklist-cover" name="cover-file" type="file" accept="image/*" data-optional
+                                ><button class="reset" tabindex="-1"><i class="icon-ccw"></i></button
+                                ><span class="state">
+                                    <i class="icon-check ok" hidden></i>
+                                    <i class="icon-cancel fail" hidden></i>
+                                </span>
+                            </p>
+                            <div class="form-row upload">
+                                <span class="label-text">Upload progress:</span
+                                ><div class="upload-range">
+                                    <div class="upload-progress"></div>
+                                </div
+                                ><span class="display-progress"></span
+                                ><span class="state">
+                                    <i class="icon-check ok" hidden></i>
+                                    <i class="icon-cancel fail" hidden></i>
+                                </span>
+                            </div>
+                            -->
                         </div>
+                        <ul class="track-forms">
+                            <!-- Example track item tree
+
+                            <li id="track-form-item[1]" data-status="existing/removed/new" data-id="..." data-order="1" data-original-order="1">
+                                <div class="content-box">
+                                    <fieldset class="new-track">
+                                        <legend>Track <span class="order">1</span> (new)</legend>
+
+                                        <div class="track-form">
+                                            <p class="form-row text">
+                                                <label for="input-track[1]-artist" class="label-text">Artist name:</label
+                                                ><input id="input-track[1]-artist" name="artist" type="text"
+                                                    placeholder="File's tag auto-fills the empty field"
+                                                ><button class="reset" tabindex="-1"><i class="icon-ccw"></i></button
+                                                ><span class="state">
+                                                    <i class="icon-check ok" hidden></i>
+                                                    <i class="icon-cancel fail" hidden></i>
+                                                </span>
+                                            </p>
+                                            <p class="form-row text">
+                                                <label for="input-track[1]-title" class="label-text">Track title:</label
+                                                ><input id="input-track[1]-title" name="title" type="text"
+                                                    placeholder="File's tag auto-fills the empty field"
+                                                ><button class="reset" tabindex="-1"><i class="icon-ccw"></i></button
+                                                ><span class="state">
+                                                    <i class="icon-check ok" hidden></i>
+                                                    <i class="icon-cancel fail" hidden></i>
+                                                </span>
+                                            </p>
+                                            <p class="form-row file">
+                                                <span class="label-text">Music file:</span
+                                                ><label for="input-track[1]-file" class="file-name missing" tabindex="0">Select a file</label
+                                                ><input id="input-track[1]-file" name="track-file" type="file" accept="audio/mpeg"
+                                                ><button class="reset" tabindex="-1"><i class="icon-ccw"></i></button
+                                                ><span class="state">
+                                                    <i class="icon-check ok" hidden></i>
+                                                    <i class="icon-cancel fail" hidden></i>
+                                                </span>
+                                            </p>
+                                            <div class="form-row upload">
+                                                <span class="label-text">Upload progress:</span
+                                                ><div class="upload-range">
+                                                    <div class="upload-progress"></div>
+                                                </div
+                                                ><span class="display-progress"></span
+                                                ><span class="state">
+                                                    <i class="icon-check ok" hidden></i>
+                                                    <i class="icon-cancel fail" hidden></i>
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <div class="track-order-panel">
+                                            <button class="direction up" data-tooltip="Move track up">
+                                                <i class="icon-up-dir"></i>
+                                            </button>
+                                            <button class="direction down" data-tooltip="Move track down">
+                                                <i class="icon-down-dir"></i>
+                                            </button>
+                                        </div>
+                                        
+                                        <button class="remove-track-form-item" data-tooltip="Cancel track adding">
+                                            <i class="icon-minus-circled"></i>
+                                        </button>
+                                    </fieldset>
+                                </div>
+
+                                <div class="content-box">
+                                    <p class="delete-info">
+                                        The existing track <span class="target-text quotes">Artist – Title</span>
+                                        <span class="status-text">will be deleted</span> from the tracklist
+                                        <span class="target-text quotes">Tracklist title</span>.
+                                        <span class="restore-text">
+                                            <button class="restore-button inactive" tabindex="-1">Restore</button> the form.
+                                        </span>
+                                    </p>
+                                </div>
+                            </li>
+                            -->
+                        </ul>
                     </div>
 
-                    <button class="close-button"><i class="icon-cancel"></i></button>
+                    <div class="static-area">
+                        <div class="drop-zone">
+                            <button class="add-track-form-item" data-tooltip="Add new track">
+                                <i class="icon-plus-circled"></i>
+                            </button>
+                        </div>
+                        <p class="tracklist-removal-confirm">
+                            <label><input type="checkbox"> Completely remove the tracklist from the database</label>
+                        </p>
+                        <div class="total-upload-row" hidden>
+                            <span class="label-text">Total upload progress:</span
+                            ><div class="upload-range">
+                                <div class="upload-progress"></div>
+                            </div
+                            ><span class="display-progress">0%</span
+                            ><span class="state">
+                                <i class="icon-check ok" hidden></i>
+                                <i class="icon-cancel fail" hidden></i>
+                            </span>
+                        </div>
+                        <div class="dialog-box-buttons">
+                            <button class="ok-button" disabled><span>&#10004;</span> ОК</button>
+                            <button class="cancel-button"><span>&#10060;</span> Cancel</button>
+                        </div>
+                        <button class="close-button"><i class="icon-close"></i></button>
+                    </div>
                 </div>
             </div>
-            
-            <script src="scripts/player.js" type="module"></script>
         </main>
 
         <footer class="page-footer">
             <p>All rights reserved<br>&#169; <time><script>document.write(new Date().getFullYear());</script></time></p>
         </footer>
+            
+        <script src="scripts/player.js" type="module"></script>
     </body>
 </html>

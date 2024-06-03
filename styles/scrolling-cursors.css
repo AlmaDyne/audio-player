@@ -1,0 +1,9 @@
+.pointer-scroll-mode * {
+    cursor: url("../img/icons/scrolling_cursor_center.png") 16 16, row-resize !important;
+}
+.scroll-up * {
+    cursor: url("../img/icons/scrolling_cursor_up.png") 16 16, n-resize !important;
+}
+.scroll-down * {
+    cursor: url("../img/icons/scrolling_cursor_down.png") 16 16, s-resize !important;
+}
