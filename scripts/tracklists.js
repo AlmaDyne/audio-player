@@ -311,9 +311,9 @@ function createTestTracklist(n) {
     }
     
     function TestTracklistObj(i) {
-        this.dateUpdated = new Date().toISOString();
+        this.dateUpdated = (new Date(Date.now() + Number(i))).toISOString();
         this.tracklistTitle = `Test Tracklist ${i}`;
-        this.cover = 'img/def_covers/no_cover_3.png';
+        this.cover = 'img/def_covers/no_cover_2.png';
         this.tracks = new Array();
     
         for (let j = 1; j <= 10; j++) {

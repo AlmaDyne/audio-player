@@ -6553,6 +6553,7 @@ function showTracklistManager(tracklistSection = null) {
     }
 
     async function confirmTracklistManager() {
+        const trackFormItems = Array.from(trackForms.children);
         let shouldFocusTracklistSection = !!savedActiveElem;
         let shouldDeleteTracklist = !tracklistRemovalConfirm.hidden && tracklistRemovalCheckbox.checked;
         let hasTracklistDataChanged = tracklistTitleInput.hasAttribute('data-value-changed') ||
@@ -6620,7 +6621,7 @@ function showTracklistManager(tracklistSection = null) {
 
                     if (!trackStates.rejected.length) {
                         statusUpdater.success();
-                    } else if (trackStates.successful.length || hasTracklistDataChanged) {
+                    } else if (trackStates.successful.size || hasTracklistDataChanged) {
                         statusUpdater.partial();
                     } else {
                         statusUpdater.error();
@@ -6653,7 +6654,7 @@ function showTracklistManager(tracklistSection = null) {
         // Functions //
 
         function removeAllTrackFormItems() {
-            [].forEach.call(trackForms.children, trackFormItem => {
+            trackFormItems.forEach(trackFormItem => {
                 if (trackFormItem.dataset.status === 'removed') return;
 
                 const removeBtn = trackFormItem.querySelector('.remove-track-form-item');
@@ -6682,7 +6683,7 @@ function showTracklistManager(tracklistSection = null) {
         }
 
         function prepareUpdating() {
-            disableActiveFormElements(...tracklistForm.children, ...trackForms.children);
+            disableActiveFormElements(...tracklistForm.children, ...trackFormItems);
             dropZone.hidden = true;
             tracklistRemovalCheckbox.disabled = true;
             okBtn.disabled = true;
@@ -6734,7 +6735,7 @@ function showTracklistManager(tracklistSection = null) {
                     tracklistsMapData = data.tracklistsMapData;
                     tracklistForm.classList.remove('deleting');
                     tracklistForm.classList.add('success-deleted');
-                    [].forEach.call(trackForms.children, trackFormItem => {
+                    trackFormItems.forEach(trackFormItem => {
                         trackFormItem.classList.add('success');
                         trackFormItem.querySelector('.status-text').textContent = 'has been deleted';
                     });
@@ -6744,7 +6745,7 @@ function showTracklistManager(tracklistSection = null) {
                     console.error('Tracklist deletion error:', error);
                     tracklistForm.classList.remove('deleting');
                     tracklistForm.classList.add('error');
-                    [].forEach.call(trackForms.children, trackFormItem => {
+                    trackFormItems.forEach(trackFormItem => {
                         trackFormItem.classList.add('error');
                         trackFormItem.querySelector('.status-text').textContent = 'has not been deleted';
                     });
@@ -6756,7 +6757,7 @@ function showTracklistManager(tracklistSection = null) {
             return new Promise(resolve => setTimeout(() => {
                 tracklistForm.classList.remove('deleting');
                 tracklistForm.classList.add('success-deleted');
-                [].forEach.call(trackForms.children, trackFormItem => {
+                trackFormItems.forEach(trackFormItem => {
                     trackFormItem.classList.add('success');
                     trackFormItem.querySelector('.status-text').textContent = 'has been deleted';
                 });
@@ -6782,39 +6783,98 @@ function showTracklistManager(tracklistSection = null) {
                 tracklistFormData.append('action', action);
                 if (action === 'edit') tracklistFormData.append('tracklistId', tracklistId);
 
-                /*return fetch('/api/tracklists', {
-                    method: 'POST',
-                    body: tracklistFormData
-                })
-                    .then(response => {
-                        if (!response.ok) throw new Error('Server responded with status: ' + response.status);
-                        return response.json();
-                    })
-                    .then(data => {
-                        console.log('Tracklist update successful:', data);
-                        tracklistsMapData = data.tracklistsMapData;
-                        if (action === 'create') {
-                            tracklistId = data.tracklistId;
-                            tracklistData = tracklistsMapData.get(tracklistId);
+                /*return new Promise((resolve, reject) => {
+                    let xhr = new XMLHttpRequest();
+                    xhr.open('POST', '/api/tracklists');
+                    xhr.responseType = 'json';
+
+                    const trlUploadFormRow = tracklistForm.querySelector('.form-row.upload');
+
+                    if (trlUploadFormRow && uploadProgressByUploadFormRow.has(trlUploadFormRow)) {
+                        const trlUploadProgress = trlUploadFormRow.querySelector('.upload-progress');
+                        const trlDisplayProgress = trlUploadFormRow.querySelector('.display-progress');
+
+                        xhr.upload.onprogress = function(event) {
+                            if (xhr.readyState < 2) return;
+
+                            if (event.lengthComputable) {
+                                let progress = (event.loaded / event.total) * 100;
+                                
+                                trlUploadProgress.style.width = progress + '%';
+                                trlDisplayProgress.textContent = Math.floor(progress) + '%';
+
+                                uploadProgressByUploadFormRow.set(trlUploadFormRow, progress);
+                                updateTotalUploadProgress(false);
+                            } else {
+                                console.error('The size of the upload cannot be determined');
+                            }
+                        };
+                    }
+
+                    xhr.onload = function() {
+                        if (xhr.status === 200) {
+                            let data = xhr.response;
+
+                            console.log('Tracklist update successful:', data);
+
+                            tracklistForm.classList.add('success');
+                            if (trlUploadFormRow) trlUploadFormRow.querySelector('.state > .ok').hidden = false;
+
+                            tracklistsMapData = data.tracklistsMapData;
+                            if (action === 'create') {
+                                tracklistId = data.tracklistId;
+                                tracklistData = tracklistsMapData.get(tracklistId);
+                            }
+
+                            resolve();
+                        } else {
+                            let error = { [xhr.status]: xhr.statusText };
+                            handleXhrError('Tracklist update error:', error);
                         }
-                        tracklistForm.classList.add('success');
-                        return true;
-                    })
-                    .catch(error => {
-                        console.error('Tracklist update error:', error);
+                    };
+
+                    xhr.onerror = function() {
+                        handleXhrError('The request could not be completed due to a network error');
+                    };
+
+                    xhr.send(tracklistFormData);
+
+                    function handleXhrError(errorMessage, error) {
+                        console.error(errorMessage, error || '');
+
                         tracklistForm.classList.add('error');
-                        // Доработать!
-                        //[].forEach.call(trackForms.children, trackFormItem => trackFormItem.classList.add('error'));
-                        return false;
-                    })
-                ;*/
+                        if (trlUploadFormRow) trlUploadFormRow.querySelector('.state > .fail').hidden = false;
+                        if (!totalUploadRow.hidden) updateTotalUploadProgress(true);
+
+                        trackFormItems.forEach(trackFormItem => {
+                            if (trackFormItem.dataset.status === 'removed') {
+                                trackFormItem.classList.add('error');
+                                trackFormItem.querySelector('.status-text').textContent = 'has not been deleted';
+                            } else {
+                                let orderChanged = trackFormItem.dataset.order !== trackFormItem.dataset.originalOrder;
+                                let inputChanged = Array.from(trackFormItem.querySelectorAll('input'))
+                                    .some(input => input.hasAttribute('data-value-changed'));
+        
+                                if (orderChanged || inputChanged) trackFormItem.classList.add('error');
+
+                                const trackUploadFormRow = trackFormItem.querySelector('.form-row.upload');
+                                if (trackUploadFormRow) trackUploadFormRow.querySelector('.state > .fail').hidden = false;
+                            }
+                        });
+
+                        reject();
+                    }
+                }).then(
+                    () => true,
+                    () => false
+                );*/
 
                 return new Promise(resolve => {
-                    const uploadFormRow = tracklistForm.querySelector('.form-row.upload');
+                    const trlUploadFormRow = tracklistForm.querySelector('.form-row.upload');
 
-                    if (uploadFormRow && uploadProgressByUploadFormRow.has(uploadFormRow)) {
-                        const uploadProgress = uploadFormRow.querySelector('.upload-progress');
-                        const displayProgress = uploadFormRow.querySelector('.display-progress');
+                    if (trlUploadFormRow && uploadProgressByUploadFormRow.has(trlUploadFormRow)) {
+                        const trlUploadProgress = trlUploadFormRow.querySelector('.upload-progress');
+                        const trlDisplayProgress = trlUploadFormRow.querySelector('.display-progress');
                         let duration = randomNumber(1000, 5000).toFixed(0);
                         let startTime = performance.now();
 
@@ -6823,13 +6883,13 @@ function showTracklistManager(tracklistSection = null) {
                         requestAnimationFrame(function callback(time) {
                             let progress = Math.min((time - startTime) / duration, 1) * 100;
     
-                            uploadProgress.style.width = progress + '%';
-                            displayProgress.textContent = Math.floor(progress) + '%';
+                            trlUploadProgress.style.width = progress + '%';
+                            trlDisplayProgress.textContent = Math.floor(progress) + '%';
 
-                            uploadProgressByUploadFormRow.set(uploadFormRow, progress);
-                            updateTotalUploadProgress();
+                            uploadProgressByUploadFormRow.set(trlUploadFormRow, progress);
+                            updateTotalUploadProgress(false);
     
-                            if (progress === 100) {
+                            if (progress >= 100) {
                                 resolve(endUploading());
                             } else {
                                 requestAnimationFrame(callback);
@@ -6846,7 +6906,7 @@ function showTracklistManager(tracklistSection = null) {
                             tracklistsMapData.set(tracklistId, tracklistData);
                         }
                         tracklistForm.classList.add('success');
-                        if (uploadFormRow) uploadFormRow.querySelector('.state > .ok').hidden = false;
+                        if (trlUploadFormRow) trlUploadFormRow.querySelector('.state > .ok').hidden = false;
                         return true;
                     }
                 });
@@ -6859,10 +6919,12 @@ function showTracklistManager(tracklistSection = null) {
         function updateTracksData() {
             console.log('update tracks');
 
-            const taskPromises = Array.from(trackForms.children).map(uploadTrackFormData);
+            const taskPromises = trackFormItems.map(uploadTrackFormData);
 
             return Promise.allSettled(taskPromises)
                 .then(results => {
+                    if (!totalUploadRow.hidden) updateTotalUploadProgress(true);
+
                     let statesData = {
                         successful: new Map(),
                         rejected: []
@@ -6953,34 +7015,76 @@ function showTracklistManager(tracklistSection = null) {
                         trackFormData.append('tracklistId', tracklistId);
                         if (isExisting) trackFormData.append('trackId', trackId);
 
-                        /*return fetch('/api/tracks', {
-                            method,
-                            body: trackFormData
-                        })
-                            .then(response => {
-                                if (!response.ok) throw new Error('Server responded with status: ' + response.status);
-                                return response.json();
-                            })
-                            .then(data => {
-                                console.log(`Track ${trackOrder} ${isExisting ? 'update' : 'creation'} successful:`, data);
-                                tracklistsMapData = data.tracklistsMapData;
-                                trackFormItem.classList.add('success');
-                                return { trackId: isExisting ? trackId : data.trackId, method };
-                            })
-                            .catch(error => {
-                                console.error(`Track ${trackOrder} ${isExisting ? 'update' : 'creation'} error:`, error);
+                        /*return new Promise((resolve, reject) => {
+                            let xhr = new XMLHttpRequest();
+                            xhr.open(method, '/api/tracks');
+                            xhr.responseType = 'json';
+
+                            const trackUploadFormRow = trackFormItem.querySelector('.form-row.upload');
+
+                            if (trackUploadFormRow && uploadProgressByUploadFormRow.has(trackUploadFormRow)) {
+                                const trackUploadProgress = trackUploadFormRow.querySelector('.upload-progress');
+                                const trackDisplayProgress = trackUploadFormRow.querySelector('.display-progress');
+
+                                xhr.upload.onprogress = function(event) {
+                                    if (xhr.readyState < 2) return;
+
+                                    if (event.lengthComputable) {
+                                        let progress = (event.loaded / event.total) * 100;
+                                        
+                                        trackUploadProgress.style.width = progress + '%';
+                                        trackDisplayProgress.textContent = Math.floor(progress) + '%';
+    
+                                        uploadProgressByUploadFormRow.set(trackUploadFormRow, progress);
+                                        updateTotalUploadProgress(false);
+                                    } else {
+                                        console.error('The size of the upload cannot be determined');
+                                    }
+                                };
+                            }
+
+                            xhr.onload = function() {
+                                if (xhr.status === 200) {
+                                    let data = xhr.response;
+
+                                    console.log(`Track ${trackOrder} ${isExisting ? 'update' : 'creation'} successful:`,
+                                        data);
+
+                                    trackFormItem.classList.add('success');
+                                    if (trackUploadFormRow) trackUploadFormRow.querySelector('.state > .ok').hidden = false;
+
+                                    tracklistsMapData = data.tracklistsMapData;
+
+                                    resolve({ trackId: isExisting ? trackId : data.trackId, method });
+                                } else {
+                                    let error = { [xhr.status]: xhr.statusText };
+                                    handleError(`Track ${trackOrder} ${isExisting ? 'update' : 'creation'} error:`, error);
+                                }
+                            };
+
+                            xhr.onerror = function() {
+                                handleError('The request could not be completed due to a network error');
+                            };
+
+                            xhr.send(trackFormData);
+
+                            function handleError(errorMessage, error) {
+                                console.error(errorMessage, error || '');
+
                                 trackFormItem.classList.add('error');
-                                return Promise.reject(trackId ? { trackId, method, error } : { trackOrder, method, error });
-                            })
-                        ;*/
+                                if (trackUploadFormRow) trackUploadFormRow.querySelector('.state > .fail').hidden = false;
+
+                                reject(trackId ? { trackId, method, error } : { trackOrder, method, error });
+                            }
+                        });*/
 
                         // Temporary code
                         return new Promise(resolve => {
-                            const uploadFormRow = trackFormItem.querySelector('.form-row.upload');
+                            const trackUploadFormRow = trackFormItem.querySelector('.form-row.upload');
 
-                            if (uploadFormRow && uploadProgressByUploadFormRow.has(uploadFormRow)) {
-                                const uploadProgress = uploadFormRow.querySelector('.upload-progress');
-                                const displayProgress = uploadFormRow.querySelector('.display-progress');
+                            if (trackUploadFormRow && uploadProgressByUploadFormRow.has(trackUploadFormRow)) {
+                                const trackUploadProgress = trackUploadFormRow.querySelector('.upload-progress');
+                                const trackDisplayProgress = trackUploadFormRow.querySelector('.display-progress');
                                 let duration = randomNumber(3000, 12000).toFixed(0);
                                 let startTime = performance.now();
 
@@ -6989,13 +7093,13 @@ function showTracklistManager(tracklistSection = null) {
                                 requestAnimationFrame(function callback(time) {
                                     let progress = Math.min((time - startTime) / duration, 1) * 100;
     
-                                    uploadProgress.style.width = progress + '%';
-                                    displayProgress.textContent = Math.floor(progress) + '%';
+                                    trackUploadProgress.style.width = progress + '%';
+                                    trackDisplayProgress.textContent = Math.floor(progress) + '%';
 
-                                    uploadProgressByUploadFormRow.set(uploadFormRow, progress);
-                                    updateTotalUploadProgress();
+                                    uploadProgressByUploadFormRow.set(trackUploadFormRow, progress);
+                                    updateTotalUploadProgress(false);
     
-                                    if (progress === 100) {
+                                    if (progress >= 100) {
                                         resolve(endUploading());
                                     } else {
                                         requestAnimationFrame(callback);
@@ -7007,7 +7111,7 @@ function showTracklistManager(tracklistSection = null) {
 
                             function endUploading() {
                                 trackFormItem.classList.add('success');
-                                if (uploadFormRow) uploadFormRow.querySelector('.state > .ok').hidden = false;
+                                if (trackUploadFormRow) trackUploadFormRow.querySelector('.state > .ok').hidden = false;
                                 return { trackId: isExisting ? trackId : crypto.randomUUID(), method };
                             }
                         });
@@ -7019,19 +7123,17 @@ function showTracklistManager(tracklistSection = null) {
             }
         }
 
-        function updateTotalUploadProgress() {
-            /*let sumProgress = 0;
-            for (let progress of uploadProgressByUploadFormRow.values()) {
-                sumProgress += progress;
-            }
-            let totalProgress = sumProgress / uploadProgressByUploadFormRow.size;*/
-
+        function updateTotalUploadProgress(isFinal) {
             let totalProgress = Array.from(uploadProgressByUploadFormRow.values())
                 .reduce((sum, val) => sum += val, 0) / uploadProgressByUploadFormRow.size;
 
             totalUploadProgress.style.width = totalProgress + '%';
             totalDisplayProgress.textContent = Math.floor(totalProgress) + '%';
-            if (totalProgress === 100) totalUploadRow.querySelector('.state > .ok').hidden = false;
+
+            if (!isFinal) return;
+
+            let completeIconClass = totalProgress >= 100 ? 'ok' : 'fail';
+            totalUploadRow.querySelector(`.state > .${completeIconClass}`).hidden = false;
         }
 
         function updateTracklistsMapData() { // Temporary code
@@ -7060,7 +7162,7 @@ function showTracklistManager(tracklistSection = null) {
             if (action === 'create') tracklistData.tracks = [];
 
             // Tracks changes
-            [].forEach.call(trackForms.children, trackFormItem => {
+            trackFormItems.forEach(trackFormItem => {
                 let trackStatus = trackFormItem.dataset.status;
                 let trackId = trackFormItem.dataset.id || crypto.randomUUID();
                 let trackOrder = trackFormItem.dataset.order;
@@ -7700,7 +7802,7 @@ function checkTracklistsContainerScrollability() {
 /////////////////////////////////
 const trlsSortOrderBank = ['dateUpdated', 'alphabetical'];
 const sortFunctions = {
-    dateUpdated: ([, a], [, b]) => new Date(a.dateUpdated) - new Date(b.dateUpdated),
+    dateUpdated: ([, a], [, b]) => new Date(b.dateUpdated) - new Date(a.dateUpdated),
     alphabetical: ([, a], [, b]) => a.tracklistTitle.localeCompare(b.tracklistTitle)
 };
 let trlsSortOrder = localStorage.getItem('tracklists_sort_order');

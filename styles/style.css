@@ -2254,7 +2254,7 @@ player-controls #volume-bar.active {
 }
 #tracklist-manager .delete-info {
     padding: 5px 8px;
-    background: rgba(var(--common-color-warning), 0.25);
+    background: rgba(var(--common-color-warning), 0.2);
     border: 2px solid rgba(var(--common-color-warning), 0);
     border-radius: 8px;
     box-sizing: border-box;
@@ -2292,7 +2292,7 @@ player-controls #volume-bar.active {
 
 /* Tracklist form success/error */
 #tracklist-manager .tracklist-form.success {
-    background: rgba(var(--common-color-emphase), 0.1);
+    background: rgba(var(--common-color-emphase), 0.2);
     outline: 2px solid rgb(var(--common-color-emphase));
 }
 #tracklist-manager .tracklist-form.deleting {
@@ -2309,27 +2309,28 @@ player-controls #volume-bar.active {
 
 /* Track form success/error */
 #tracklist-manager .track-forms > li.success fieldset {
-    background: rgba(var(--common-color-emphase), 0.1);
+    background: rgba(var(--common-color-emphase), 0.2);
     border-color: rgba(var(--common-color-emphase), 0.75);
 }
 #tracklist-manager .track-forms > li.success fieldset > legend,
 #tracklist-manager .track-forms > li.success fieldset > legend > .order {
     color: rgb(var(--common-color-emphase));
 }
-#tracklist-manager .track-forms > li.success .delete-info {
-    border: 2px solid rgb(var(--common-color-emphase));
-    box-sizing: border-box;
-}
-#tracklist-manager .track-forms > li.success .delete-info > .status-text {
-    color: rgb(var(--common-color-emphase));
-}
 #tracklist-manager .track-forms > li.error fieldset {
-    background: rgba(var(--common-color-warning), 0.1);
+    background: rgba(var(--common-color-warning), 0.2);
     border-color: rgba(var(--common-color-warning), 0.75);
 }
 #tracklist-manager .track-forms > li.error fieldset > legend,
 #tracklist-manager .track-forms > li.error fieldset > legend > .order {
     color: rgb(var(--common-color-warning));
+}
+
+/* Delete info success/error */
+#tracklist-manager .track-forms > li.success .delete-info {
+    border: 2px solid rgb(var(--common-color-emphase));
+}
+#tracklist-manager .track-forms > li.success .delete-info > .status-text {
+    color: rgb(var(--common-color-emphase));
 }
 #tracklist-manager .track-forms > li.error .delete-info {
     border: 2px solid rgb(var(--common-color-warning));
