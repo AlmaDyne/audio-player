@@ -525,7 +525,7 @@ i {
     vertical-align: middle;
     color: rgb(var(--color-emphase));
     color: var(--color-primary);
-    transform: translateX(1px);
+    transform: translate(1px, -0.75px);
 }
 .tracklist-details header.strip label > span,
 .tracklist-details footer.strip label + label {
@@ -614,7 +614,7 @@ i {
     --clear-playlist-active-transition: 0.3s var(--clear-playlist-timing-function);
     width: 50px;
     height: 50px;
-    margin-right: 4%;
+    margin-right: 3%;
     vertical-align: bottom;
     border-radius: 50%;
     border: none;
@@ -629,31 +629,39 @@ i {
         transform var(--clear-playlist-active-transition)
     ;
 }
+#tracklist-database > .add-controls button:last-of-type {
+    margin-right: 0;
+}
 #tracklist-database > .add-controls > .left-col > button {
     display: none;
     margin-left: 1px;
     color: rgb(var(--color-emphase));
 }
-#tracklist-database > .add-controls button > i {
+#tracklist-database > .add-controls .add-controls-button-i {
     font-size: 25pt;
     transform: translate(0.5px, 2px);
     pointer-events: none;
 }
-#tracklist-database > .add-controls button:last-of-type {
-    margin-right: 0;
+.keys-info .add-controls-button-i {
+    transform: translate(0.5px, 2px);
 }
-#tracklist-database > .add-controls .clear-playlist-img,
-.keys-info .clear-playlist-img {
+#tracklist-database > .add-controls .add-controls-button-img,
+.keys-info .add-controls-button-img {
     width: 32px;
     vertical-align: middle; /* Убрать нижний отступ */
     border-radius: 50%;
-    border-top-right-radius: 12%;
     filter: invert(calc(0.95 - var(--img-invert-filter)));
     transition: filter var(--transition-time-primary);
     pointer-events: none;
+
+    /*outline: 1px solid var(--color-secondary);*/
 }
-#tracklist-database > .add-controls .clear-playlist-img {
+#tracklist-database > .add-controls #clear-playlist > img {
+    border-top-right-radius: 12%;
     transform: translate(-2px, 2px);
+}
+.keys-info .add-controls-button-img[alt="Clear"] {
+    border-top-right-radius: 12%;
 }
 #tracklist-database > .add-controls .create-tracklist-svg,
 .keys-info .create-tracklist-svg {
@@ -1563,6 +1571,7 @@ player-controls #volume-bar.active {
     justify-content: space-between;
 }
 
+/* Settings */
 #settings-area {
     position: sticky;
     top: 0;
@@ -1648,6 +1657,7 @@ player-controls #volume-bar.active {
     text-shadow: var(--site-shadow-hover);
 }
 
+/* Document scroll arrows */
 #document-scroll-arrows-container {
     position: sticky;
     bottom: 0;
@@ -1672,6 +1682,7 @@ player-controls #volume-bar.active {
     transition: background-color var(--transition-time-primary);
 }
 
+/* Scrollable area of a dialog window */
 .scrollable-area {
     position: relative;
     min-height: 50px;
@@ -1784,6 +1795,7 @@ player-controls #volume-bar.active {
 .keys-info .icon i,
 .keys-info .icon div {
     cursor: default;
+    user-select: none;
     pointer-events: none;
 }
 .keys-info .description {

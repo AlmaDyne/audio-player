@@ -15,6 +15,7 @@ const tracklistDatabase = document.getElementById('tracklist-database');
 const tracklistDtbsTitle = tracklistDatabase.querySelector('#tracklist-database-title');
 const tracklistsContainer = document.getElementById('tracklists-container');
 const createTracklistBtn = document.getElementById('create-tracklist');
+const sortTracklistsBtn = document.getElementById('sort-tracklists');
 const expandAllTrlDetailsBtn = document.getElementById('expand-all-tracklist-details');
 const collapseAllTrlDetailsBtn = document.getElementById('collapse-all-tracklist-details');
 const clearPlaylistBtn = document.getElementById('clear-playlist');
@@ -2232,7 +2233,7 @@ visPlaylistArea.onpointerdown = function(event) {
     this.setPointerCapture(event.pointerId);
 
     if (event.pointerType === 'mouse') {
-        let cursorScrollStyles = '<link rel="stylesheet" href="styles/scrolling-cursors.css" type="text/css">';
+        let cursorScrollStyles = '<link rel="stylesheet" href="styles/scrolling_cursors.css" type="text/css">';
         document.querySelector('head').insertAdjacentHTML('beforeend', cursorScrollStyles);
         document.body.classList.add('pointer-scroll-mode');
 
@@ -2373,7 +2374,7 @@ visPlaylistArea.onpointerdown = function(event) {
             }
     
             if (event.pointerType === 'mouse') {
-                document.querySelector('head > link[href="styles/scrolling-cursors.css"]').remove();
+                document.querySelector('head > link[href="styles/scrolling_cursors.css"]').remove();
                 document.body.classList.remove('pointer-scroll-mode');
                 document.body.classList.remove('scroll-up');
                 document.body.classList.remove('scroll-down');
@@ -4018,28 +4019,29 @@ document.addEventListener('click', (event) => {
 let inputTicking = false;
 
 for (let input of settingsArea.querySelectorAll('input[type="number"]')) {
-    //Filtering keys
     input.onkeydown = (event) => {
-        return (event.key >= '0' && event.key <= '9') ||
-            event.code === 'ArrowUp' || event.code === 'ArrowDown' ||
+        if ( //Filtering keys
+            (event.key >= '0' && event.key <= '9') ||
+            (!event.shiftKey && (event.code === 'ArrowUp' || event.code === 'ArrowDown')) ||
             event.code === 'ArrowLeft' || event.code === 'ArrowRight' ||
             event.code === 'Delete' || event.code === 'Backspace' ||
             event.code === 'Tab' || event.key === 'Enter' ||
             (event.ctrlKey && (event.code === 'KeyX' || event.code === 'KeyC' || event.code === 'KeyV'))
-        ;
-    };
-
-    // Optimization for keyrepeat (ArrowUp, ArrowDown)
-    input.addEventListener('keydown', (event) => {
-        if ((event.code === 'ArrowUp' || event.code === 'ArrowDown') && event.repeat) {
-            if (!inputTicking) {
-                inputTicking = true;
-                setTimeout(() => inputTicking = false, 50);
-            } else {
-                event.preventDefault();
+        ) {
+            // Optimization for keyrepeat (ArrowUp, ArrowDown)
+            if ((event.code === 'ArrowUp' || event.code === 'ArrowDown') && event.repeat) {
+                if (!inputTicking) {
+                    inputTicking = true;
+                    setTimeout(() => inputTicking = false, 50);
+                } else {
+                    event.preventDefault();
+                }
             }
+            return true;
+        } else {
+            return false;
         }
-    });
+    };
 }
 
 // Document blur
@@ -4991,14 +4993,14 @@ tracklistDatabase.onclick = (event) => {
     let target;
 
     // Sort tracklists
-    if (event.target.closest('#tracklist-database-title')) {
+    if (event.target.closest('#sort-tracklists')) {
         let trlsSortOrderIdx = trlsSortOrderBank.indexOf(trlsSortOrder);
         sortAndCreateTracklists(trlsSortOrderIdx + 1);
         return;
     }
     // Create new tracklist
     if (event.target === createTracklistBtn) {
-        showTracklistManager();
+        showTracklistManager(null);
         return;
     }
     // Expand all tracklist details
@@ -5388,7 +5390,7 @@ function showTracklistDeletion(tracklistSection) {
             }
 
             function getActiveTracklistTrackId() {
-                let activeElem = document.activeElement;
+                let activeElem = savedActiveElem || document.activeElement;
             
                 if (list.contains(activeElem)) {
                     const li = activeElem.closest('li');
@@ -5415,6 +5417,11 @@ function showTracklistDeletion(tracklistSection) {
                 let tracklistTrackNum = allNewTracklistTracks.length;
 
                 allNewTracklistTracks.forEach((tracklistTrack, idx) => {
+                    if (activeTracklistTrackId && tracklistTrack.dataset.id === activeTracklistTrackId) {
+                        const checkboxLabel = tracklistTrack.querySelector('label.design-proxy');
+                        decideFocusAction(checkboxLabel);
+                    }
+
                     tracklistTrack.classList.add('no-size');
                     setAnimationDelay('grow-track-in-tracklist', idx * 2, () => growTracklistTrack(tracklistTrack));
                 });
@@ -5425,11 +5432,6 @@ function showTracklistDeletion(tracklistSection) {
                 });
 
                 function growTracklistTrack(tracklistTrack) {
-                    if (activeTracklistTrackId && tracklistTrack.dataset.id === activeTracklistTrackId) {
-                        const checkboxLabel = tracklistTrack.querySelector('label.design-proxy');
-                        checkboxLabel.focus();
-                    }
-    
                     tracklistTrack.classList.remove('no-size');
                     tracklistTrack.style.height = tracklistTrack.offsetHeight + 'px';
                     tracklistTrack.classList.add('grow');
@@ -5486,7 +5488,7 @@ function showTracklistDeletion(tracklistSection) {
                         tracklistSection.previousElementSibling ||
                         createTracklistBtn
                     ;
-                    newActiveElem.focus();
+                    decideFocusAction(newActiveElem);
                     shouldFocusTracklistSection = false;
                 }
 
@@ -5588,7 +5590,7 @@ function showTracklistDeletion(tracklistSection) {
         tracklistDtbsBtn.classList.remove('waiting');
         tracklistDtbsBtn.classList.add('enabled');
 
-        if (shouldFocusTracklistSection) tracklistSection.focus();
+        if (shouldFocusTracklistSection) decideFocusAction(tracklistSection);
         calcTracklistsContainerMaxHeight();
         setDocScrollbarYWidth();
         checkTracklistDtbsAction();
@@ -5625,15 +5627,15 @@ function hideTracklistDeletion() {
 // Tracklist Manager //
 ///////////////////////
 
-function tracklistManagerAction() {
+function tracklistManagerAction(tracklistSection) {
     if (tracklistMgrWin.hidden) {
-        showTracklistManager();
+        showTracklistManager(tracklistSection);
     } else if (tracklistMgrWin.classList.contains('active')) {
         checkChangesBeforeHideTracklistManager();
     }
 }
 
-function showTracklistManager(tracklistSection = null) {
+function showTracklistManager(tracklistSection) {
     if (!tracklistDelWin.hidden) return;
 
     document.getSelection().empty();
@@ -7516,7 +7518,7 @@ function showTracklistManager(tracklistSection = null) {
                         tracklistSection.previousElementSibling ||
                         createTracklistBtn
                     ;
-                    newActiveElem.focus();
+                    decideFocusAction(newActiveElem);
                     shouldFocusTracklistSection = false;
                 }
                 
@@ -7555,7 +7557,7 @@ function showTracklistManager(tracklistSection = null) {
             }
 
             function saveActiveElementInfo() {
-                let activeElem = document.activeElement;
+                let activeElem = savedActiveElem || document.activeElement;
 
                 if (list.contains(activeElem)) {
                     const li = activeElem.closest('li');
@@ -7567,7 +7569,7 @@ function showTracklistManager(tracklistSection = null) {
                     }
                 } else {
                     if (tracklistSection.contains(activeElem)) {
-                        savedActiveElem = activeElem;
+                        if (!savedActiveElem) savedActiveElem = activeElem;
                         shouldFocusTracklistSection = false;
                     }
                 }
@@ -7580,9 +7582,9 @@ function showTracklistManager(tracklistSection = null) {
 
                     if (activeTracklistTrack) {
                         const checkboxLabel = activeTracklistTrack.querySelector('label.design-proxy');
-                        checkboxLabel.focus();
+                        decideFocusAction(checkboxLabel);
                     }
-                } else if (savedActiveElem) {
+                } else if (savedActiveElem && keysInfoWin.hidden) {
                     savedActiveElem.focus();
                     savedActiveElem = null;
                 }
@@ -7596,7 +7598,7 @@ function showTracklistManager(tracklistSection = null) {
             tracklistDtbsBtn.classList.remove('waiting');
             tracklistDtbsBtn.classList.add('enabled');
 
-            if (shouldFocusTracklistSection) tracklistSection.focus();
+            if (shouldFocusTracklistSection) decideFocusAction(tracklistSection);
             calcTracklistsContainerMaxHeight();
             setDocScrollbarYWidth();
             checkTracklistDtbsAction();
@@ -7721,6 +7723,14 @@ function clearTextFromHtml(str) {
     return str.replace(/<.*?>/gi, '');
 }
 
+function decideFocusAction(elem) {
+    if (keysInfoWin.hidden) {
+        elem.focus();
+    } else {
+        savedActiveElem = elem;
+    }
+}
+
 function toggleTracklistActivitiesFocusability(tracklistDetails) {
     const focusableElems = tracklistDetails.querySelectorAll('label.design-proxy');
     focusableElems.forEach(elem => elem.tabIndex = (tracklistDetails.style.height !== '0px') ? 0 : -1);
@@ -7827,10 +7837,23 @@ function sortAndCreateTracklists(idx) {
     trlsSortOrder = trlsSortOrderBank[idx] || trlsSortOrderBank[0];
     localStorage.setItem('tracklists_sort_order', trlsSortOrder);
 
+    const sortIcon = sortTracklistsBtn.firstElementChild;
+
+    switch (trlsSortOrder) {
+        case 'dateUpdated':
+            sortIcon.src = 'img/icons/sort_date.png';
+            sortIcon.alt = 'Sort Date';
+            break;
+        case 'alphabetical':
+            sortIcon.src = 'img/icons/sort_alphabetical.png';
+            sortIcon.alt = 'Sort Alphabetical';
+            break;
+    }
+
     console.log('tracklist sort order = ' + trlsSortOrder);
 
     if (!tracklistDatabase.hasAttribute('data-ready')) {
-        runSortAndCreateTracklists();
+        createSortedTracklists();
     } else {
         tracklistDtbsBtn.classList.remove('enabled');
         tracklistDtbsBtn.classList.add('waiting');
@@ -7843,7 +7866,7 @@ function sortAndCreateTracklists(idx) {
             tracklistsContainer.innerHTML = '';
             tracklistsNum = 0;
 
-            runSortAndCreateTracklists();
+            createSortedTracklists();
 
             tracklistsExpandedState.clear();
 
@@ -7859,7 +7882,7 @@ function sortAndCreateTracklists(idx) {
         }));
     }
 
-    function runSortAndCreateTracklists() {
+    function createSortedTracklists() {
         Array.from(tracklistsMapData.entries())
             .sort(sortFunctions[trlsSortOrder])
             .forEach(([key, value]) => {
@@ -8392,10 +8415,19 @@ function connectKeyHandlers() {
         if (event.code === 'Insert') {
             if (!tracklistDatabase.hasAttribute('data-ready')) return;
             if (tracklistDatabase.classList.contains('updating')) return;
-            highlightButton(createTracklistBtn, event.code, tracklistManagerAction);
+            if (tracklistsContainer.contains(document.activeElement)) return;
+            highlightButton(createTracklistBtn, event.code, tracklistManagerAction, null);
             return;
         }
 
+        // Sorting tracklists
+        if (event.code === 'KeyV') {
+            if (!tracklistDatabase.hasAttribute('data-ready')) return;
+            if (tracklistDatabase.classList.contains('updating')) return;
+            let trlsSortOrderIdx = trlsSortOrderBank.indexOf(trlsSortOrder);
+            highlightButton(sortTracklistsBtn, event.code, sortAndCreateTracklists, trlsSortOrderIdx + 1);
+            return;
+        }
         // Expanding all tracklist details
         if (event.code === 'NumpadAdd') {
             if (!tracklistDatabase.hasAttribute('data-ready')) return;
@@ -8553,7 +8585,7 @@ function connectKeyHandlers() {
     });
 
     // Focusing tracklists
-    tracklistDatabase.addEventListener('keydown', (event) => {
+    tracklistsContainer.addEventListener('keydown', (event) => {
         if (!tracklistDatabase.hasAttribute('data-ready')) return;
         if (tracklistDatabase.classList.contains('updating')) return;
         let tracklistSection = event.target.closest('.tracklist-section');
@@ -8584,6 +8616,12 @@ function connectKeyHandlers() {
             highlightButton(addBtn, event.code, addTracklistToPlaylist, tracklistSection, false);
             return;
         }
+        // Manage existing tracklist
+        if (event.code === 'Insert') {
+            let manageBtn = tracklistSection.querySelector('label[for^="edit-tracklist"].design-proxy');
+            highlightButton(manageBtn, event.code, tracklistManagerAction, tracklistSection);
+            return;
+        }
     });
 
     // Enable focus on visPlaylistArea when switching focus back from curPlaylist
@@ -8600,10 +8638,10 @@ function connectKeyHandlers() {
     document.addEventListener('keydown', (event) => {
         if (event.shiftKey || event.ctrlKey || event.altKey || event.metaKey || event.repeat) return;
         if (event.code === 'KeyG') {
-            //console.log(document.activeElement);
+            console.log(document.activeElement);
             //console.log(highlightActiveElem);
             //console.log(eventManager.eventTypesByElement);
-            console.log(fileByFileInput);
+            //console.log(fileByFileInput);
             //console.log(tracklistsMapData);
         }
     });
