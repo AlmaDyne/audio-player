@@ -70,9 +70,9 @@ tracklistsMapData.set('be2c049d-11d8-4060-8595-c05cb2e85930', {
 tracklistsMapData.set('75a7e1f4-2755-4e16-913e-d7cb23508ef2', {
     dateUpdated: '2024-05-03T22:50:26.112Z',
     
-    tracklistTitle: 'Dmitry Miroshkin - Orchestra--Ethno--Folk',
+    tracklistTitle: 'Dmitry Miroshkin - Orchestra/Ethno/Folk',
 
-    cover: 'music/Dmitry_Miroshkin_-_Orchestra--Ethno--Folk/cover.jpg',
+    cover: 'music/Dmitry_Miroshkin_-_Orchestra-Ethno-Folk/cover.jpg',
 
     tracks: new Array(
         {
@@ -80,42 +80,42 @@ tracklistsMapData.set('75a7e1f4-2755-4e16-913e-d7cb23508ef2', {
             order: 1,
             artist: 'Dmitry Miroshkin',
             title: 'Thousand Miles',
-            src: 'music/Dmitry_Miroshkin_-_Orchestra--Ethno--Folk/1._Dmitry_Miroshkin_-_Thousand_Miles.mp3'
+            src: 'music/Dmitry_Miroshkin_-_Orchestra-Ethno-Folk/1._Dmitry_Miroshkin_-_Thousand_Miles.mp3'
         },
         {
             id: 'feddf836-11bd-4119-aa89-9093eef47b2a',
             order: 2,
             artist: 'Dmitry Miroshkin',
             title: 'Wolf Spirit',
-            src: 'music/Dmitry_Miroshkin_-_Orchestra--Ethno--Folk/2._Dmitry_Miroshkin_-_Wolf_Spirit.mp3'
+            src: 'music/Dmitry_Miroshkin_-_Orchestra-Ethno-Folk/2._Dmitry_Miroshkin_-_Wolf_Spirit.mp3'
         },
         {
             id: '170cf975-cc3c-47e4-a94c-7ff19cf6618b',
             order: 3,
             artist: 'Dmitry Miroshkin',
-            title: 'The King-.s Path',
-            src: 'music/Dmitry_Miroshkin_-_Orchestra--Ethno--Folk/3._Dmitry_Miroshkin_-_The_King-.s_path.mp3'
+            title: 'The King&#39;s Path',
+            src: 'music/Dmitry_Miroshkin_-_Orchestra-Ethno-Folk/3._Dmitry_Miroshkin_-_The_King-s_path.mp3'
         },
         {
             id: '758d4892-2271-4b83-97f0-0311bfe9ee3c',
             order: 4,
             artist: 'Dmitry Miroshkin & Anthony Driverson',
             title: 'When the Mountains Fall',
-            src: 'music/Dmitry_Miroshkin_-_Orchestra--Ethno--Folk/4._Dmitry_Miroshkin_&_Anthony_Driverson_-_When_the_Mountains_Fall.mp3'
+            src: 'music/Dmitry_Miroshkin_-_Orchestra-Ethno-Folk/4._Dmitry_Miroshkin_&_Anthony_Driverson_-_When_the_Mountains_Fall.mp3'
         },
         {
             id: '28c4ea05-2dab-4912-998c-fc5fe5bc2c40',
             order: 5,
             artist: 'Dmitry Miroshkin',
             title: 'Wind Waves',
-            src: 'music/Dmitry_Miroshkin_-_Orchestra--Ethno--Folk/5._Dmitry_Miroshkin_-_Wind_Waves.mp3'
+            src: 'music/Dmitry_Miroshkin_-_Orchestra-Ethno-Folk/5._Dmitry_Miroshkin_-_Wind_Waves.mp3'
         },
         {
             id: '3a2b5af6-0104-4027-9771-557ffd2b583a',
             order: 6,
             artist: 'Dmitry Miroshkin',
             title: 'Heart of the Forest',
-            src: 'music/Dmitry_Miroshkin_-_Orchestra--Ethno--Folk/6._Dmitry_Miroshkin_-_Heart_of_the_Forest.mp3'
+            src: 'music/Dmitry_Miroshkin_-_Orchestra-Ethno-Folk/6._Dmitry_Miroshkin_-_Heart_of_the_Forest.mp3'
         }
     )
 });

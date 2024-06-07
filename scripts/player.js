@@ -7147,16 +7147,13 @@ function showTracklistManager(tracklistSection) {
             }
 
             tracklistData.dateUpdated = new Date().toISOString();
-
-            let tracklistTitle = correctText(tracklistTitleInput.value);
-            tracklistData.tracklistTitle = tracklistTitle;
+            let tracklistTitle = tracklistData.tracklistTitle = correctText(tracklistTitleInput.value);
 
             let tracklistCover = fileByFileInput.get(tracklistCoverInput);
             if (tracklistCover) {
                 let fileExtension = getExtension(tracklistCover instanceof File ? tracklistCover.name : tracklistCover);
                 let filename = 'cover.' + fileExtension;
-                let src = `music/${tracklistTitle}/${filename}`;
-                tracklistData.cover = replaceTextSpaces(src);
+                tracklistData.cover = `music/${sanitizePathSegment(tracklistTitle)}/${filename}`;
             } else {
                 delete tracklistData.cover;
             }
@@ -7175,6 +7172,7 @@ function showTracklistManager(tracklistSection) {
                 } else if (trackStatus === 'existing') {
                     let trackData = tracklistData.tracks.find(trackData => trackData.id === trackId);
                     let isTrackDataChanged = false;
+                    let isTracklistNameChanged = tracklistTitleInput.hasAttribute('data-value-changed');
 
                     if (trackOrder !== trackFormItem.dataset.originalOrder) {
                         trackData.order = Number(trackOrder);
@@ -7189,9 +7187,8 @@ function showTracklistManager(tracklistSection) {
                     });
 
                     const fileInput = trackFormItem.querySelector('input[type="file"]');
-                    if (fileInput.hasAttribute('data-value-changed') || isTrackDataChanged) {
-                        changeFileData(trackData, fileInput);
-                    }
+                    let isFileChanged = fileInput.hasAttribute('data-value-changed');
+                    if (isFileChanged || isTrackDataChanged || isTracklistNameChanged) changeFileData(trackData, fileInput);
                 } else if (trackStatus === 'new') {
                     let trackData = {
                         id: trackId,
@@ -7222,16 +7219,11 @@ function showTracklistManager(tracklistSection) {
                 let file = fileByFileInput.get(input);
                 let fileExtension = getExtension(file instanceof File ? file.name : file);
                 let filename = `${trackData.order}. ${trackData.artist} - ${trackData.title}.${fileExtension}`
-                let src = `music/${tracklistTitle}/${filename}`;
-                trackData.src = replaceTextSpaces(src);
+                trackData.src = `music/${sanitizePathSegment(tracklistTitle)}/${sanitizePathSegment(filename)}`;
             }
 
             function getExtension(filename) {
                 return filename.split('.').pop();
-            }
-
-            function replaceTextSpaces(str) {
-                return str.replace(/\s/g, '_');
             }
         }
 
@@ -7702,21 +7694,36 @@ function checkFormChanges(trackFormList, inputs) {
 }
 
 function correctText(str) {
-    return str.trim().replace(/(\s[\u2013\u2014\u2212]\s)|(\/)|(<)|(>)|(')/g, (match, p1, p2, p3, p4, p5) => {
-        if (match === p1) return ' - ';
-        if (match === p2) return '--';
-        if (match === p3) return '[';
-        if (match === p4) return ']';
-        if (match === p5) return '-.';
-    });
+    return str.trim()
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;')
+        .replace(/\\/g, '\\\\')
+        .replace(/\s+/g, ' ')
+        .replace(/\s[\u2013\u2014\u2212]\s/g, ' - ')
+    ;
 }
 
 function restoreText(str) {
-    return str.replace(/(--)|(\s-\s)|(-.)/g, (match, p1, p2, p3) => {
-        if (match === p1) return '<wbr>/<wbr>';
-        if (match === p2) return ' \u2013 ';
-        if (match === p3) return '\'';
-    });
+    return str.trim()
+        .replace(/\|/g, '<wbr>|<wbr>')
+        .replace(/\//g, '<wbr>/<wbr>')
+        .replace(/\\\\/g, '<wbr>\\<wbr>')
+        .replace(/\s-\s/g, ' \u2013 ')
+    ;
+}
+
+function sanitizePathSegment(str) {
+    return str.trim()
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '\"')
+        .replace(/&#39;/g, '\'')
+        .replace(/\\\\/g, '\\')
+        .replace(/[/\\?%*:|"<>]/g, '-')
+        .replace(/\s+/g, '_')
+    ;
 }
 
 function clearTextFromHtml(str) {

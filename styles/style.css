@@ -503,7 +503,8 @@ i {
 .tracklist-details footer.strip button {
     display: none;
 }
-.tracklist-details footer.strip label.design-proxy {
+.tracklist-details footer.strip label.design-proxy,
+.keys-info .edit-tracklist {
     width: 19px;
     height: 19px;
     background: rgb(var(--color-emphase));
@@ -513,19 +514,26 @@ i {
     overflow: hidden;
     cursor: pointer;
 }
+.keys-info .edit-tracklist {
+    width: 34px;
+    height: 34px;
+}
 .tracklist-details footer.strip label.design-proxy:active,
 .tracklist-details footer.strip label.design-proxy.key-pressed {
     border: 1px solid var(--color-secondary);
     outline: 1px solid var(--color-primary);
 }
 
-.tracklist-details footer.strip .edit-tracklist-svg {
+.tracklist-details footer.strip .edit-tracklist-svg,
+.keys-info .edit-tracklist > .edit-tracklist-svg {
     width: 90%;
     height: auto;
     vertical-align: middle;
-    color: rgb(var(--color-emphase));
     color: var(--color-primary);
     transform: translate(1px, -0.75px);
+}
+.keys-info .edit-tracklist > .edit-tracklist-svg {
+    transform: translate(0px, -2px);
 }
 .tracklist-details header.strip label > span,
 .tracklist-details footer.strip label + label {
@@ -643,28 +651,22 @@ i {
     pointer-events: none;
 }
 .keys-info .add-controls-button-i {
-    transform: translate(0.5px, 2px);
+    transform: translateY(1px);
 }
 #tracklist-database > .add-controls .add-controls-button-img,
 .keys-info .add-controls-button-img {
     width: 32px;
     vertical-align: middle; /* Убрать нижний отступ */
-    border-radius: 50%;
     filter: invert(calc(0.95 - var(--img-invert-filter)));
     transition: filter var(--transition-time-primary);
     pointer-events: none;
-
-    /*outline: 1px solid var(--color-secondary);*/
 }
 #tracklist-database > .add-controls #clear-playlist > img {
     border-top-right-radius: 12%;
     transform: translate(-2px, 2px);
 }
-.keys-info .add-controls-button-img[alt="Clear"] {
-    border-top-right-radius: 12%;
-}
 #tracklist-database > .add-controls .create-tracklist-svg,
-.keys-info .create-tracklist-svg {
+.keys-info .create-tracklist > .create-tracklist-svg {
     width: 70%;
     height: auto;
     vertical-align: middle;
@@ -673,6 +675,13 @@ i {
     border-radius: 6%;
     transition: color var(--transition-time-primary);
     pointer-events: none;
+}
+.keys-info .create-tracklist {
+    width: 34px;
+}
+.keys-info .create-tracklist > .create-tracklist-svg {
+    width: 100%;
+    transform: none;
 }
 #tracklist-database > .add-controls button.show {
     --clear-playlist-timing-function: cubic-bezier(.18,.52,.5,1.7);
@@ -2088,7 +2097,9 @@ player-controls #volume-bar.active {
     word-break: normal;
 }
 #tracklist-manager .file-name.inactive {
+    color: rgb(var(--common-color-inactive));
     background: rgba(var(--common-color-inactive), 0.07);
+    cursor: not-allowed;
 }
 #tracklist-manager input {
     flex: 1;
@@ -2104,10 +2115,9 @@ player-controls #volume-bar.active {
     ;
 }
 #tracklist-manager input.inactive {
-    border-color: inherit !important;
-}
-#tracklist-manager input:disabled {
     color: rgb(var(--common-color-inactive));
+    border-color: inherit !important;
+    cursor: not-allowed;
 }
 #tracklist-manager input[type="file"] {
     display: none;
@@ -2228,6 +2238,7 @@ player-controls #volume-bar.active {
     border-color: var(--color-secondary);
 }
 #tracklist-manager .drop-zone.inactive {
+    cursor: not-allowed;
     pointer-events: none;
 }
 #tracklist-manager button.add-track-form-item,
@@ -2290,7 +2301,6 @@ player-controls #volume-bar.active {
     color: var(--color-primary);
     transition: none;
 }
-#tracklist-manager .file-name.inactive,
 #tracklist-manager button.reset.inactive,
 #tracklist-manager .state > .ok.inactive,
 #tracklist-manager .state > .fail.inactive,
