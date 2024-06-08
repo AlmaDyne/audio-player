@@ -1,5 +1,7 @@
 export const tracklistsMapData = new Map();
 
+// https://almadyne.github.io/audio-player/
+
 tracklistsMapData.set('be2c049d-11d8-4060-8595-c05cb2e85930', {
     dateUpdated: '2024-05-03T22:49:23.653Z',
 
@@ -13,21 +15,21 @@ tracklistsMapData.set('be2c049d-11d8-4060-8595-c05cb2e85930', {
             order: 1,
             artist: 'Zmicier M.',
             title: 'Cold Lights (Metal Mix by ATD)',
-            src: 'https://almadyne.github.io/audio-player/music/Experiments_and_Parodies/1._Zmicier_M._-_Cold_Lights_(Metal_Mix_by_ATD).mp3'
+            src: 'music/Experiments_and_Parodies/1._Zmicier_M._-_Cold_Lights_(Metal_Mix_by_ATD).mp3'
         },
         {
             id: 'e777ad8e-7f5e-43d6-b28a-ad7f6bbdfc1e',
             order: 2,
             artist: 'Zmicier M.',
             title: 'Silent Minds (feat. ATD)',
-            src: 'https://almadyne.github.io/audio-player/music/Experiments_and_Parodies/2._Zmicier_M._-_Silent_Minds_(feat._ATD).mp3'
+            src: 'music/Experiments_and_Parodies/2._Zmicier_M._-_Silent_Minds_(feat._ATD).mp3'
         },
         {
             id: '785b0f2b-f5a2-42f4-a7ea-00ab110d1cef',
             order: 3,
             artist: 'Zmicier M.',
             title: 'Classical TechnoDub (feat. ATD)',
-            src: 'https://almadyne.github.io/audio-player/music/Experiments_and_Parodies/3._Zmicier_M._-_Classical_TechnoDub_(feat._ATD).mp3'
+            src: 'music/Experiments_and_Parodies/3._Zmicier_M._-_Classical_TechnoDub_(feat._ATD).mp3'
         },
         {
             id: 'b79324f3-2ea2-49ee-b6d3-aa80151126fd',
