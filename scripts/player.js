@@ -48,7 +48,7 @@ const visPlaylistArea = document.getElementById('visible-playlist-area');
 const playlist = document.getElementById('playlist');
 const playlistScrollArrowUp = document.getElementById('playlist-scroll-arrow-up');
 const playlistScrollArrowDown = document.getElementById('playlist-scroll-arrow-down');
-const tempTrackBox = document.getElementById('temporary-track-box');
+const tempTrackStorage = document.getElementById('temporary-track-storage');
 const configBtn = document.getElementById('configuration');
 const colorBtn = document.getElementById('coloring');
 const playlistStyleBtn = document.getElementById('playlist-style');
@@ -86,7 +86,7 @@ const
 ;
 
 // Setted constants
-const TIMELINE_POSITION_CHANGE_STEP = 0.5;
+const TIMELINE_POSITION_STEP = 2;
 const TIMELINE_UPDATE_INTERVAL = 200;
 const LAG = 16.7;
 const ACCELERATION_FACTOR = 5;
@@ -126,7 +126,6 @@ let cursorOverPlaylist = false;
 let scrollablePlaylist = false;
 let scrollElemsDisplaying = false;
 let playOn = false;
-let roundTime = false;
 let timePosSeeking = false;
 let timeRangeEnter = false;
 let timelinePos = 0;
@@ -181,57 +180,59 @@ const DEFAULTS_DATA = {
 };
 
 const accelerationData = {
-    'fast-forward': {
-        playbackRate: ACCELERATION_FACTOR,
-        classIcons: {
-            accOn: 'icon-fast-forward',
-            accOff: 'icon-to-end'
+    types: {
+        'fast-forward': {
+            playbackRate: ACCELERATION_FACTOR,
+            classIcons: {
+                accOn: 'icon-fast-forward',
+                accOff: 'icon-to-end'
+            },
+            button: forwardBtn
         },
-        button: forwardBtn
-    },
-    'fast-rewind': {
-        playbackRate: -ACCELERATION_FACTOR,
-        classIcons: {
-            accOn: 'icon-fast-backward',
-            accOff: 'icon-to-start'
+        'fast-rewind': {
+            playbackRate: -ACCELERATION_FACTOR,
+            classIcons: {
+                accOn: 'icon-fast-backward',
+                accOff: 'icon-to-start'
+            },
+            button: rewindBtn
         },
-        button: rewindBtn
+        'none': {
+            playbackRate: 1
+        }
     },
-    'none': {
-        playbackRate: 1
-    }
-};
 
-const stepKeysData = {
-    KeyA: {
-        stepFunction: rewindAction,
-        accelerationType: 'fast-rewind',
-        button: rewindBtn
-    },
-    KeyD: {
-        stepFunction: forwardAction,
-        accelerationType: 'fast-forward',
-        button: forwardBtn
-    },
-    ArrowLeft: {
-        stepFunction: rewindAction,
-        accelerationType: 'fast-rewind',
-        button: rewindBtn
-    },
-    ArrowRight: {
-        stepFunction: forwardAction,
-        accelerationType: 'fast-forward',
-        button: forwardBtn
-    },
-    PointerRewind: {
-        stepFunction: rewindAction,
-        accelerationType: 'fast-rewind',
-        button: rewindBtn
-    },
-    PointerForward: {
-        stepFunction: forwardAction,
-        accelerationType: 'fast-forward',
-        button: forwardBtn
+    keys: {
+        KeyA: {
+            stepFunc: stepBack,
+            accelerationType: 'fast-rewind',
+            button: rewindBtn
+        },
+        KeyD: {
+            stepFunc: stepForward,
+            accelerationType: 'fast-forward',
+            button: forwardBtn
+        },
+        ArrowLeft: {
+            stepFunc: stepBack,
+            accelerationType: 'fast-rewind',
+            button: rewindBtn
+        },
+        ArrowRight: {
+            stepFunc: stepForward,
+            accelerationType: 'fast-forward',
+            button: forwardBtn
+        },
+        PointerRewind: {
+            stepFunc: stepBack,
+            accelerationType: 'fast-rewind',
+            button: rewindBtn
+        },
+        PointerForward: {
+            stepFunc: stepForward,
+            accelerationType: 'fast-forward',
+            button: forwardBtn
+        }
     }
 };
 
@@ -330,23 +331,23 @@ function showTrackInfo(audio, prevSelected = null) {
     }
     
     if (audio.duration) {
-        updateTime(audio);
-        updateDuration(audio);
+        updateTimeDisplay({ audio });
+        updateDurationDisplay({ audio });
     } else {
-        updateTime(null, '??:??');
-        updateDuration(null, '??:??');
+        updateTimeDisplay({ displayStr: '??:??' });
+        updateDurationDisplay({ displayStr: '??:??' });
 
         audio.ondurationchange = () => {
             if (audio !== selectedAudio) return;
 
-            updateDuration(audio);
+            updateDurationDisplay({ audio });
             audio.currentTime = timelinePos * audio.duration / timeRange.offsetWidth;
 
             if (acceleration) {
                 clearUpdTimers();
                 runUpdTimers(audio);
             } else {
-                updateTime(audio);
+                updateTimeDisplay({ audio });
             }
 
             if (timeRangeHoverIntent.elemRect) timeRangeHoverIntent.executeTask();
@@ -368,7 +369,7 @@ function connectAudioHandlers(audio) {
             indicator.classList.add('active');
 
             try {
-                audio.playbackRate = accelerationData[accelerationType].playbackRate;
+                audio.playbackRate = accelerationData.types[accelerationType].playbackRate;
             } catch(error) {
                 console.error(error.name + ': ' + error.message);
         
@@ -437,6 +438,9 @@ function connectAudioHandlers(audio) {
 }
 
 function disconnectAudioHandlers(audio) {
+    //audio.removeAttribute('src');
+    //audio.load();
+
     if (audio.paused) audio.onplaying = null;
     audio.onended = null;
     audio.onpause = null;
@@ -472,401 +476,8 @@ function moveTitles(...titles) {
     }
 }
 
-//////////////////////////////////
-// Track time and position info //
-//////////////////////////////////
-
-timeRange.onclick = null;
-
-timeRange.oncontextmenu = () => {
-    if (isTouchDevice) return false;
-}
-
-timeRange.onpointerenter = enterTimeRange;
-
-function enterTimeRange() {
-    timeRangeEnter = true;
-
-    timeRange.onpointermove = moveOverTimeRange;
-
-    timeRange.onpointerleave = function() {
-        timeRangeEnter = false;
-        timeBar.hidden = true;
-        this.style.cursor = '';
-
-        this.onpointerdown = null;
-        this.onpointermove = null;
-        this.onpointerleave = null;
-    };
-
-    if (!selectedAudio) return;
-
-    timeBar.hidden = false;
-    timeRange.style.cursor = 'pointer';
-
-    timeRange.onpointerdown = function(event) {
-        if (event.button !== 0) return;
-
-        document.getSelection().empty();
-
-        this.setPointerCapture(event.pointerId);
-        this.pointerId = event.pointerId;
-
-        clearFinPlayTimer();
-        clearUpdTimers();
-
-        if (playOn) {
-            console.log('pause (pointer down on timeline) | ' + selectedAudio.dataset.title);
-
-            pauseAudio(selectedAudio);
-        }
-
-        timePosSeeking = true;
-
-        moveOverTimeRange = moveOverTimeRange.bind(this);
-        moveOverTimeRange(event);
-
-        this.onpointerup = function() {
-            timePosSeeking = false;
-
-            if (playOn) {
-                playAudio(selectedAudio);
-            } else if (acceleration) {
-                runUpdTimers(selectedAudio);
-            }
-
-            this.onpointerup = null;
-            delete this.pointerId;
-        };
-    };
-
-    function moveOverTimeRange(event) {
-        let x = findXPos(event.clientX);
-        let timeBarPos = (x < this.offsetWidth) ? x : x - 1;
-
-        timeBar.style.left = timeBarPos + 'px';
-
-        if (timePosSeeking) {
-            document.getSelection().empty();
-            
-            timelinePos = x;
-            updateTimePosition(timelinePos);
-        }
-    }
-
-    function findXPos(clientX) {
-        let x = clientX - timeRange.getBoundingClientRect().left;
-        if (x < 0) x = 0;
-        if (x > timeRange.offsetWidth) x = timeRange.offsetWidth;
-        return x;
-    }
-
-    function updateTimePosition(xPos) {
-        timeline.style.width = (timelineMrgnLeft + xPos) + 'px';
-
-        if (selectedAudio.duration) {
-            selectedAudio.currentTime = xPos * selectedAudio.duration / timeRange.offsetWidth;
-            updateTime(selectedAudio);
-        }
-    }
-}
-
-function calcTimeRangeTooltip(xPos) {
-    if (!selectedAudio) return;
-    if (!selectedAudio.duration) return '??:??';
-
-    let calculatedTime = xPos * selectedAudio.duration / timeRange.offsetWidth;
-
-    let mins = Math.floor(calculatedTime / 60);
-    let secs = Math.floor(calculatedTime - mins * 60);
-
-    if (mins < 10) mins = '0' + mins;
-    if (secs < 10) secs = '0' + secs;
-
-    return calculatedTime = mins + ':' + secs;
-}
-
-/////////////////////////////
-// Player controls - FW/RW //
-/////////////////////////////
-
-// Pointer step/acceleration handlers
-for (let button of [rewindBtn, forwardBtn]) {
-    let key = 'Pointer' + button.id[0].toUpperCase() + button.id.slice(1);
-
-    button.onpointerdown = function(event) {
-        if (event.button !== 0) return;
-
-        this.setPointerCapture(event.pointerId);
-
-        downKeyStepAccAction(key);
-    };
-    
-    button.onpointerup = function() {
-        upKeyStepAccAction(key);
-    };
-
-    button.oncontextmenu = (event) => {
-        if (event.pointerType !== 'mouse') return false;
-    }
-
-    button.onpointercancel = () => {
-        clearTimeout(timerAccelerateAudioDelay);
-
-        if (acceleration) stopAcceleration();
-
-        curAccelerateKey = null;
-        activeStepAccKeys.clear();
-        canceledStepAccKeys.clear();
-    };
-}
-
-function downKeyStepAccAction(key) {
-    activeStepAccKeys.add(key);
-
-    clearTimeout(timerAccelerateAudioDelay);
-
-    timerAccelerateAudioDelay = setTimeout(runAcceleration, ACCELERATION_DELAY);
-}
-
-function upKeyStepAccAction(key) {
-    if (!activeStepAccKeys.size) return;
-
-    activeStepAccKeys.delete(key);
-
-    clearTimeout(timerAccelerateAudioDelay);
-
-    if (activeStepAccKeys.size) {
-        if (acceleration) {
-            if (key === curAccelerateKey) {
-                runAcceleration();
-            } else {
-                if (!canceledStepAccKeys.has(key)) {
-                    if (!timePosSeeking) stepKeysData[key].stepFunction();
-                } else {
-                    canceledStepAccKeys.delete(key);
-                }
-            }
-        } else {
-            if (!timePosSeeking) stepKeysData[key].stepFunction();
-            timerAccelerateAudioDelay = setTimeout(runAcceleration, ACCELERATION_DELAY);
-        }
-    } else {
-        if (acceleration) {
-            stopAcceleration();
-        } else {
-            if (!timePosSeeking) stepKeysData[key].stepFunction();
-        }
-
-        curAccelerateKey = null;
-        canceledStepAccKeys.clear();
-    }
-}
-
-function runAcceleration() {
-    canceledStepAccKeys.clear();
-    activeStepAccKeys.forEach(activeKey => canceledStepAccKeys.add(activeKey));
-    
-    curAccelerateKey = Array.from(activeStepAccKeys)[activeStepAccKeys.size - 1];
-    let keyAccType = stepKeysData[curAccelerateKey].accelerationType;
-
-    if (keyAccType !== accelerationType) {
-        if (acceleration) stopAcceleration();
-        if (selectedAudio) accelerate(selectedAudio, keyAccType);
-    }
-}
-
-function rewindAction() {
-    if (!selectedAudio) {
-        selectedAudio = curOrderedAudios[curOrderedAudios.length - 1];
-        if (!selectedAudio) return;
-
-        console.log('step-rewind track selecting | ' + selectedAudio.dataset.title);
-        
-        setSelected(selectedAudio);
-        showTrackInfo(selectedAudio);
-        if (timeRangeEnter) enterTimeRange();
-        return;
-    }
-
-    if (
-        (selectedAudio.duration && selectedAudio.currentTime <= 3) ||
-        (!selectedAudio.duration && !timelinePos)
-    ) { 
-        // Playlist is cleared, selected audio is from the previous playlist
-        if (!curOrderedAudios.length) return;
-
-        clearFinPlayTimer();
-        clearUpdTimers();
-    
-        if (playOn) pauseAudio(selectedAudio);
-
-        let prevSelectedAudio = selectedAudio;
-        let idx = curOrderedAudios.findIndex(aud => aud === selectedAudio);
-        let prevAudio = curOrderedAudios[--idx];
-        
-        removeSelected(prevSelectedAudio);
-        selectedAudio = prevAudio ? prevAudio : curOrderedAudios[curOrderedAudios.length - 1];
-        setSelected(selectedAudio);
-
-        console.log('step-rewind track selecting | ' + selectedAudio.dataset.title);
-
-        prevSelectedAudio.currentTime = 0;
-        selectedAudio.currentTime = 0;
-        timelinePos = 0;
-        
-        showTrackInfo(selectedAudio, prevSelectedAudio);
-
-        if (playOn) {
-            playAudio(selectedAudio);
-        } else if (acceleration) {
-            runUpdTimers(selectedAudio);
-        }
-    } else {
-        console.log('skip to start | ' + selectedAudio.dataset.title);
-
-        clearFinPlayTimer();
-
-        selectedAudio.currentTime = 0;
-        timelinePos = 0;
-
-        keepSelectedTitleVisible(selectedAudio);
-        if (selectedAudio.duration) updateTime(selectedAudio);
-        updateTimeline(selectedAudio);
-    }
-}
-
-function forwardAction() {
-    if (!selectedAudio) {
-        selectedAudio = curOrderedAudios[0];
-        if (!selectedAudio) return;
-
-        console.log('step-forward track selecting | ' + selectedAudio.dataset.title);
-
-        setSelected(selectedAudio);
-        showTrackInfo(selectedAudio);
-        if (timeRangeEnter) enterTimeRange();
-        return;
-    }
-
-    // Playlist is cleared, selected audio is from the previous playlist
-    if (!curOrderedAudios.length) return;
-
-    clearFinPlayTimer();
-    clearUpdTimers();
-
-    if (playOn) pauseAudio(selectedAudio);
-    
-    let prevSelectedAudio = selectedAudio;
-    let idx = curOrderedAudios.findIndex(aud => aud === selectedAudio);
-    let nextAudio = curOrderedAudios[++idx];
-
-    removeSelected(prevSelectedAudio);
-    selectedAudio = nextAudio ? nextAudio : curOrderedAudios[0];
-    setSelected(selectedAudio);
-
-    console.log('step-forward track selecting | ' + selectedAudio.dataset.title);
-
-    prevSelectedAudio.currentTime = 0;
-    selectedAudio.currentTime = 0;
-    timelinePos = 0;
-
-    showTrackInfo(selectedAudio, prevSelectedAudio);
-
-    if (playOn) {
-        playAudio(selectedAudio);
-    } else if (acceleration) {
-        runUpdTimers(selectedAudio);
-    }
-}
-
-//////////////////
-// Acceleration //
-//////////////////
-
-function accelerate(audio, accType) {
-    console.log(`start ${accType} acceleration`);
-
-    acceleration = true;
-    accelerationType = accType;
-
-    let button = accelerationData[accelerationType].button;
-
-    for (let comparedAccType of Object.keys(accelerationData)) {
-        let comparedButton = accelerationData[comparedAccType].button;
-        if (!comparedButton) continue;
-
-        comparedButton.className = (comparedButton === button) ?
-            accelerationData[comparedAccType].classIcons.accOn :
-            accelerationData[comparedAccType].classIcons.accOff;
-    }
-
-    clearUpdTimers();
-
-    try {
-        audio.playbackRate = accelerationData[accelerationType].playbackRate;
-    } catch(error) {
-        console.error(error.name + ': ' + error.message);
-
-        if (error.name === 'NotSupportedError') {
-            acceleratePlaying = false;
-            if (playOn && audio.readyState >= 3) audio.pause();
-        }
-    }
-
-    console.log('playbackRate = ' + audio.playbackRate);
-
-    if (!timePosSeeking) runUpdTimers(audio);
-
-    highlightSelected(selectedAudio);
-}
-
-function stopAcceleration() {
-    console.log(`stop ${accelerationType} acceleration`);
-
-    clearTimeout(timerAccelerateAudioDelay);
-    clearUpdTimers();
-
-    let button = accelerationData[accelerationType].button;
-    button.className = accelerationData[accelerationType].classIcons.accOff;
-
-    acceleratePlaying = true;
-    acceleration = false;
-    accelerationType = 'none';
-
-    selectedAudio.playbackRate = accelerationData[accelerationType].playbackRate;
-
-    updateTimeline(selectedAudio);
-
-    if (playOn) {
-        if (selectedAudio.paused) {
-            playAudio(selectedAudio);
-        } else if (selectedAudio.readyState >= 3) {
-            runUpdTimers(selectedAudio);
-        }
-    } else {
-        if (selectedAudio.duration) {
-            updateTime(selectedAudio);
-        }
-    }
-
-    highlightSelected(selectedAudio);
-}
-
-function stopAccelerationAndClear() {
-    if (!activeStepAccKeys.size) return;
-
-    clearTimeout(timerAccelerateAudioDelay);
-
-    if (acceleration) stopAcceleration();
-
-    curAccelerateKey = null;
-    activeStepAccKeys.clear();
-    canceledStepAccKeys.clear();
-}
-
 ///////////////////////////////////////
-// Player controls - Play/pause/stop //
+// Player controls - Play/Pause/Stop //
 ///////////////////////////////////////
 
 playPauseBtn.onclick = playPauseAction;
@@ -903,7 +514,7 @@ function playPauseAction() {
 function pauseAudio(audio) {
     if (audio.readyState >= 3) {
         audio.pause();
-        updateTime(audio);
+        updateTimeDisplay({ audio });
     }
 }
 
@@ -913,24 +524,8 @@ function playAudio(audio) { // playOn = true
     if (!audio.src) {
         audio.src = audio.dataset.src;
 
-        if (acceleration) runUpdTimers(audio);
-
-        setTimeout(() => {
-            if (audio.duration) {
-                if (playOn && audio === selectedAudio) runPlaying(audio);
-            } else {
-                showLoading(audio);
-
-                audio.oncanplaythrough = () => {
-                    console.log('can play (first play) | ' + audio.dataset.title);
-
-                    hideLoading(audio);
-                    if (playOn && audio === selectedAudio) runPlaying(audio);
-
-                    audio.oncanplaythrough = null;
-                };
-            }
-        }, LAG);
+        if (!audio.duration) showLoading(audio);
+        runPlaying(audio);
     } else {
         if (audio.duration && audio.paused) {
             runPlaying(audio);
@@ -940,10 +535,10 @@ function playAudio(audio) { // playOn = true
     }
 
     function runPlaying(audio) {
-        if (acceleration && accelerationType === 'fast-rewind' && audio.ended === true) {
+        /*if (acceleration && accelerationType === 'fast-rewind' && audio.ended === true) {
             audio.currentTime = 0;
             audio.currentTime = audio.duration;
-        }
+        }*/
 
         audio.volume = 0;
         audio.preservesPitch = false;
@@ -954,12 +549,10 @@ function playAudio(audio) { // playOn = true
                 console.error(error);
             }
         });
-
-        audio.oncanplaythrough = null;
     }
 }
 
-stopBtn.onclick = () => stopAction();
+stopBtn.onclick = stopAction;
 
 function stopAction() {
     if (!selectedAudio) return;
@@ -984,215 +577,135 @@ function setPauseState() {
     playPauseBtn.classList.add('icon-play');
 }
 
-//////////////////////////////////////
-// Updating track time and position //
-//////////////////////////////////////
+/////////////////////////////
+// Player controls - FW/RW //
+/////////////////////////////
 
-function updateTime(audio, displayStr) {
-    if (audio) {
-        console.log(audio.currentTime + ' | ' + audio.dataset.title);
+// Pointer step/acceleration handlers
+for (let button of [rewindBtn, forwardBtn]) {
+    let key = 'Pointer' + button.id[0].toUpperCase() + button.id.slice(1);
 
-        let mins = roundTime ?
-            Math.floor(Math.round(audio.currentTime) / 60) :
-            Math.floor(audio.currentTime / 60);
-        let secs = roundTime ?
-            Math.round(audio.currentTime - mins * 60) :
-            Math.floor(audio.currentTime - mins * 60);
+    button.onpointerdown = function(event) {
+        if (event.button !== 0) return;
+
+        this.setPointerCapture(event.pointerId);
+
+        downKeyStepAccAction(key);
+    };
     
-        if (mins < 10) mins = '0' + mins;
-        if (secs < 10) secs = '0' + secs;
+    button.onpointerup = function() {
+        upKeyStepAccAction(key);
+    };
 
-        let timeStr = mins + ':' + secs;
-
-        for (let i = 0; i <= 4; i++) {
-            curTimeDisplay.children[i].innerHTML = timeStr[i];
-        }
-    } else {
-        for (let i = 0; i <= 4; i++) {
-            curTimeDisplay.children[i].innerHTML = displayStr[i];
-        }
+    button.oncontextmenu = (event) => {
+        if (event.pointerType !== 'mouse') return false;
     }
+
+    button.onpointercancel = () => {
+        clearTimeout(timerAccelerateAudioDelay);
+        if (acceleration) stopAcceleration();
+
+        curAccelerateKey = null;
+        activeStepAccKeys.clear();
+        canceledStepAccKeys.clear();
+    };
 }
 
-function updateDuration(audio, displayStr) {
-    if (audio) {
-        let mins = Math.floor(audio.duration / 60);
-        let secs = Math.round(audio.duration - mins * 60);
-    
-        if (mins < 10) mins = '0' + mins;
-        if (secs < 10) secs = '0' + secs;
-    
-        let timeStr = mins + ':' + secs;
+function downKeyStepAccAction(key) {
+    clearTimeout(timerAccelerateAudioDelay);
+    activeStepAccKeys.add(key);
+    if (!selectedAudio) return;
 
-        for (let i = 0; i <= 4; i++) {
-            durationDisplay.children[i].innerHTML = timeStr[i];
-        }
-    } else {
-        for (let i = 0; i <= 4; i++) {
-            durationDisplay.children[i].innerHTML = displayStr[i];
-        }
-    }
+    timerAccelerateAudioDelay = setTimeout(runAcceleration, ACCELERATION_DELAY);
 }
 
-function updateTimeline(audio) {
-    let timelineWidth = audio.duration ?
-        audio.currentTime / audio.duration * 100 :
-        timelinePos / timeRange.offsetWidth * 100;
-    
-    timeline.style.width = `calc(${timelineMrgnLeft}px + ${timelineWidth}%)`;
-}
+function upKeyStepAccAction(key) {
+    if (!activeStepAccKeys.size) return;
 
-function runUpdTimers(audio) {
-    let rateFactor = acceleration ? ACCELERATION_FACTOR : 1;
-    let timelineUpdInterval = TIMELINE_UPDATE_INTERVAL / rateFactor;
-    let isTrackFinished;
+    clearTimeout(timerAccelerateAudioDelay);
+    activeStepAccKeys.delete(key);
 
-    if (audio.duration) {
-        runUpdCurTimeDisplay(audio);
-        runUpdTimeline_isDuration(audio);
-    } else {
-        runUpdTimeline_noDuration(audio);
-    }
-
-    function runUpdCurTimeDisplay(audio) {
-        updateTime(audio);
-
-        let lastTime = Math.floor(audio.currentTime);
-
-        requestCheckCurTime = requestAnimationFrame(function checkCurTime() {
-            let curTime = Math.floor(audio.currentTime);
-
-            if (curTime !== lastTime) {
-                updateTime(audio);
-                lastTime = curTime;
-            }
-
-            requestCheckCurTime = requestAnimationFrame(checkCurTime);
-        });
-    }
-
-    function runUpdTimeline_isDuration(audio) {
-        let curTimeChangeStep = TIMELINE_UPDATE_INTERVAL / 1000;
-        let isCurTimeChanging = acceleration && (!playOn || audio.readyState < 3 || !acceleratePlaying);
-
-        timerTimelineUpd = setInterval(() => {
-            if (isCurTimeChanging) {
-                switch (accelerationType) {
-                    case 'fast-forward':
-                        audio.currentTime += curTimeChangeStep;
-                        isTrackFinished = audio.currentTime >= audio.duration;
-                        break;
-                    case 'fast-rewind':
-                        audio.currentTime -= curTimeChangeStep;
-                        isTrackFinished = audio.currentTime <= 0;
-                        break;
-                }
-
-                if (isTrackFinished) {
-                    console.log(`track ended in ${accelerationType} (no playback) | ${audio.dataset.title}`);
-                    
-                    finishTrack(audio);
-                }
-            }
-
-            updateTimeline(audio);
-        }, timelineUpdInterval);
-    }
-
-    function runUpdTimeline_noDuration(audio) {
-        timerTimelineUpd = setInterval(() => {
-            switch (accelerationType) {
-                case 'fast-forward':
-                    timeline.style.width = `calc(${timeline.offsetWidth}px + ${TIMELINE_POSITION_CHANGE_STEP}%)`;
-                    timelinePos = timeline.offsetWidth - timelineMrgnLeft;
-                    isTrackFinished = timelinePos >= timeRange.offsetWidth;
-                    break;
-                case 'fast-rewind':
-                    timeline.style.width = `calc(${timeline.offsetWidth}px - ${TIMELINE_POSITION_CHANGE_STEP}%)`;
-                    timelinePos = timeline.offsetWidth - timelineMrgnLeft;
-                    isTrackFinished = timelinePos <= 0;
-                    break;
-            }
-
-            if (isTrackFinished) {
-                console.log(`track ended in ${accelerationType} (no duration) | ${audio.dataset.title}`);
-
-                finishTrack(audio);
-            }
-        }, timelineUpdInterval);
-    }
-}
-
-////////////////////
-// Finish playing //
-////////////////////
-
-function finishTrack(audio) {
-    clearUpdTimers();
-
-    // Round the current time to the audio duration and extend the timeline over the entire range
-    roundTime = true;
-    updateTime(audio);
-    updateTimeline(audio);
-    roundTime = false;
-
-    if (repeatBtn.dataset.repeat === 'track') {
-        playFollowingAudio(audio);
-    } else {
-        let idx = curOrderedAudios.findIndex(aud => aud === audio);
-        let followingAudio = (acceleration && accelerationType === 'fast-rewind') ?
-            curOrderedAudios[--idx] :
-            curOrderedAudios[++idx];
-
-        if (followingAudio) {
-            playFollowingAudio(followingAudio);
-        } else {
-            if (acceleration && accelerationType === 'fast-rewind') {
-                followingAudio = curOrderedAudios[curOrderedAudios.length - 1];
-
-                if (followingAudio) playFollowingAudio(followingAudio);
+    if (activeStepAccKeys.size) {
+        if (acceleration) {
+            if (key === curAccelerateKey) {
+                runAcceleration();
             } else {
-                let shuffleInfo = shuffleBtn.firstElementChild.classList.contains('active') ? 'shuffle ' : '';
-
-                if (repeatBtn.dataset.repeat === 'playlist') {
-                    followingAudio = curOrderedAudios[0];
-
-                    if (followingAudio) {
-                        console.log(`repeat ${shuffleInfo}playlist`);
-
-                        playFollowingAudio(followingAudio);
-                    } else {
-                        console.log(`${shuffleInfo}playlist ended`);
-
-                        finishPlaying();
-                    }
-                } else if (repeatBtn.dataset.repeat === 'none') {
-                    console.log(`${shuffleInfo}playlist ended`);
-
-                    finishPlaying();
+                if (!canceledStepAccKeys.has(key)) {
+                    if (!timePosSeeking) accelerationData.keys[key].stepFunc();
+                } else {
+                    canceledStepAccKeys.delete(key);
                 }
             }
+        } else {
+            if (!timePosSeeking) accelerationData.keys[key].stepFunc();
+            timerAccelerateAudioDelay = setTimeout(runAcceleration, ACCELERATION_DELAY);
         }
+    } else {
+        if (acceleration) {
+            stopAcceleration();
+        } else {
+            if (!timePosSeeking) accelerationData.keys[key].stepFunc();
+        }
+
+        curAccelerateKey = null;
+        canceledStepAccKeys.clear();
+    }
+}
+
+function runAcceleration() {
+    if (timerFinishPlay) return;
+
+    canceledStepAccKeys.clear();
+    activeStepAccKeys.forEach(activeKey => canceledStepAccKeys.add(activeKey));
+    
+    curAccelerateKey = Array.from(activeStepAccKeys)[activeStepAccKeys.size - 1];
+    let keyAccType = accelerationData.keys[curAccelerateKey].accelerationType;
+
+    if (keyAccType !== accelerationType) {
+        if (acceleration) stopAcceleration();
+        accelerationType = keyAccType;
+        if (selectedAudio) accelerate(selectedAudio);
+    }
+}
+
+function stepBack() {
+    if (!selectedAudio) {
+        selectedAudio = curOrderedAudios[curOrderedAudios.length - 1];
+        if (!selectedAudio) return;
+
+        console.log('step-rewind track selecting | ' + selectedAudio.dataset.title);
+        
+        setSelected(selectedAudio);
+        showTrackInfo(selectedAudio);
+        if (timeRangeEnter) enterTimeRange();
+        return;
     }
 
-    function playFollowingAudio(followingAudio) {
-        let prevSelectedAudio = selectedAudio;
+    if (
+        (selectedAudio.duration && selectedAudio.currentTime <= 3) ||
+        (!selectedAudio.duration && !timelinePos)
+    ) { 
+        if (!curOrderedAudios.length) return; // Playlist is cleared, selected audio is in the temporary track box
 
+        clearFinPlayTimer();
+        clearUpdTimers();
+    
+        if (playOn) pauseAudio(selectedAudio);
+
+        let prevSelectedAudio = selectedAudio;
+        let idx = curOrderedAudios.findIndex(aud => aud === selectedAudio);
+        let prevAudio = curOrderedAudios[--idx];
+        
         removeSelected(prevSelectedAudio);
-        selectedAudio = followingAudio;
+        selectedAudio = prevAudio ? prevAudio : curOrderedAudios[curOrderedAudios.length - 1];
         setSelected(selectedAudio);
 
-        console.log('following track selecting | ' + selectedAudio.dataset.title);
+        console.log('step-rewind track selecting | ' + selectedAudio.dataset.title);
 
-        if (!acceleration || (acceleration && accelerationType === 'fast-forward')) {
-            prevSelectedAudio.currentTime = 0;
-            selectedAudio.currentTime = 0;
-            timelinePos = 0;
-        } else if (acceleration && accelerationType === 'fast-rewind') { 
-            if (selectedAudio.duration) selectedAudio.currentTime = selectedAudio.duration;
-            timelinePos = timeRange.offsetWidth;
-        }
-
+        prevSelectedAudio.currentTime = 0;
+        selectedAudio.currentTime = 0;
+        timelinePos = 0;
+        
         showTrackInfo(selectedAudio, prevSelectedAudio);
 
         if (playOn) {
@@ -1200,136 +713,136 @@ function finishTrack(audio) {
         } else if (acceleration) {
             runUpdTimers(selectedAudio);
         }
-    }
-}
+    } else {
+        console.log('skip to start | ' + selectedAudio.dataset.title);
 
-function finishPlaying() {
-    console.log('finish playing');
-    
-    setPauseState();
-    clearTitlesMovingTimers();
-    if (acceleration) stopAcceleration();
-
-    scrollEndStates.curPlaylist = false;
-    scrollEndStates.document = false;
-
-    timerFinishPlay = setTimeout(() => {
-        stopAccelerationAndClear();
-
-        trackTitleDisplay.textContent = '';
-        artistNameDisplay.textContent = '';
-
-        updateTime(null, '--:--');
-        updateDuration(null, '--:--');
-
-        if (timeRangeHoverIntent.elemRect) timeRangeHoverIntent.dismissTask();
-        timePosSeeking = false;
-        timeline.style.width = `${timelineMrgnLeft}px`;
-        timeRange.style.cursor = '';
-        timeBar.hidden = true;
-        timeRange.onpointerdown = null;
-        timeRange.onpointerup = null;
-        if (timeRange.pointerId) {
-            timeRange.releasePointerCapture(timeRange.pointerId);
-            delete timeRange.pointerId;
-        }
+        clearFinPlayTimer();
 
         selectedAudio.currentTime = 0;
         timelinePos = 0;
-        
-        removeSelected(selectedAudio);
-        disconnectAudioHandlers(selectedAudio);
-        selectedAudio = undefined;
 
-        (function resetScrollPositionsAndReturnFocus() {
-            let isScrollAndAlignPlaylistActive = false;
+        keepSelectedTitleVisible(selectedAudio);
+        if (selectedAudio.duration) updateTimeDisplay({ audio: selectedAudio });
+        updateTimeline(selectedAudio);
+    }
+}
 
-            if (playlistLim.scrollTop) {
-                scrollAndAlignPlaylist({
-                    direction: 'up',
-                    deltaHeight: playlistLim.scrollTop,
-                    align: false,
-                    hide: true
-                });
+function stepForward() {
+    if (!selectedAudio) {
+        selectedAudio = curOrderedAudios[0];
+        if (!selectedAudio) return;
+
+        console.log('step-forward track selecting | ' + selectedAudio.dataset.title);
+
+        setSelected(selectedAudio);
+        showTrackInfo(selectedAudio);
+        if (timeRangeEnter) enterTimeRange();
+        return;
+    }
+
+    if (!curOrderedAudios.length) return; // Playlist is cleared, selected audio is in the temporary track box
+
+    clearFinPlayTimer();
+    clearUpdTimers();
+
+    if (playOn) pauseAudio(selectedAudio);
     
-                isScrollAndAlignPlaylistActive = true;
-            }
+    let prevSelectedAudio = selectedAudio;
+    let idx = curOrderedAudios.findIndex(aud => aud === selectedAudio);
+    let nextAudio = curOrderedAudios[++idx];
 
-            if (!highlightActiveElem) highlightActiveElem = document.activeElement;
+    removeSelected(prevSelectedAudio);
+    selectedAudio = nextAudio ? nextAudio : curOrderedAudios[0];
+    setSelected(selectedAudio);
 
-            curPlaylist.select();
-            curPlaylist.setSelectionRange(0, 0);
-            if (curPlaylist !== highlightActiveElem) curPlaylist.blur();
-    
-            if (isScrollAndAlignPlaylistActive) {
-                eventManager.addOnceEventListener(document, 'scrollAndAlignPlaylistEnd', resetScrollbarPositions);
-            } else {
-                resetScrollbarPositions();
-            }
-        })();
+    console.log('step-forward track selecting | ' + selectedAudio.dataset.title);
 
-        timerFinishPlay = null;
-    }, PLAYLIST_FINISH_DELAY);
-    
+    prevSelectedAudio.currentTime = 0;
+    selectedAudio.currentTime = 0;
+    timelinePos = 0;
+
+    showTrackInfo(selectedAudio, prevSelectedAudio);
+
+    if (playOn) {
+        playAudio(selectedAudio);
+    } else if (acceleration) {
+        runUpdTimers(selectedAudio);
+    }
+}
+
+function accelerate(audio) {
+    console.log(`start ${accelerationType} acceleration`);
+
+    acceleration = true;
+
+    let accBtn = accelerationData.types[accelerationType].button;
+    accBtn.className = accelerationData.types[accelerationType].classIcons.accOn;
+
+    clearUpdTimers();
+
+    try {
+        audio.playbackRate = accelerationData.types[accelerationType].playbackRate;
+    } catch(error) {
+        console.error(error.name + ': ' + error.message);
+
+        if (error.name === 'NotSupportedError') {
+            acceleratePlaying = false;
+            if (playOn && audio.readyState >= 3) audio.pause();
+        }
+    }
+
+    console.log('playbackRate = ' + audio.playbackRate);
+
+    if (!timePosSeeking) runUpdTimers(audio);
+
     highlightSelected(selectedAudio);
+}
 
-    function resetScrollbarPositions() {
-        // Current playlist
-        curPlaylist.scrollTo({
-            left: 0,
-            top: 0,
-            behavior: 'smooth'
-        });
-    
-        if (curPlaylist.scrollTop && hasScrollend) {
-            eventManager.addOnceEventListener(curPlaylist, 'scrollend', () => scrollEndStates.curPlaylist = true);
-        } else {
-            scrollEndStates.curPlaylist = true;
+function stopAcceleration() {
+    console.log(`stop ${accelerationType} acceleration`);
+
+    clearUpdTimers();
+
+    let accBtn = accelerationData.types[accelerationType].button;
+    accBtn.className = accelerationData.types[accelerationType].classIcons.accOff;
+
+    acceleratePlaying = true;
+    acceleration = false;
+    accelerationType = 'none';
+
+    selectedAudio.playbackRate = accelerationData.types[accelerationType].playbackRate;
+
+    updateTimeline(selectedAudio);
+
+    if (playOn) {
+        if (selectedAudio.paused) {
+            playAudio(selectedAudio);
+        } else if (selectedAudio.readyState >= 3) {
+            runUpdTimers(selectedAudio);
         }
-    
-        // Document
-        window.scrollTo({
-            left: window.scrollX,
-            top: 0,
-            behavior: 'smooth'
-        });
-    
-        if (window.scrollY && hasScrollend) {
-            window.targetScrollPosY = 0;
-            eventManager.addOnceEventListener(document, 'scrollend', () => scrollEndStates.document = true);
-        } else {
-            scrollEndStates.document = true;
+    } else {
+        if (selectedAudio.duration) {
+            updateTimeDisplay({ audio: selectedAudio });
         }
     }
+
+    highlightSelected(selectedAudio);
 }
 
-//////////////////
-// Clear timers //
-//////////////////
+function stopAccelerationAndClear() {
+    if (!activeStepAccKeys.size) return;
 
-function clearUpdTimers() {
-    cancelAnimationFrame(requestCheckCurTime);
-    clearInterval(timerTimelineUpd);
+    clearTimeout(timerAccelerateAudioDelay);
+    if (acceleration) stopAcceleration();
+
+    curAccelerateKey = null;
+    activeStepAccKeys.clear();
+    canceledStepAccKeys.clear();
 }
 
-function clearTitlesMovingTimers() {
-    for (let key in titleMoveTimers) {
-        cancelAnimationFrame(titleMoveTimers[key]);
-        clearInterval(titleMoveTimers[key]);
-        delete titleMoveTimers[key];
-    }
-}
-
-function clearFinPlayTimer() {
-    if (timerFinishPlay) moveTitles(trackTitleDisplay, artistNameDisplay);
-
-    clearTimeout(timerFinishPlay);
-    timerFinishPlay = null;
-}
-
-//////////////
-// Shuffle  //
-//////////////
+////////////////////////////////
+// Player controls - Shuffle  //
+////////////////////////////////
 
 shuffleBtn.onclick = shuffleAction;
 
@@ -1430,9 +943,9 @@ function shuffle(array) {
     }
 }
 
-////////////
-// Repeat //
-////////////
+//////////////////////////////
+// Player controls - Repeat //
+//////////////////////////////
 
 repeatBtn.onclick = repeatAction;
 
@@ -1468,9 +981,9 @@ function repeatAction() {
     highlightSelected(selectedAudio);
 }
 
-////////////
-// Volume //
-////////////
+//////////////////////////////
+// Player controls - Volume //
+//////////////////////////////
 
 function changeVolumeAction(changeType, keyRepeat) {
     if (settedVolume && !keyRepeat) savedVolume = settedVolume;
@@ -1588,6 +1101,456 @@ function showVolumeIcon(vol) {
 function calcVolumeTooltip() {
     let calculatedVolume = (settedVolume * 100).toFixed(0) + '%';
     return calculatedVolume;
+}
+
+//////////////////////////////////
+// Track time and position info //
+//////////////////////////////////
+
+timeRange.onclick = null;
+
+timeRange.oncontextmenu = () => {
+    if (isTouchDevice) return false;
+}
+
+timeRange.onpointerenter = enterTimeRange;
+
+function enterTimeRange() {
+    timeRangeEnter = true;
+
+    timeRange.onpointermove = moveOverTimeRange;
+
+    timeRange.onpointerleave = function() {
+        timeRangeEnter = false;
+        timeBar.hidden = true;
+        this.style.cursor = '';
+
+        this.onpointerdown = null;
+        this.onpointermove = null;
+        this.onpointerleave = null;
+    };
+
+    if (!selectedAudio) return;
+
+    timeBar.hidden = false;
+    timeRange.style.cursor = 'pointer';
+
+    timeRange.onpointerdown = function(event) {
+        if (event.button !== 0) return;
+
+        document.getSelection().empty();
+
+        this.setPointerCapture(event.pointerId);
+        this.pointerId = event.pointerId;
+
+        clearFinPlayTimer();
+        clearUpdTimers();
+
+        if (playOn) {
+            console.log('pause (pointer down on timeline) | ' + selectedAudio.dataset.title);
+
+            pauseAudio(selectedAudio);
+        }
+
+        timePosSeeking = true;
+
+        moveOverTimeRange = moveOverTimeRange.bind(this);
+        moveOverTimeRange(event);
+
+        this.onpointerup = function() {
+            timePosSeeking = false;
+
+            if (playOn) {
+                playAudio(selectedAudio);
+            } else if (acceleration) {
+                runUpdTimers(selectedAudio);
+            }
+
+            this.onpointerup = null;
+            delete this.pointerId;
+        };
+    };
+
+    function moveOverTimeRange(event) {
+        let x = findXPos(event.clientX);
+        let timeBarPos = (x < this.offsetWidth) ? x : x - 1;
+
+        timeBar.style.left = timeBarPos + 'px';
+
+        if (timePosSeeking) {
+            document.getSelection().empty();
+
+            timelinePos = x;
+            updateTimePosition(x);
+        }
+    }
+
+    function findXPos(clientX) {
+        let x = clientX - timeRange.getBoundingClientRect().left;
+        if (x < 0) x = 0;
+        if (x > timeRange.offsetWidth) x = timeRange.offsetWidth;
+        return x;
+    }
+
+    function updateTimePosition(xPos) {
+        if (selectedAudio.duration) {
+            selectedAudio.currentTime = xPos * selectedAudio.duration / timeRange.offsetWidth;
+            updateTimeDisplay({ audio: selectedAudio });
+        }
+
+        updateTimeline(selectedAudio);
+    }
+}
+
+function calcTimeRangeTooltip(xPos) {
+    if (!selectedAudio) return;
+    if (!selectedAudio.duration) return '??:??';
+
+    let calculatedTime = xPos * selectedAudio.duration / timeRange.offsetWidth;
+    if (calculatedTime < 0) calculatedTime = 0;
+    if (calculatedTime > selectedAudio.duration) calculatedTime = selectedAudio.duration;
+
+    let mins = Math.floor(calculatedTime / 60);
+    let secs = Math.floor(calculatedTime - mins * 60);
+
+    if (mins < 10) mins = '0' + mins;
+    if (secs < 10) secs = '0' + secs;
+
+    return calculatedTime = mins + ':' + secs;
+}
+
+//////////////////////////////////////
+// Updating track time and position //
+//////////////////////////////////////
+
+function updateTimeDisplay(options = {}) {
+    let { audio = null, displayStr = '**:**', roundTime = false } = options;
+
+    if (audio) {
+        console.log(audio.currentTime + ' | ' + audio.dataset.title);
+
+        let mins = roundTime ?
+            Math.floor(Math.round(audio.currentTime) / 60) :
+            Math.floor(audio.currentTime / 60);
+        let secs = roundTime ?
+            Math.round(audio.currentTime % 60) :
+            Math.floor(audio.currentTime % 60);
+    
+        if (mins < 10) mins = '0' + mins;
+        if (secs < 10) secs = '0' + secs;
+
+        displayStr = mins + ':' + secs;
+    }
+
+    [...curTimeDisplay.children].forEach((signBox, idx) => signBox.textContent = displayStr[idx] || '');
+}
+
+function updateDurationDisplay(options = {}) {
+    let { audio = null, displayStr = '**:**' } = options;
+
+    if (audio) {
+        let mins = Math.floor(audio.duration / 60);
+        let secs = Math.round(audio.duration % 60);
+    
+        if (mins < 10) mins = '0' + mins;
+        if (secs < 10) secs = '0' + secs;
+    
+        displayStr = mins + ':' + secs;
+    }
+
+    [...durationDisplay.children].forEach((signBox, idx) => signBox.textContent = displayStr[idx] || '');
+}
+
+function updateTimeline(audio) {
+    let timelineWidth = audio.duration ?
+        audio.currentTime / audio.duration * 100 :
+        timelinePos / timeRange.offsetWidth * 100;
+    
+    timeline.style.width = `calc(${timelineMrgnLeft}px + ${timelineWidth}%)`;
+}
+
+function runUpdTimers(audio) {
+    let rateFactor = acceleration ? ACCELERATION_FACTOR : 1;
+    let timelineUpdInterval = TIMELINE_UPDATE_INTERVAL / rateFactor;
+    let isTrackFinished;
+
+    if (audio.duration) {
+        runUpdCurTimeDisplay(audio);
+        runUpdTimeline_isDuration(audio);
+    } else {
+        runUpdTimeline_noDuration(audio);
+    }
+
+    function runUpdCurTimeDisplay(audio) {
+        updateTimeDisplay({ audio });
+
+        let lastTime = Math.floor(audio.currentTime);
+
+        requestCheckCurTime = requestAnimationFrame(function checkCurTime() {
+            let curTime = Math.floor(audio.currentTime);
+
+            if (curTime !== lastTime) {
+                updateTimeDisplay({ audio });
+                lastTime = curTime;
+            }
+
+            requestCheckCurTime = requestAnimationFrame(checkCurTime);
+        });
+    }
+
+    function runUpdTimeline_isDuration(audio) {
+        let curTimeChangeStep = TIMELINE_UPDATE_INTERVAL / 1000;
+        let isCurTimeChanging = acceleration && (!playOn || audio.readyState < 3 || !acceleratePlaying);
+
+        timerTimelineUpd = setInterval(() => {
+            if (isCurTimeChanging) {
+                switch (accelerationType) {
+                    case 'fast-forward':
+                        audio.currentTime += curTimeChangeStep;
+                        isTrackFinished = audio.currentTime >= audio.duration;
+                        break;
+                    case 'fast-rewind':
+                        audio.currentTime -= curTimeChangeStep;
+                        isTrackFinished = audio.currentTime <= 0;
+                        break;
+                }
+
+                if (isTrackFinished) {
+                    console.log(`track ended in ${accelerationType} (no playback) | ${audio.dataset.title}`);
+                    
+                    finishTrack(audio);
+                }
+            }
+
+            updateTimeline(audio);
+        }, timelineUpdInterval);
+    }
+
+    function runUpdTimeline_noDuration(audio) {
+        timerTimelineUpd = setInterval(() => {
+            switch (accelerationType) {
+                case 'fast-forward':
+                    timelinePos += TIMELINE_POSITION_STEP;
+                    isTrackFinished = timelinePos >= timeRange.offsetWidth;
+                    break;
+                case 'fast-rewind':
+                    timelinePos -= TIMELINE_POSITION_STEP;
+                    isTrackFinished = timelinePos <= 0;
+                    break;
+            }
+
+            if (isTrackFinished) {
+                console.log(`track ended in ${accelerationType} (no duration) | ${audio.dataset.title}`);
+
+                finishTrack(audio);
+            }
+
+            updateTimeline(audio);
+        }, timelineUpdInterval);
+    }
+}
+
+////////////////////
+// Finish playing //
+////////////////////
+
+function finishTrack(audio) {
+    clearUpdTimers();
+
+    // Round the current time to the audio duration and extend the timeline over the entire range
+    updateTimeDisplay({ audio, roundTime: true });
+    updateTimeline(audio);
+
+    if (repeatBtn.dataset.repeat === 'track') {
+        playFollowingAudio(audio);
+    } else {
+        let idx = curOrderedAudios.findIndex(aud => aud === audio);
+        let followingAudio = (acceleration && accelerationType === 'fast-rewind') ?
+            curOrderedAudios[--idx] :
+            curOrderedAudios[++idx];
+
+        if (followingAudio) {
+            playFollowingAudio(followingAudio);
+        } else {
+            if (acceleration && accelerationType === 'fast-rewind') {
+                followingAudio = curOrderedAudios[curOrderedAudios.length - 1];
+
+                if (followingAudio) playFollowingAudio(followingAudio);
+            } else {
+                let shuffleInfo = shuffleBtn.firstElementChild.classList.contains('active') ? 'shuffle ' : '';
+
+                if (repeatBtn.dataset.repeat === 'playlist') {
+                    followingAudio = curOrderedAudios[0];
+
+                    if (followingAudio) {
+                        console.log(`repeat ${shuffleInfo}playlist`);
+
+                        playFollowingAudio(followingAudio);
+                    } else {
+                        console.log(`${shuffleInfo}playlist ended`);
+
+                        finishPlaying();
+                    }
+                } else if (repeatBtn.dataset.repeat === 'none') {
+                    console.log(`${shuffleInfo}playlist ended`);
+
+                    finishPlaying();
+                }
+            }
+        }
+    }
+
+    function playFollowingAudio(followingAudio) {
+        let prevSelectedAudio = selectedAudio;
+
+        removeSelected(prevSelectedAudio);
+        selectedAudio = followingAudio;
+        setSelected(selectedAudio);
+
+        console.log('following track selecting | ' + selectedAudio.dataset.title);
+
+        if (!acceleration || (acceleration && accelerationType === 'fast-forward')) {
+            prevSelectedAudio.currentTime = 0;
+            selectedAudio.currentTime = 0;
+            timelinePos = 0;
+        } else if (acceleration && accelerationType === 'fast-rewind') { 
+            if (selectedAudio.duration) selectedAudio.currentTime = selectedAudio.duration;
+            timelinePos = timeRange.offsetWidth;
+        }
+
+        showTrackInfo(selectedAudio, prevSelectedAudio);
+
+        if (playOn) {
+            playAudio(selectedAudio);
+        } else if (acceleration) {
+            runUpdTimers(selectedAudio);
+        }
+    }
+}
+
+function finishPlaying() {
+    console.log('finish playing');
+    
+    setPauseState();
+    clearTitlesMovingTimers();
+    clearTimeout(timerAccelerateAudioDelay);
+    if (acceleration) stopAcceleration();
+
+    scrollEndStates.curPlaylist = false;
+    scrollEndStates.document = false;
+
+    timerFinishPlay = setTimeout(() => {
+        stopAccelerationAndClear();
+
+        trackTitleDisplay.textContent = '';
+        artistNameDisplay.textContent = '';
+
+        updateTimeDisplay({ displayStr: '--:--' });
+        updateDurationDisplay({ displayStr: '--:--' });
+
+        if (timeRangeHoverIntent.elemRect) timeRangeHoverIntent.dismissTask();
+        timePosSeeking = false;
+        timeline.style.width = timelineMrgnLeft + 'px';
+        timeRange.style.cursor = '';
+        timeBar.hidden = true;
+        timeRange.onpointerdown = null;
+        timeRange.onpointerup = null;
+        if (timeRange.pointerId) {
+            timeRange.releasePointerCapture(timeRange.pointerId);
+            delete timeRange.pointerId;
+        }
+
+        selectedAudio.currentTime = 0;
+        timelinePos = 0;
+        
+        removeSelected(selectedAudio);
+        disconnectAudioHandlers(selectedAudio);
+        selectedAudio = undefined;
+
+        (function resetScrollPositionsAndReturnFocus() {
+            let isScrollAndAlignPlaylistActive = false;
+
+            if (playlistLim.scrollTop) {
+                scrollAndAlignPlaylist({
+                    direction: 'up',
+                    deltaHeight: playlistLim.scrollTop,
+                    align: false,
+                    hide: true
+                });
+    
+                isScrollAndAlignPlaylistActive = true;
+            }
+
+            if (!highlightActiveElem) highlightActiveElem = document.activeElement;
+
+            curPlaylist.select();
+            curPlaylist.setSelectionRange(0, 0);
+            if (curPlaylist !== highlightActiveElem) curPlaylist.blur();
+    
+            if (isScrollAndAlignPlaylistActive) {
+                eventManager.addOnceEventListener(document, 'scrollAndAlignPlaylistEnd', resetScrollbarPositions);
+            } else {
+                resetScrollbarPositions();
+            }
+        })();
+
+        timerFinishPlay = null;
+    }, PLAYLIST_FINISH_DELAY);
+    
+    highlightSelected(selectedAudio);
+
+    function resetScrollbarPositions() {
+        // Current playlist
+        curPlaylist.scrollTo({
+            left: 0,
+            top: 0,
+            behavior: 'smooth'
+        });
+    
+        if (curPlaylist.scrollTop && hasScrollend) {
+            eventManager.addOnceEventListener(curPlaylist, 'scrollend', () => scrollEndStates.curPlaylist = true);
+        } else {
+            scrollEndStates.curPlaylist = true;
+        }
+    
+        // Document
+        window.scrollTo({
+            left: window.scrollX,
+            top: 0,
+            behavior: 'smooth'
+        });
+    
+        if (window.scrollY && hasScrollend) {
+            window.targetScrollPosY = 0;
+            eventManager.addOnceEventListener(document, 'scrollend', () => scrollEndStates.document = true);
+        } else {
+            scrollEndStates.document = true;
+        }
+    }
+}
+
+//////////////////
+// Clear timers //
+//////////////////
+
+function clearUpdTimers() {
+    cancelAnimationFrame(requestCheckCurTime);
+    clearInterval(timerTimelineUpd);
+}
+
+function clearTitlesMovingTimers() {
+    for (let key in titleMoveTimers) {
+        cancelAnimationFrame(titleMoveTimers[key]);
+        clearInterval(titleMoveTimers[key]);
+        delete titleMoveTimers[key];
+    }
+}
+
+function clearFinPlayTimer() {
+    if (timerFinishPlay) moveTitles(trackTitleDisplay, artistNameDisplay);
+
+    clearTimeout(timerFinishPlay);
+    timerFinishPlay = null;
 }
 
 //////////////
@@ -1858,7 +1821,7 @@ function removeTrackFromPlaylist(track, eventType = null) {
         if (audio === selectedAudio) {
             track.classList.remove('removing');
             audio.setAttribute('data-removed', '');
-            tempTrackBox.append(track);
+            tempTrackStorage.append(track);
         } else {
             track.remove();
         }
@@ -1938,7 +1901,7 @@ visPlaylistArea.oncontextmenu = function(event) {
     
     let downloadLink = document.createElement('div');
     downloadLink.className = 'menu-item';
-    downloadLink.innerHTML = 'Save audio as MP3';
+    downloadLink.textContent = 'Save audio as MP3';
     trackMenu.appendChild(downloadLink);
 
     let playerRect = player.getBoundingClientRect(); // player - parent element for trackMenu
@@ -1991,19 +1954,19 @@ visPlaylistArea.oncontextmenu = function(event) {
 
         let status = document.createElement('div');
         status.className = 'status';
-        status.innerHTML = 'Waiting for loading...';
+        status.textContent = 'Waiting for loading...';
         progress.appendChild(status);
 
         let displayProgress = document.createElement('div');
         displayProgress.className = 'display-progress';
-        displayProgress.innerHTML = '0%';
+        displayProgress.textContent = '0%';
         loadInfo.appendChild(displayProgress);
 
         let url = audio.dataset.src;
         let response = await fetch(url);
     
         if (response.ok) {
-            status.innerHTML = 'Loading...';
+            status.textContent = 'Loading...';
 
             const reader = response.body.getReader();
             const contentLength = +response.headers.get('Content-Length');
@@ -2019,10 +1982,10 @@ visPlaylistArea.oncontextmenu = function(event) {
 
                 let receivedPercent = receivedLength / contentLength * 100;
                 progress.style.width = `calc(${receivedPercent}%)`;
-                displayProgress.innerHTML = Math.floor(receivedPercent) + '%';
+                displayProgress.textContent = Math.floor(receivedPercent) + '%';
             }
 
-            if (receivedLength === contentLength) status.innerHTML = 'Complete download!';
+            if (receivedLength === contentLength) status.textContent = 'Complete download!';
 
             let audioBlob = new Blob([binaryData], {type: 'audio/mpeg'});
             let audioName = audio.dataset.artist + ' - ' + audio.dataset.title + '.mp3';
@@ -2043,7 +2006,7 @@ visPlaylistArea.oncontextmenu = function(event) {
                         }
                     })();
 
-                /*if (supportsFileSystemAccess) { // File System Access API поддерживается…
+                if (supportsFileSystemAccess) { // File System Access API поддерживается
                     try {
                         // Показать диалог сохранения файла.
                         let handle = await window.showSaveFilePicker({
@@ -2055,16 +2018,14 @@ visPlaylistArea.oncontextmenu = function(event) {
                         await writable.write(blob);
                         await writable.close();
 
-                        status.innerHTML = 'Audio file is saved!';
+                        status.textContent = 'Audio file is saved!';
                         hideLoadStatus();
-                        return;
                     } catch (err) {
                         console.error(err.name + ': ' + err.message);
 
                         if (err.name === 'AbortError') { // Отмена скачивания файла, не предлагать второй вариант
-                            status.innerHTML = 'Audio file saving canceled';
+                            status.textContent = 'Audio file saving canceled';
                             hideLoadStatus();
-                            return;
                         }
 
                         if (err.name === 'SecurityError') {
@@ -2072,21 +2033,21 @@ visPlaylistArea.oncontextmenu = function(event) {
                                 'Осуществлён метод загрузки через ссылку.');
                         }
                     }
-                }*/
+                } else {
+                    // Доступ API к файловой системе не поддерживается или ошибка в процессе => Загрузка через ссылку
+                    let audioLink = document.createElement('a');
+                    audioLink.download = fileName;
+                    audioLink.href = URL.createObjectURL(blob);
+                    audioLink.click();
+                    URL.revokeObjectURL(audioLink.href);
 
-                // Доступ API к файловой системе не поддерживается или ошибка в процессе => Загрузка через ссылку
-                let audioLink = document.createElement('a');
-                audioLink.download = fileName;
-                audioLink.href = URL.createObjectURL(blob);
-                audioLink.click();
-                URL.revokeObjectURL(audioLink.href);
-
-                eventManager.addOnceEventListener(window, 'focus', hideLoadStatus);
+                    eventManager.addOnceEventListener(window, 'focus', hideLoadStatus);
+                }
             }
         } else {
             alert("Download error! Response status: " + response.status);
 
-            status.innerHTML = 'Download failed';
+            status.textContent = 'Download failed';
             hideLoadStatus();
         }
 
@@ -4214,15 +4175,15 @@ function connectTooltipHoverIntent(tooltipElem) {
                 this.elem.dataset.tooltip = calcVolumeTooltip();
             }
 
-            tooltip.innerHTML = this.elem.dataset.tooltip;
+            tooltip.textContent = this.elem.dataset.tooltip;
 
             let x;
             if (this.elem === timeRange) {
-                x = this.elemRect.left + this.x1 - tooltip.offsetWidth / 2;
+                x = timeBar.getBoundingClientRect().left - tooltip.offsetWidth / 2;
             } else if (this.elem === volumeRange) {
                 x = volumeBar.getBoundingClientRect().left + volumeBar.offsetWidth / 2 - tooltip.offsetWidth / 2;
             } else {
-                x = this.elemRect.left + this.elem.offsetWidth / 2 - tooltip.offsetWidth / 2;
+                x = this.elemRect.left + this.elemRect.width / 2 - tooltip.offsetWidth / 2;
             }
 
             if (x < 0) x = 0;
@@ -4311,7 +4272,7 @@ function highlightButton(btn, key, actionFunc, ...args) {
     highlightedBtns.set(key, btn);
 
     if (actionFunc === downKeyStepAccAction) {
-        let keyAccType = stepKeysData[key].accelerationType;
+        let keyAccType = accelerationData.keys[key].accelerationType;
 
         if (keyAccType !== accelerationType) {
             btn.classList.add('key-pressed');
@@ -7522,7 +7483,7 @@ function showTracklistManager(tracklistSection) {
                 let tracklistTitle = restoreText(tracklistData.tracklistTitle);
     
                 if (tracklistTitleInput.hasAttribute('data-value-changed')) {
-                    tracklistSection.querySelector('.tracklist-title').innerHTML = tracklistTitle;
+                    tracklistSection.querySelector('.tracklist-title').textContent = tracklistTitle;
                     coverImg.alt = `${clearTextFromHtml(tracklistTitle)} Cover`;
                 } 
     
@@ -7695,12 +7656,12 @@ function checkFormChanges(trackFormList, inputs) {
 
 function correctText(str) {
     return str.trim()
+        .replace(/\s+/g, ' ')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;')
         .replace(/\\/g, '\\\\')
-        .replace(/\s+/g, ' ')
         .replace(/\s[\u2013\u2014\u2212]\s/g, ' - ')
     ;
 }
@@ -8151,7 +8112,7 @@ function createPlaylist(addedTracksData, clearPlaylist) {
             audio.setAttribute('data-src', src);
             if (dub) audio.setAttribute('data-dub', dub);
             audio.setAttribute('type', 'audio/mpeg');
-            audio.setAttribute('preload', 'auto');
+            audio.setAttribute('preload', 'none');
             track.appendChild(audio);
     
             origOrderedAudios.push(audio);
@@ -8365,7 +8326,7 @@ function connectKeyHandlers() {
                 return;
             }
 
-            let btn = stepKeysData[event.code].button;
+            let btn = accelerationData.keys[event.code].button;
             highlightButton(btn, event.code, downKeyStepAccAction, event.code);
             return;
         }
