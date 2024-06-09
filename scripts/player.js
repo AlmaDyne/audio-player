@@ -86,16 +86,18 @@ const
 ;
 
 // Setted constants
-const TIMELINE_POSITION_STEP = 2;
-const TIMELINE_UPDATE_INTERVAL = 200;
-const LAG = 16.7;
-const ACCELERATION_FACTOR = 5;
-const ACCELERATION_DELAY = 750;
-const DEFAULT_SCROLLING_TIME = 150;
-const KEY_SCROLLING_TIME = 120;
-const PLAYLIST_FINISH_DELAY = 500;
-const HIDE_SCROLL_ELEMENTS_DELAY = 500;
-const RETURN_FOCUS_DELAY = 500;
+const MAX_LOADED_AUDIOS = 5,
+    TIMELINE_POSITION_STEP = 2,
+    TIMELINE_UPDATE_INTERVAL = 200,
+    LAG = 16.7,
+    ACCELERATION_FACTOR = 5,
+    ACCELERATION_DELAY = 750,
+    DEFAULT_SCROLLING_TIME = 150,
+    KEY_SCROLLING_TIME = 120,
+    PLAYLIST_FINISH_DELAY = 500,
+    HIDE_SCROLL_ELEMENTS_DELAY = 500,
+    RETURN_FOCUS_DELAY = 500
+;
 
 // Constants-collections and other
 const origOrderedAudios = [],
@@ -105,6 +107,7 @@ const origOrderedAudios = [],
     fixedCurPlaylistStrings = new Map(),
     highlightedBtns = new Map(),
     fileByFileInput = new Map(),
+    cachedAudioPool = new Set(),
     activeScrollKeys = new Set(),
     activeStepAccKeys = new Set(),
     canceledStepAccKeys = new Set(),
@@ -162,6 +165,7 @@ function defineProperty(propertyName, audio) {
             if (propertyName !== 'selectedAudio') return;
 
             if (audio && audio.hasAttribute('data-removed') && audio !== newAudio) {
+                clearAudioCache(audio);
                 audio.parentElement.remove();
             }
             
@@ -438,14 +442,23 @@ function connectAudioHandlers(audio) {
 }
 
 function disconnectAudioHandlers(audio) {
-    //audio.removeAttribute('src');
-    //audio.load();
-
     if (audio.paused) audio.onplaying = null;
     audio.onended = null;
     audio.onpause = null;
     audio.onwaiting = null;
     audio.onseeking = null;
+
+    if (cachedAudioPool.size >= MAX_LOADED_AUDIOS) {
+        let firstAudio = cachedAudioPool.values().next().value;
+        clearAudioCache(firstAudio);
+        hideLoading(firstAudio);
+    }
+}
+
+function clearAudioCache(audio) {
+    cachedAudioPool.delete(audio);
+    audio.removeAttribute('src');
+    audio.load();
 }
 
 function moveTitles(...titles) {
@@ -523,6 +536,7 @@ function playAudio(audio) { // playOn = true
 
     if (!audio.src) {
         audio.src = audio.dataset.src;
+        cachedAudioPool.add(audio);
 
         if (!audio.duration) showLoading(audio);
         runPlaying(audio);
@@ -890,7 +904,7 @@ function generateCurrentPlaylistText(isOriginalOrder) {
         if (isOriginalOrder) curOrderedAudios.push(audio);
 
         let dub = audio.dataset.dub ? ` (${audio.dataset.dub})` : '';
-        return `${idx + 1}. ${audio.dataset.artist} – ${audio.dataset.title}${dub}`;
+        return `${idx + 1}. ${audio.dataset.artist} \u2013 ${audio.dataset.title}${dub}`;
     }).join('\n');
 
     breakLine(curPlaylistText);
@@ -1755,11 +1769,8 @@ function removeTrackFromPlaylist(track, eventType = null) {
 
     if (scrollablePlaylist) showScrollElems();
 
-    let audio = track.querySelector('audio');
-    let trackInfoBox = track.querySelector('.track-info-box');
     let docWidth = getDocWidth();
     let playlistLimLeft = playlistLim.getBoundingClientRect().left + window.scrollX;
-
     playlistLim.style.width = docWidth - playlistLimLeft + 'px';
     
     // If a track is being added, set the current property values when starting the removal animation
@@ -1786,11 +1797,15 @@ function removeTrackFromPlaylist(track, eventType = null) {
     track.classList.add('removing');
 
     eventManager.addOnceEventListener(track, 'animationend', () => {
+        let audio = track.querySelector('audio');
+
         console.log('remove track from playlist | ' + audio.dataset.title);
 
         removingTracksNum--;
 
         // If focused elem === track title => set focus on another elem
+        let trackInfoBox = track.querySelector('.track-info-box');
+
         if (eventType === 'keydown' && document.activeElement === trackInfoBox) {
             let nextTrack = track.nextElementSibling || track.previousElementSibling;
             let nextFocusedElem = nextTrack ?
@@ -1823,6 +1838,7 @@ function removeTrackFromPlaylist(track, eventType = null) {
             audio.setAttribute('data-removed', '');
             tempTrackStorage.append(track);
         } else {
+            if (cachedAudioPool.has(audio)) clearAudioCache(audio);
             track.remove();
         }
 
@@ -3728,9 +3744,9 @@ function highlightSelected(audio) {
     //console.log('+ highlight');
 
     // Searching string
-    let artist = audio.dataset.artist.replace(/\p{P}/gu, '\\$&');
-    let title = audio.dataset.title.replace(/\p{P}/gu, '\\$&');
-    let dub = (audio.dataset.dub) ? ` \\(${audio.dataset.dub}\\)` : '';
+    let artist = audio.dataset.artist.replace(/[\\+*?^$()[\]{}=!<>|:-]/g, '\\$&');
+    let title = audio.dataset.title.replace(/[\\+*?^$()[\]{}=!<>|:-]/g, '\\$&');
+    let dub = audio.dataset.dub ? ` \\(${audio.dataset.dub}\\)` : '';
     let regexp = new RegExp(`^\\d+\\.\\s${artist}\\s\u2013\\s${title}${dub}$`);
     let keyStr = Array.from(fixedCurPlaylistStrings.keys()).find(str => str.match(regexp));
     let fixedStr = fixedCurPlaylistStrings.get(keyStr);
@@ -6579,6 +6595,7 @@ function showTracklistManager(tracklistSection) {
     
                 if (isTracklistUpdated) {
                     trackStates = await updateTracksData();
+                    if (!totalUploadRow.hidden) updateTotalUploadProgress(true);
                     
                     console.log(trackStates);
 
@@ -6886,24 +6903,15 @@ function showTracklistManager(tracklistSection) {
 
             return Promise.allSettled(taskPromises)
                 .then(results => {
-                    if (!totalUploadRow.hidden) updateTotalUploadProgress(true);
-
                     let statesData = {
                         successful: new Map(),
                         rejected: []
                     };
-                    let statesByMethods = {
-                        POST: 'created',
-                        PATCH: 'updated',
-                        DELETE: 'deleted'
-                    };
 
                     results.forEach(({ status, value, reason }) => {
                         if (status === 'fulfilled' && value) {
-                            let { trackId, method } = value;
-                            if (!statesByMethods[method]) return;
-
-                            statesData.successful.set(trackId, statesByMethods[method]);
+                            let { trackId, trackState } = value;
+                            statesData.successful.set(trackId, trackState);
                         } else if (status === 'rejected') {
                             statesData.rejected.push(reason);
                         }
@@ -6917,9 +6925,9 @@ function showTracklistManager(tracklistSection) {
                 let trackOrder = trackFormItem.dataset.order;
 
                 if (trackFormItem.dataset.status === 'removed') {
-                    let method = 'DELETE';
-
-                    /*return fetch('/api/tracks?trackId=' + encodeURIComponent(trackId), { method })
+                    /*return fetch('/api/tracks?trackId=' + encodeURIComponent(trackId), {
+                        method: 'DELETE'
+                    })
                         .then(response => {
                             if (!response.ok) throw new Error('Server responded with status: ' + response.status);
                             return response.json();
@@ -6929,13 +6937,13 @@ function showTracklistManager(tracklistSection) {
                             tracklistsMapData = data.tracklistsMapData;
                             trackFormItem.classList.add('success');
                             trackFormItem.querySelector('.status-text').textContent = 'has been deleted';
-                            return { trackId, method };
+                            return { trackId, trackState: 'deleted' };
                         })
                         .catch(error => {
                             console.error('Track ${trackOrder} deletion error:', error);
                             trackFormItem.classList.add('error');
                             trackFormItem.querySelector('.status-text').textContent = 'has not been deleted';
-                            return Promise.reject({ trackId, method, error });
+                            return Promise.reject({ trackId, trackState: 'deleted', error });
                         })
                     ;*/
 
@@ -6943,7 +6951,7 @@ function showTracklistManager(tracklistSection) {
                     return new Promise(resolve => setTimeout(() => {
                         trackFormItem.classList.add('success');
                         trackFormItem.querySelector('.status-text').textContent = 'has been deleted';
-                        resolve({ trackId, method });
+                        resolve({ trackId, trackState: 'deleted' });
                     }, 1e3));
                 } else {
                     const trackFormData = new FormData();
@@ -6971,7 +6979,7 @@ function showTracklistManager(tracklistSection) {
                     if ([...trackFormData.entries()].length) {
                         let trackStatus = trackFormItem.dataset.status;
                         let isExisting = trackStatus === 'existing';
-                        let method = isExisting ? 'PATCH' : 'POST';
+                        let trackState = isExisting ? 'updated' : 'created';
 
                         trackFormData.append('form', 'track');
                         trackFormData.append('status', trackStatus);
@@ -6980,6 +6988,7 @@ function showTracklistManager(tracklistSection) {
 
                         /*return new Promise((resolve, reject) => {
                             let xhr = new XMLHttpRequest();
+                            let method = isExisting ? 'PATCH' : 'POST';
                             xhr.open(method, '/api/tracks');
                             xhr.responseType = 'json';
 
@@ -7018,7 +7027,7 @@ function showTracklistManager(tracklistSection) {
 
                                     tracklistsMapData = data.tracklistsMapData;
 
-                                    resolve({ trackId: isExisting ? trackId : data.trackId, method });
+                                    resolve({ trackId: isExisting ? trackId : data.trackId, trackState });
                                 } else {
                                     let error = { [xhr.status]: xhr.statusText };
                                     handleError(`Track ${trackOrder} ${isExisting ? 'update' : 'creation'} error:`, error);
@@ -7037,7 +7046,7 @@ function showTracklistManager(tracklistSection) {
                                 trackFormItem.classList.add('error');
                                 if (trackUploadFormRow) trackUploadFormRow.querySelector('.state > .fail').hidden = false;
 
-                                reject(trackId ? { trackId, method, error } : { trackOrder, method, error });
+                                reject(trackId ? { trackId, trackState, error } : { trackOrder, trackState, error });
                             }
                         });*/
 
@@ -7075,15 +7084,21 @@ function showTracklistManager(tracklistSection) {
                             function endUploading() {
                                 trackFormItem.classList.add('success');
                                 if (trackUploadFormRow) trackUploadFormRow.querySelector('.state > .ok').hidden = false;
-                                return { trackId: isExisting ? trackId : crypto.randomUUID(), method };
+                                return { trackId: isExisting ? trackId : crypto.randomUUID(), trackState };
                             }
                         });
+                    } else  if (action === 'edit' && tracklistTitleInput.hasAttribute('data-value-changed')) {
+                        return Promise.resolve({ trackId, trackState: 'updated' });
                     } else {
                         console.log(`No updates for track ${trackOrder}`);
                         return Promise.resolve();
                     }
                 }
             }
+        }
+
+        if (tracklistTitleInput.hasAttribute('data-value-changed')) {
+            trackFormData.append('tracklistTitle', correctText(tracklistTitleInput.value));
         }
 
         function updateTotalUploadProgress(isFinal) {
@@ -7133,7 +7148,7 @@ function showTracklistManager(tracklistSection) {
                 } else if (trackStatus === 'existing') {
                     let trackData = tracklistData.tracks.find(trackData => trackData.id === trackId);
                     let isTrackDataChanged = false;
-                    let isTracklistNameChanged = tracklistTitleInput.hasAttribute('data-value-changed');
+                    let isTracklistTitleChanged = tracklistTitleInput.hasAttribute('data-value-changed');
 
                     if (trackOrder !== trackFormItem.dataset.originalOrder) {
                         trackData.order = Number(trackOrder);
@@ -7149,7 +7164,7 @@ function showTracklistManager(tracklistSection) {
 
                     const fileInput = trackFormItem.querySelector('input[type="file"]');
                     let isFileChanged = fileInput.hasAttribute('data-value-changed');
-                    if (isFileChanged || isTrackDataChanged || isTracklistNameChanged) changeFileData(trackData, fileInput);
+                    if (isFileChanged || isTrackDataChanged || isTracklistTitleChanged) changeFileData(trackData, fileInput);
                 } else if (trackStatus === 'new') {
                     let trackData = {
                         id: trackId,
@@ -7204,6 +7219,10 @@ function showTracklistManager(tracklistSection) {
                     delNum++;
                     playlistTrack.classList.add('pending-removal');
                     setAnimationDelay('remove-track-from-playlist', delNum, () => removeTrackFromPlaylist(playlistTrack));
+
+                    if (audio === selectedAudio) {
+                        finishPlaying();
+                    }
                 } else if (trackState === 'updated') {
                     isUpdated = true;
 
@@ -7212,13 +7231,17 @@ function showTracklistManager(tracklistSection) {
                     let trackData = tracklistData.tracks.find(trackData => trackData.id === trackId);
                     let dub = audio.dataset.dub;
 
-                    playlistTracksData[idx].artist = audio.dataset.artist = trackData.artist;
-                    playlistTracksData[idx].title = audio.dataset.title = trackData.title;
+                    playlistTracksData[idx].artist = audio.dataset.artist = artistName.textContent = trackData.artist;
+                    playlistTracksData[idx].title = audio.dataset.title = trackTitle.textContent = trackData.title;
                     playlistTracksData[idx].src = audio.dataset.src = trackData.src;
-
-                    artistName.textContent = trackData.artist;
-                    trackTitle.textContent = trackData.title;
                     if (dub) trackTitle.textContent += ' (' + dub + ')';
+
+                    if (cachedAudioPool.has(audio)) clearAudioCache(audio);
+
+                    if (audio === selectedAudio) {
+                        showTrackInfo(audio, audio);
+                        if (playOn) playAudio(audio);
+                    }
                 }
             });
 
@@ -7483,7 +7506,7 @@ function showTracklistManager(tracklistSection) {
                 let tracklistTitle = restoreText(tracklistData.tracklistTitle);
     
                 if (tracklistTitleInput.hasAttribute('data-value-changed')) {
-                    tracklistSection.querySelector('.tracklist-title').textContent = tracklistTitle;
+                    tracklistSection.querySelector('.tracklist-title').innerHTML = tracklistTitle;
                     coverImg.alt = `${clearTextFromHtml(tracklistTitle)} Cover`;
                 } 
     
@@ -7656,35 +7679,31 @@ function checkFormChanges(trackFormList, inputs) {
 
 function correctText(str) {
     return str.trim()
+        .replace(/</g, '[/')
+        .replace(/>/g, '/]')
         .replace(/\s+/g, ' ')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;')
-        .replace(/\\/g, '\\\\')
         .replace(/\s[\u2013\u2014\u2212]\s/g, ' - ')
     ;
 }
 
 function restoreText(str) {
     return str.trim()
+        .replace(/\s-\s/g, ' \u2013 ')
         .replace(/\|/g, '<wbr>|<wbr>')
         .replace(/\//g, '<wbr>/<wbr>')
-        .replace(/\\\\/g, '<wbr>\\<wbr>')
-        .replace(/\s-\s/g, ' \u2013 ')
+        .replace(/\\/g, '<wbr>\\<wbr>')
+        .replace(/(<wbr>)+/g, '<wbr>')
     ;
 }
 
 function sanitizePathSegment(str) {
-    return str.trim()
-        .replace(/&lt;/g, '<')
-        .replace(/&gt;/g, '>')
-        .replace(/&quot;/g, '\"')
-        .replace(/&#39;/g, '\'')
-        .replace(/\\\\/g, '\\')
-        .replace(/[/\\?%*:|"<>]/g, '-')
+    let sanitized = str.trim()
+        .replace(/\[\//g, '<')
+        .replace(/\/\]/g, '>')
+        .replace(/[/\\?%*:|"<>;]/g, '-')
         .replace(/\s+/g, '_')
-    ;
+    ; 
+    return encodeURIComponent(sanitized);
 }
 
 function clearTextFromHtml(str) {
@@ -8108,7 +8127,7 @@ function createPlaylist(addedTracksData, clearPlaylist) {
             audio.setAttribute('data-id', trackId);
             audio.setAttribute('data-artist', artist);
             audio.setAttribute('data-title', title);
-            src += '?nocache=' + Math.random(); // Test cache clearing
+            //src += '?nocache=' + Math.random(); // Test cache clearing
             audio.setAttribute('data-src', src);
             if (dub) audio.setAttribute('data-dub', dub);
             audio.setAttribute('type', 'audio/mpeg');
