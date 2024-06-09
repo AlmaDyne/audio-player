@@ -5306,6 +5306,9 @@ function showTracklistDeletion(tracklistSection) {
                     delNum++;
                     playlistTrack.classList.add('pending-removal');
                     setAnimationDelay('remove-track-from-playlist', delNum, () => removeTrackFromPlaylist(playlistTrack));
+
+                    let audio = playlistTrack.querySelector('audio');
+                    if (audio === selectedAudio) finishPlaying();
                 }
             });
         }
@@ -5477,8 +5480,6 @@ function showTracklistDeletion(tracklistSection) {
     }
 
     function deleteTracks(deletedTrackIds) {
-        console.log('+ del tracks');
-
         const taskPromises = deletedTrackIds.map(sendTrackDeletion);
 
         return Promise.allSettled(taskPromises)
@@ -5488,7 +5489,7 @@ function showTracklistDeletion(tracklistSection) {
                 return successDelTrackIds;
             });
 
-        function sendTrackDeletion(delTrackId, idx) {
+        function sendTrackDeletion(delTrackId) {
             /*return fetch('/api/tracks?trackId=' + encodeURIComponent(delTrackId), {
                 method: 'DELETE'
             })
@@ -5506,17 +5507,11 @@ function showTracklistDeletion(tracklistSection) {
                 })
             ;*/
 
-            if (idx !== 2) { // Temporary code
-                return new Promise(resolve => setTimeout(() => resolve({ trackId: delTrackId }), 1e3));
-            } else {
-                return new Promise((resolve, reject) => setTimeout(reject, 1e3));
-            }
+            return new Promise(resolve => setTimeout(() => resolve({ trackId: delTrackId }), 1e3));
         }
     }
 
     function deleteTracklist() {
-        console.log('+ del tracklist');
-
         /*return fetch('/api/tracklists?tracklistId=' + encodeURIComponent(tracklistId), {
             method: 'DELETE'
         })
@@ -7220,9 +7215,7 @@ function showTracklistManager(tracklistSection) {
                     playlistTrack.classList.add('pending-removal');
                     setAnimationDelay('remove-track-from-playlist', delNum, () => removeTrackFromPlaylist(playlistTrack));
 
-                    if (audio === selectedAudio) {
-                        finishPlaying();
-                    }
+                    if (audio === selectedAudio) finishPlaying();
                 } else if (trackState === 'updated') {
                     isUpdated = true;
 
@@ -7679,15 +7672,15 @@ function checkFormChanges(trackFormList, inputs) {
 
 function correctText(str) {
     return str.trim()
-        .replace(/</g, '[/')
-        .replace(/>/g, '/]')
         .replace(/\s+/g, ' ')
-        .replace(/\s[\u2013\u2014\u2212]\s/g, ' - ')
+        .replace(/[\u2013\u2014\u2212]/g, '-')
     ;
 }
 
 function restoreText(str) {
     return str.trim()
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
         .replace(/\s-\s/g, ' \u2013 ')
         .replace(/\|/g, '<wbr>|<wbr>')
         .replace(/\//g, '<wbr>/<wbr>')
@@ -7698,8 +7691,6 @@ function restoreText(str) {
 
 function sanitizePathSegment(str) {
     let sanitized = str.trim()
-        .replace(/\[\//g, '<')
-        .replace(/\/\]/g, '>')
         .replace(/[/\\?%*:|"<>;]/g, '-')
         .replace(/\s+/g, '_')
     ; 
