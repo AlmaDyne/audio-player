@@ -3349,15 +3349,14 @@ function tracklistDatabaseAction() {
 
     function disableTracklistsContainerScrollBar() {
         tracklistsContainer.style.paddingRight = '';
+        
+        if (tracklistsContainer.classList.contains('scrollable')) {
+            tracklistsContainer.style.overflow = 'hidden';
 
-        let isScrollable = setTracklistsContainerScrollability();
-        if (!isScrollable) return;
-
-        tracklistsContainer.style.overflow = 'hidden';
-
-        if (!canAutoChangeWidth) {
-            let curPaddingRight = parseInt(getComputedStyle(tracklistsContainer).paddingRight);
-            tracklistsContainer.style.paddingRight = curPaddingRight + scrollbarWidth + 'px';
+            if (!canAutoChangeWidth) {
+                let curPaddingRight = parseInt(getComputedStyle(tracklistsContainer).paddingRight);
+                tracklistsContainer.style.paddingRight = curPaddingRight + scrollbarWidth + 'px';
+            }
         }
     }
     
@@ -7773,8 +7772,8 @@ function setTracklistsContainerScrollability() {
     let isScrollable = tracklistsContainer.scrollHeight > tracklistsContainer.offsetHeight;
     let trlsContScrollbarWidth = isScrollable ? `${scrollbarWidth}px` : '';
 
+    tracklistsContainer.classList.toggle('scrollable', isScrollable);
     tracklistsContainer.style.setProperty('--tracklists-container-scrollbar-y-width', trlsContScrollbarWidth);
-    return isScrollable;
 }
 
 /////////////////////////////////

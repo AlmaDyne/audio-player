@@ -252,13 +252,10 @@ i {
     margin-left: calc(
         50% - var(--tracklist-database-max-width) - var(--player-width)/2 + var(--document-scrollbar-y-width)*0.5
     );
-    /*margin-right: var(--common-spacing);*/
-    /*padding: 0 var(--common-spacing);*/
+    padding: 0 var(--common-spacing);
     box-sizing: border-box;
     color: var(--color-primary);
     text-align: center;
-
-    /*outline: 1px solid;*/
 }
 #tracklist-database.enabled {
     display: block;
@@ -316,13 +313,14 @@ i {
     position: relative;
     left: -100%;
     max-height: 0;
-    padding: calc(var(--common-spacing));
+    padding: var(--common-spacing);
     box-sizing: border-box;
     overflow: auto;
 }
-#tracklists-container.scrollable {
-    /*margin-right: 0;
-    padding-right: var(--common-spacing);*/
+#tracklists-container:not(.scrollable) {
+    width: calc(200% + var(--common-spacing));
+    padding-left: 0;
+    /*padding-right: var(--common-spacing);*/
 }
 #tracklists-container.no-animation > * {
     transition: none !important;
@@ -335,7 +333,7 @@ i {
     --tracklist-section-active-transition: 0.2s var(--tracklist-section-timing-function);
     --tracklist-section-margin-top: 50px;
     --shrunk-state-margin-top: 0px;
-    width: calc(50% - var(--common-spacing) - var(--tracklists-container-scrollbar-y-width)*0.5);
+    width: calc(50% - var(--tracklists-container-scrollbar-y-width)*0.5);
     position: relative;
     left: var(--common-spacing);
     margin-top: var(--tracklist-section-margin-top);
@@ -355,7 +353,7 @@ i {
 }
 #tracklists-container > .tracklist-section.show {
     --tracklist-section-timing-function: ease-in;
-    left: calc(50% + var(--common-spacing) + var(--tracklists-container-scrollbar-y-width)*0.5);
+    left: calc(50% + var(--tracklists-container-scrollbar-y-width)*0.5);
     opacity: 1;
 }
 #tracklists-container > .tracklist-section.shrink {
@@ -609,13 +607,13 @@ i {
 #tracklist-database > .add-controls {
     display: flex;
     margin-top: 50px;
-    padding: 0 var(--common-spacing);
 }
 #tracklist-database > .add-controls > .left-col {
     flex: 0 1 auto;
 }
 #tracklist-database > .add-controls > .right-col {
     flex: 1 1 auto;
+    /*text-align: right;*/
 }
 #tracklist-database > .add-controls button {
     --clear-playlist-timing-function: cubic-bezier(.5,-0.7,.82,.48);
