@@ -32,6 +32,9 @@ function randomInteger(min, max) {
 // Scrollbar width
 function getScrollbarWidth() {
     let div = document.createElement('div');
+    div.style.position = 'absolute'; // Абсолютное позиционирование
+    div.style.top = '-9999px';
+    div.style.visibility = 'hidden';
     div.style.overflowY = 'scroll';
     div.style.width = '50px';
     div.style.height = '50px';

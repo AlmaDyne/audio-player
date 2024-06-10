@@ -13,7 +13,7 @@ export class PlayerHoverIntent {
         this.executeTaskDelay = executeTaskDelay;
         this.elem = elem;
         this.repeatTask = repeatTask;
-        this.executeTask = executeTask;
+        this.executeTask = this.isReady(executeTask.bind(this));
         this.dismissTask = dismissTask;
 
         this.onPointerEnter = this.onPointerEnter.bind(this);
@@ -26,6 +26,16 @@ export class PlayerHoverIntent {
         this.calcFinishingRadius = this.calcFinishingRadius.bind(this);
 
         elem.addEventListener('pointerenter', this.onPointerEnter);
+    }
+
+    isReady(func) {
+        return () => {
+            if (this.elemRect) func();
+        };
+    }
+
+    setExecuteTaskStrategy(strategy) {
+        this.executeTask = this.isReady(strategy.bind(this));
     }
     
     onPointerEnter(event) {

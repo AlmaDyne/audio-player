@@ -80,7 +80,6 @@ const
     playlistScrollArrowBoxHeight = playlistContainer.querySelector('.playlist-scroll-arrow-box').offsetHeight,
     timelineMrgnLeft = Math.abs(parseInt(getComputedStyle(timeline).marginLeft)), 
     trackHeight = parseInt(getComputedStyle(playlistLim).getPropertyValue('--track-height')),
-    scrollbarWidth = getScrollbarWidth(),
     origDocWidth = getDocWidth(),
     hasScrollend = 'onscrollend' in window
 ;
@@ -103,6 +102,7 @@ const MAX_LOADED_AUDIOS = 5,
 const origOrderedAudios = [],
     curOrderedAudios = [],
     orderedDownloads = [],
+    tooltipHoverIntentByElem = new WeakMap(),
     tracklistsExpandedState = new Map(),
     fixedCurPlaylistStrings = new Map(),
     highlightedBtns = new Map(),
@@ -120,6 +120,7 @@ const origOrderedAudios = [],
 ;
 
 // Variables
+let scrollbarWidth = getScrollbarWidth();
 let accelerateScrolling = false;
 let pointerModeScrolling = false;
 let activeScrollAndAlign = false;
@@ -151,8 +152,6 @@ let acceleratePlaying = true;
 let acceleration = false;
 let accelerationType = 'none';
 let removingTracksNum = 0;
-let timeRangeHoverIntent = {};
-let volumeRangeHoverIntent = {};
 
 defineProperty('selectedAudio', undefined);
 
@@ -317,7 +316,7 @@ function showTrackInfo(audio, prevSelected = null) {
     startInfoDisplay.hidden = true;
 
     keepSelectedTitleVisible(audio);
-    if (timeRangeHoverIntent.elemRect) timeRangeHoverIntent.executeTask();
+    tooltipHoverIntentByElem.get(timeRange).executeTask();
 
     if (audio !== prevSelected) {
         if (prevSelected) disconnectAudioHandlers(prevSelected);
@@ -354,7 +353,7 @@ function showTrackInfo(audio, prevSelected = null) {
                 updateTimeDisplay({ audio });
             }
 
-            if (timeRangeHoverIntent.elemRect) timeRangeHoverIntent.executeTask();
+            tooltipHoverIntentByElem.get(timeRange).executeTask();
         };
     }
 
@@ -501,8 +500,8 @@ function playPauseAction() {
         if (!selectedAudio) return;
 
         setSelected(selectedAudio);
-        showTrackInfo(selectedAudio);
         if (timeRangeEnter) enterTimeRange();
+        showTrackInfo(selectedAudio);
     } else {
         highlightSelected(selectedAudio);
     }
@@ -690,8 +689,8 @@ function stepBack() {
         console.log('step-rewind track selecting | ' + selectedAudio.dataset.title);
         
         setSelected(selectedAudio);
-        showTrackInfo(selectedAudio);
         if (timeRangeEnter) enterTimeRange();
+        showTrackInfo(selectedAudio);
         return;
     }
 
@@ -749,8 +748,8 @@ function stepForward() {
         console.log('step-forward track selecting | ' + selectedAudio.dataset.title);
 
         setSelected(selectedAudio);
-        showTrackInfo(selectedAudio);
         if (timeRangeEnter) enterTimeRange();
+        showTrackInfo(selectedAudio);
         return;
     }
 
@@ -1011,14 +1010,13 @@ function changeVolumeAction(changeType, keyRepeat) {
     setVolume(volumePos);
     showVolumeIcon(settedVolume);
 
-    if (volumeRangeHoverIntent.elemRect) volumeRangeHoverIntent.executeTask();
-
     if (settedVolume) {
         volumeBar.classList.add('active');
     } else {
         volumeBar.classList.remove('active');
     }
-        
+    
+    tooltipHoverIntentByElem.get(volumeRange).executeTask();
     highlightSelected(selectedAudio);
 }
 
@@ -1049,6 +1047,7 @@ function volumeAction() {
         volumeBar.style.left = volumePos + 'px';
     }
 
+    tooltipHoverIntentByElem.get(volumeRange).executeTask();
     highlightSelected(selectedAudio);
 }
 
@@ -1111,10 +1110,15 @@ function showVolumeIcon(vol) {
         (vol <= 0.9) ? 'icon-volume active' :
         'icon-volume-up active';
 }
+    
+function executeVolumeRangeTask() {
+    tooltip.textContent = calcVolumeTooltip();
+    positionTooltip(volumeBar.getBoundingClientRect(), this.y1, 10);
 
-function calcVolumeTooltip() {
-    let calculatedVolume = (settedVolume * 100).toFixed(0) + '%';
-    return calculatedVolume;
+    function calcVolumeTooltip() {
+        let calculatedVolume = (settedVolume * 100).toFixed(0) + '%';
+        return calculatedVolume;
+    }
 }
 
 //////////////////////////////////
@@ -1216,21 +1220,27 @@ function enterTimeRange() {
     }
 }
 
-function calcTimeRangeTooltip(xPos) {
+function executeTimeRangeTask() {
     if (!selectedAudio) return;
-    if (!selectedAudio.duration) return '??:??';
 
-    let calculatedTime = xPos * selectedAudio.duration / timeRange.offsetWidth;
-    if (calculatedTime < 0) calculatedTime = 0;
-    if (calculatedTime > selectedAudio.duration) calculatedTime = selectedAudio.duration;
+    tooltip.textContent = calcTimeRangeTooltip(this.x1);
+    positionTooltip(timeBar.getBoundingClientRect(), this.y1, 5);
 
-    let mins = Math.floor(calculatedTime / 60);
-    let secs = Math.floor(calculatedTime - mins * 60);
-
-    if (mins < 10) mins = '0' + mins;
-    if (secs < 10) secs = '0' + secs;
-
-    return calculatedTime = mins + ':' + secs;
+    function calcTimeRangeTooltip(xPos) {
+        if (!selectedAudio.duration) return '??:??';
+    
+        let calculatedTime = xPos * selectedAudio.duration / timeRange.offsetWidth;
+        if (calculatedTime < 0) calculatedTime = 0;
+        if (calculatedTime > selectedAudio.duration) calculatedTime = selectedAudio.duration;
+    
+        let mins = Math.floor(calculatedTime / 60);
+        let secs = Math.floor(calculatedTime - mins * 60);
+    
+        if (mins < 10) mins = '0' + mins;
+        if (secs < 10) secs = '0' + secs;
+    
+        return calculatedTime = mins + ':' + secs;
+    }
 }
 
 //////////////////////////////////////
@@ -1462,7 +1472,7 @@ function finishPlaying() {
         updateTimeDisplay({ displayStr: '--:--' });
         updateDurationDisplay({ displayStr: '--:--' });
 
-        if (timeRangeHoverIntent.elemRect) timeRangeHoverIntent.dismissTask();
+        tooltipHoverIntentByElem.get(timeRange).dismissTask();
         timePosSeeking = false;
         timeline.style.width = timelineMrgnLeft + 'px';
         timeRange.style.cursor = '';
@@ -1729,6 +1739,7 @@ function selectPlaylistTrack(track) {
         selectedAudio = newAudio;
 
         setSelected(selectedAudio);
+        if (timeRangeEnter) enterTimeRange();
         showTrackInfo(selectedAudio);
         playAudio(selectedAudio);
         return;
@@ -1836,7 +1847,7 @@ function removeTrackFromPlaylist(track, eventType = null) {
         if (audio === selectedAudio) {
             track.classList.remove('removing');
             audio.setAttribute('data-removed', '');
-            tempTrackStorage.append(track);
+            tempTrackStorage.appendChild(track);
         } else {
             if (cachedAudioPool.has(audio)) clearAudioCache(audio);
             track.remove();
@@ -3000,12 +3011,12 @@ function tracklistDatabaseAction() {
 
             calcTracklistsTextIndent();
             calcTracklistsContainerMaxHeight();
-            disableTracklistsContainerScroll();
+            disableTracklistsContainerScrollBar();
             checkPlayerContainerJustify();
             checkGlobalStates();
     
             let tracklistDtbsLeft = playerLeft - tracklistDatabase.offsetWidth;
-            let noSpaceForMoving = (tracklistDtbsLeft === 0) ? true : false;
+            let noSpaceForMoving = tracklistDtbsLeft === 0 ? true : false;
     
             if (isTracklistDtbsStickedLeft && !noSpaceForMoving) { // Move tracklists
                 moveTracklistDatabase();
@@ -3014,7 +3025,7 @@ function tracklistDatabaseAction() {
             }
         } else { // Hide tracklists/move player
             if (tracklistDatabase.classList.contains('active')) { // Hide tracklists
-                disableTracklistsContainerScroll();
+                disableTracklistsContainerScrollBar();
                 toggleTracklistDatabaseVisibility('hide');
             } else {
                 if (isTracklistDtbsMoved) { // Cancel tracklists moving animation (move player)
@@ -3138,6 +3149,21 @@ function tracklistDatabaseAction() {
         animateElements(...args);
     }
 
+    function filterVisibleTracklistSections() {
+        return [].filter.call(tracklistsContainer.children, tracklistSection => {
+            let trlContainerTop = tracklistsContainer.scrollTop;
+            let trlContainerBottom = trlContainerTop + tracklistsContainer.clientHeight;
+
+            let trlSectionTop = tracklistSection.offsetTop;
+            let trlSectionBottom = trlSectionTop + tracklistSection.offsetHeight;
+
+            let isTrlSectionTopVisible = trlSectionTop > trlContainerTop && trlSectionTop < trlContainerBottom;
+            let isTrlSectionBottomVisible = trlSectionBottom > trlContainerTop && trlSectionBottom < trlContainerBottom;
+
+            return isTrlSectionTopVisible || isTrlSectionBottomVisible;
+        });
+    }
+
     async function animateElements(animatedElems, animElemsNum, controlsNum, animationAction, endAnimFunc) {
         let firstIteration = true;
 
@@ -3190,21 +3216,6 @@ function tracklistDatabaseAction() {
             () => true,
             () => false
         );
-    }
-
-    function filterVisibleTracklistSections() {
-        return [].filter.call(tracklistsContainer.children, tracklistSection => {
-            let trlContainerTop = tracklistsContainer.scrollTop;
-            let trlContainerBottom = trlContainerTop + tracklistsContainer.clientHeight;
-
-            let trlSectionTop = tracklistSection.offsetTop;
-            let trlSectionBottom = trlSectionTop + tracklistSection.offsetHeight;
-
-            let isTrlSectionTopVisible = trlSectionTop > trlContainerTop && trlSectionTop < trlContainerBottom;
-            let isTrlSectionBottomVisible = trlSectionBottom > trlContainerTop && trlSectionBottom < trlContainerBottom;
-
-            return isTrlSectionTopVisible || isTrlSectionBottomVisible;
-        });
     }
 
     function toggleShowClass(elem, animationAction) {
@@ -3299,7 +3310,7 @@ function tracklistDatabaseAction() {
         tracklistDtbsBtn.classList.remove('waiting');
         tracklistDtbsBtn.classList.add('enabled');
 
-        enableTracklistsContainerScroll();
+        enableTracklistsContainerScrollBar();
         checkPendingSettingsAction();
         checkStartInfoDisplaying();
     }
@@ -3325,7 +3336,6 @@ function tracklistDatabaseAction() {
                 movePlayer();
             } else {
                 tracklistDatabase.classList.remove('enabled');
-
                 tracklistDtbsBtn.classList.remove('waiting');
                 tracklistDtbsBtn.classList.remove('enabled');
 
@@ -3337,20 +3347,21 @@ function tracklistDatabaseAction() {
         }
     }
 
-    function disableTracklistsContainerScroll() {
+    function disableTracklistsContainerScrollBar() {
         tracklistsContainer.style.paddingRight = '';
 
-        if (tracklistsContainer.classList.contains('scrollable')) {
-            tracklistsContainer.style.overflow = 'hidden';
+        let isScrollable = setTracklistsContainerScrollability();
+        if (!isScrollable) return;
 
-            if (!canAutoChangeWidth) {
-                let curPaddingRight = parseInt(getComputedStyle(tracklistsContainer).paddingRight);
-                tracklistsContainer.style.paddingRight = curPaddingRight + scrollbarWidth + 'px';
-            }
+        tracklistsContainer.style.overflow = 'hidden';
+
+        if (!canAutoChangeWidth) {
+            let curPaddingRight = parseInt(getComputedStyle(tracklistsContainer).paddingRight);
+            tracklistsContainer.style.paddingRight = curPaddingRight + scrollbarWidth + 'px';
         }
     }
     
-    function enableTracklistsContainerScroll() {
+    function enableTracklistsContainerScrollBar() {
         tracklistsContainer.style.overflow = '';
         tracklistsContainer.style.paddingRight = '';
     }
@@ -4021,6 +4032,11 @@ for (let input of settingsArea.querySelectorAll('input[type="number"]')) {
     };
 }
 
+// Stop scrolling on context menu
+document.oncontextmenu = () => {
+    if (accelerateScrolling) stopScrollingAndClean();
+};
+
 // Document blur
 document.body.onblur = () => {
     setTimeout(() => {
@@ -4030,68 +4046,69 @@ document.body.onblur = () => {
     });
 };
 
-// Connection focus handler
-function initFocusHandlerConnections() {
-    let focusingElems = document.querySelectorAll('input, button, textarea, #visible-playlist-area');
-    focusingElems.forEach(elem => connectFocusHandler(elem));
-}
+// Focus handler
+document.addEventListener('focus', function(event) {
+    const selector = 'input, button, textarea, [tabindex]';
+    if (!event.target.matches(selector)) return;
 
-function connectFocusHandler(elem) {
-    elem.onfocus = function() {
-        if (accelerateScrolling) {
-            if (!scrollablePlaylist) return;
+    handleFocus(event.target);
+}, true);
 
-            let isDocScrollbar = isDocScrollbarCheck();
-            let key = Array.from(activeScrollKeys)[activeScrollKeys.size - 1];
-            let direction = scrollingKeysData[key].direction;
-            let isReachingLimits = checkReachingPlaylistBoundaries(direction);
+function handleFocus(elem) {
+    if (accelerateScrolling) {
+        if (!scrollablePlaylist) return;
 
-            // Quickly hide playlist scroll elements
-            if (
-                isReachingLimits &&
-                this !== visPlaylistArea &&
-                isDocScrollbar &&
-                !cursorOverPlaylist &&
-                !pointerModeScrolling
-            ) {
-                hideScrollElems();
-            }
+        let isDocScrollbar = isDocScrollbarCheck();
+        let key = Array.from(activeScrollKeys)[activeScrollKeys.size - 1];
+        let direction = scrollingKeysData[key].direction;
+        let isReachingLimits = checkReachingPlaylistBoundaries(direction);
 
-            // Start/stop scrolling
-            if (
-                !highlightActiveElem && (
-                    (this.matches('input[type="number"]') && (key === 'ArrowUp' || key === 'ArrowDown')) ||
-                    (!this.matches('.tracklist-section') && this.scrollHeight > this.clientHeight) ||
-                    (this !== visPlaylistArea && isDocScrollbar && !cursorOverPlaylist && !pointerModeScrolling)
-                )
-            ) {
-                stopScrolling(KEY_SCROLLING_TIME);
-            } else if (
-                    this === visPlaylistArea ||
-                    this !== curPlaylist && (
-                        !isDocScrollbar ||
-                        cursorOverPlaylist ||
-                        pointerModeScrolling
-                    )
-            ) {
-                startScrolling(key);
-            }
+        // Quickly hide playlist scroll elements
+        if (
+            isReachingLimits &&
+            elem !== visPlaylistArea &&
+            isDocScrollbar &&
+            !cursorOverPlaylist &&
+            !pointerModeScrolling
+        ) {
+            hideScrollElems();
         }
 
-        // Cancelling returning focus on highlightActiveElem
-        if (this !== curPlaylist && highlightActiveElem) cancelReturningFocus();
+        // Start/stop scrolling
+        if (
+            !highlightActiveElem && (
+                (elem.matches('input[type="number"]') && (key === 'ArrowUp' || key === 'ArrowDown')) ||
+                (!elem.matches('.tracklist-section') && elem.scrollHeight > elem.clientHeight) ||
+                (elem !== visPlaylistArea && isDocScrollbar && !cursorOverPlaylist && !pointerModeScrolling)
+            )
+        ) {
+            stopScrolling(KEY_SCROLLING_TIME);
+        } else if (
+                elem === visPlaylistArea ||
+                elem !== curPlaylist && (
+                    !isDocScrollbar ||
+                    cursorOverPlaylist ||
+                    pointerModeScrolling
+                )
+        ) {
+            startScrolling(key);
+        }
+    }
 
-        // Check reaching playlist limits when focusing on the last track via Tab
-        if (this.matches('.track-info-box')) {
-            document.getSelection().empty();
-            if (!scrollablePlaylist) return;
+    // Cancelling returning focus on highlightActiveElem
+    if (elem !== curPlaylist && highlightActiveElem) cancelReturningFocus();
 
+    // Check reaching playlist limits when focusing on the last track via Tab
+    if (elem.matches('.track-info-box')) {
+        document.getSelection().empty();
+
+        if (scrollablePlaylist) {
             activateScrollArrows();
             checkReachingPlaylistBoundaries('all');
         }
+    }
 
-        if (pointerModeScrolling) document.dispatchEvent(new Event('pointermove'));
-    };
+    if (pointerModeScrolling) document.dispatchEvent(new Event('pointermove'));
 }
 
 // Alignment after auto scrolling focused track title
@@ -4100,32 +4117,32 @@ visPlaylistArea.addEventListener('keydown', function(event) {
     if (!scrollablePlaylist) return;
     if (activeScrollAndAlign) return;
 
-    let selTrack;
-    if (event.target === this) selTrack = playlist.firstElementChild;
+    let track;
+    if (event.target === this) track = playlist.firstElementChild;
     if (event.target.matches('.track-info-box')) {
-        let track = event.target.closest('.track');
-        selTrack = event.shiftKey ? track.previousElementSibling : track.nextElementSibling;
+        let prevTrack = event.target.closest('.track');
+        track = event.shiftKey ? prevTrack.previousElementSibling : prevTrack.nextElementSibling;
     }
-    if (!selTrack) return;
+    if (!track) return;
 
     // Scrolling the document to center the selected track in the window
     let isPlaylistInView = isPlaylistInViewCheck();
 
     if (!isPlaylistInView) {
-        let selTrackRect = selTrack.getBoundingClientRect();
+        let trackRect = track.getBoundingClientRect();
         let winHeight = getWinHeight();
         let y;
 
-        if (selTrackRect.top < playlistScrollArrowBoxHeight) {
-            y = (Math.round(selTrackRect.bottom) > playlistScrollArrowBoxHeight) ?
-                selTrackRect.top - playlistScrollArrowBoxHeight :
-                selTrackRect.top - winHeight / 2 + selTrackRect.height / 2
+        if (trackRect.top < playlistScrollArrowBoxHeight) {
+            y = (Math.round(trackRect.bottom) > playlistScrollArrowBoxHeight) ?
+                trackRect.top - playlistScrollArrowBoxHeight :
+                trackRect.top - winHeight / 2 + trackRect.height / 2
             ;
         }
-        if (selTrackRect.bottom > winHeight - playlistScrollArrowBoxHeight) {
-            y = (Math.round(selTrackRect.top) < winHeight - playlistScrollArrowBoxHeight) ? 
-                playlistScrollArrowBoxHeight - (winHeight - selTrackRect.bottom) :
-                selTrackRect.bottom - winHeight / 2 - selTrackRect.height / 2
+        if (trackRect.bottom > winHeight - playlistScrollArrowBoxHeight) {
+            y = (Math.round(trackRect.top) < winHeight - playlistScrollArrowBoxHeight) ? 
+                playlistScrollArrowBoxHeight - (winHeight - trackRect.bottom) :
+                trackRect.bottom - winHeight / 2 - trackRect.height / 2
             ;
         }
         
@@ -4141,13 +4158,13 @@ visPlaylistArea.addEventListener('keydown', function(event) {
 
     // Showing scroll elements and aligning the playlist after auto-scrolling
     if (
-        selTrack.offsetTop < playlistLim.scrollTop ||
-        selTrack.offsetTop + selTrack.offsetHeight > playlistLim.scrollTop + playlistLim.offsetHeight
+        track.offsetTop < playlistLim.scrollTop ||
+        track.offsetTop + track.offsetHeight > playlistLim.scrollTop + playlistLim.offsetHeight
     ) {
-        requestAnimationFrame(() => {
+        setTimeout(() => {
             showScrollElems();
             scrollAndAlignPlaylist({
-                direction: (event.shiftKey || selTrack === playlist.firstElementChild) ? 'up' : 'down',
+                direction: (event.shiftKey || track === playlist.firstElementChild) ? 'up' : 'down',
                 duration: KEY_SCROLLING_TIME,
                 hide: true
             });
@@ -4155,16 +4172,16 @@ visPlaylistArea.addEventListener('keydown', function(event) {
     }
 });
 
-// Stop scrolling on context menu
-document.oncontextmenu = () => {
-    if (accelerateScrolling) stopScrollingAndClean();
-};
-
 // Creating tooltips
 function initTooltipHoverIntentConnections() {
     const tooltipElems = playerContainer.querySelectorAll('[data-tooltip]');
     tooltipElems.forEach(elem => connectTooltipHoverIntent(elem));
 }
+
+const executeTaskStrategies = {
+    'time-range': executeTimeRangeTask,
+    'volume-range': executeVolumeRangeTask
+};
 
 function connectTooltipHoverIntent(tooltipElem) {
     setAdditionalAttributes(tooltipElem);
@@ -4175,63 +4192,35 @@ function connectTooltipHoverIntent(tooltipElem) {
         repeatTask: (tooltipElem === timeRange || tooltipElem === volumeRange) ? true : false,
 
         executeTask() {
-            if (!this.elemRect) return;
-
-            if (this.elem === timeRange) {
-                let calculatedTime = calcTimeRangeTooltip(this.x1);
-
-                if (calculatedTime) {
-                    this.elem.dataset.tooltip = calculatedTime;
-                } else {
-                    return;
-                }
-            }
-
-            if (this.elem === volumeRange) {
-                this.elem.dataset.tooltip = calcVolumeTooltip();
-            }
-
             tooltip.textContent = this.elem.dataset.tooltip;
-
-            let x;
-            if (this.elem === timeRange) {
-                x = timeBar.getBoundingClientRect().left - tooltip.offsetWidth / 2;
-            } else if (this.elem === volumeRange) {
-                x = volumeBar.getBoundingClientRect().left + volumeBar.offsetWidth / 2 - tooltip.offsetWidth / 2;
-            } else {
-                x = this.elemRect.left + this.elemRect.width / 2 - tooltip.offsetWidth / 2;
-            }
-
-            if (x < 0) x = 0;
-            if (x > document.documentElement.clientWidth - tooltip.offsetWidth) {
-                x = document.documentElement.clientWidth - tooltip.offsetWidth;
-            }
-
-            let y = this.elemRect.top - tooltip.offsetHeight;
-            if (this.elem === timeRange) y -= 6;
-            if (this.elem === volumeRange) y -= 10;
-
-            if (y < 0) y = this.elemRect.top + this.y1 + 24;
-
-            tooltip.style.left = x + 'px';
-            tooltip.style.top = y + 'px';
-            
-            tooltip.style.opacity = 1;
-            tooltip.style.marginTop = 0;
+            positionTooltip(this.elemRect, this.y1, 0);
         },
 
         dismissTask() {
             tooltip.style.opacity = '';
-            tooltip.style.marginTop = '';
-
-            if (this.elem === timeRange || this.elem === volumeRange) {
-                this.elem.dataset.tooltip = '';
-            }
+            tooltip.style.transform = '';
         }
     });
 
-    if (tooltipElem === timeRange) timeRangeHoverIntent = hoverIntent;
-    if (tooltipElem === volumeRange) volumeRangeHoverIntent = hoverIntent;
+    tooltipHoverIntentByElem.set(tooltipElem, hoverIntent);
+        
+    let strategy = executeTaskStrategies[tooltipElem.id];
+    if (strategy) hoverIntent.setExecuteTaskStrategy(strategy);
+}
+
+function positionTooltip(targElemRect, elemCursorY, shiftY) {
+    let x = targElemRect.left + targElemRect.width / 2 - tooltip.offsetWidth / 2;
+    x = Math.max(x, 0);
+    x = Math.min(x, document.documentElement.clientWidth - tooltip.offsetWidth);
+
+    let y = targElemRect.top - tooltip.offsetHeight - shiftY;
+    if (y < 0) y = targElemRect.top + elemCursorY + 24;
+
+    tooltip.style.left = x + 'px';
+    tooltip.style.top = y + 'px';
+    
+    tooltip.style.opacity = 1;
+    tooltip.style.transform = 'translateY(0)';
 }
 
 function setAdditionalAttributes(tooltipElem) {
@@ -4358,6 +4347,7 @@ let resizeTick = false;
 window.addEventListener('resize', () => {
     if (!resizeTick) {
         requestAnimationFrame(function () {
+            scrollbarWidth = getScrollbarWidth();
             calcTracklistsContainerMaxHeight();
             setDocScrollbarYWidth();
             checkPlayerContainerJustify();
@@ -4821,7 +4811,7 @@ function changeInitialVolume(value) {
     volumeBar.style.left = volBarPos + 'px';
     volumeline.style.width = volBarPos + volumeBar.offsetWidth / 2 + 'px';
     
-    if (volumeRangeHoverIntent.elemRect) volumeRangeHoverIntent.executeTask();
+    tooltipHoverIntentByElem.get(volumeRange).executeTask();
     if (selectedAudio) selectedAudio.volume = settedVolume;
 }
 
@@ -5069,6 +5059,7 @@ function toggleTracklistDetails(tracklistSection, options = {}) {
     if (tracklistDetails.style.height !== '0px' && targetState === 'expand') return;
 
     tracklistsContainer.setAttribute('data-toggling-details', '');
+    tracklistsContainer.classList.add('no-animation');
 
     let trlDetailsId = tracklistDetails.id;
     cancelAnimationFrame(trlDetailsAnimationFrameIds[trlDetailsId]);
@@ -5103,6 +5094,7 @@ function toggleTracklistDetails(tracklistSection, options = {}) {
 
         if (!Object.keys(trlDetailsAnimationFrameIds).length) {
             tracklistsContainer.removeAttribute('data-toggling-details');
+            tracklistsContainer.classList.remove('no-animation');
             
             checkTracklistDtbsAction();
             checkTracklistDtbsSorting();
@@ -5113,7 +5105,7 @@ function toggleTracklistDetails(tracklistSection, options = {}) {
         if (applyToAll && tracklistSection !== tracklistsContainer.lastElementChild) return;
         
         setDocScrollbarYWidth();
-        checkTracklistsContainerScrollability();
+        setTracklistsContainerScrollability();
         if (isExpanded && !applyToAll) scrollToViewAnimatedElement(tracklistsContainer, tracklistSection, commonSpacing);
         
         trlDetailsAnimationFrameIds[trlDetailsId] = requestAnimationFrame(checkScrollabilities);
@@ -5201,7 +5193,7 @@ function showTracklistDeletion(tracklistSection) {
                 deletingList.push(tracklistTrack);
             });
 
-            delTracks.append(delTracksFragment);
+            delTracks.appendChild(delTracksFragment);
         }
     }
 
@@ -5948,7 +5940,7 @@ function showTracklistManager(tracklistSection) {
         const tooltipElems = trackFormItem.querySelectorAll('[data-tooltip]');
         tooltipElems.forEach(elem => connectTooltipHoverIntent(elem));
 
-        trackForms.append(trackFormItem);
+        trackForms.appendChild(trackFormItem);
 
         // Show animation
         disableActiveFormElements(trackFormItem);
@@ -7670,6 +7662,14 @@ function checkFormChanges(trackFormList, inputs) {
     return isFormChanged;
 }
 
+function decideFocusAction(elem) {
+    if (keysInfoWin.hidden) {
+        elem.focus();
+    } else {
+        savedActiveElem = elem;
+    }
+}
+
 function correctText(str) {
     return str.trim()
         .replace(/\s+/g, ' ')
@@ -7699,14 +7699,6 @@ function sanitizePathSegment(str) {
 
 function clearTextFromHtml(str) {
     return str.replace(/<.*?>/gi, '');
-}
-
-function decideFocusAction(elem) {
-    if (keysInfoWin.hidden) {
-        elem.focus();
-    } else {
-        savedActiveElem = elem;
-    }
 }
 
 function toggleTracklistActivitiesFocusability(tracklistDetails) {
@@ -7767,22 +7759,22 @@ function calcTracklistsContainerMaxHeight() {
     let playerContainerBottom = playerContainer.getBoundingClientRect().bottom;
     let tracklistDtbsBottomHeight = playerContainerBottom - winHeight - siteFooterHeight;
 
-    if (
-        playerContainer.offsetHeight > winHeight &&
-        tracklistDtbsBottomHeight < 0
-    ) {
+    if (playerContainer.offsetHeight > winHeight && tracklistDtbsBottomHeight < 0) {
         maxTracklistsContainerHeight += tracklistDtbsBottomHeight;
     }
 
     tracklistsContainer.style.maxHeight = maxTracklistsContainerHeight + 'px';
     playerContainer.style.minHeight = '';
 
-    checkTracklistsContainerScrollability();
+    setTracklistsContainerScrollability();
 }
 
-function checkTracklistsContainerScrollability() {
+function setTracklistsContainerScrollability() {
     let isScrollable = tracklistsContainer.scrollHeight > tracklistsContainer.offsetHeight;
-    tracklistsContainer.classList.toggle('scrollable', isScrollable);
+    let trlsContScrollbarWidth = isScrollable ? `${scrollbarWidth}px` : '';
+
+    tracklistsContainer.style.setProperty('--tracklists-container-scrollbar-y-width', trlsContScrollbarWidth);
+    return isScrollable;
 }
 
 /////////////////////////////////
@@ -7887,8 +7879,6 @@ function createTracklistSection(tracklistId, tracklistData, isNewTracklist = fal
     tracklistSection.setAttribute('aria-controls', `trlDetails[${tracklistsNum}]`);
     tracklistSection.tabIndex = 0;
     trlSectionFragment.appendChild(tracklistSection);
-    
-    connectFocusHandler(tracklistSection);
 
     let menu = document.createElement('div');
     menu.className = 'tracklist-menu';
@@ -7925,9 +7915,6 @@ function createTracklistSection(tracklistId, tracklistData, isNewTracklist = fal
         </p>
     `;
     details.appendChild(header);
-
-    let headerCheckboxLabel = header.querySelector('label.design-proxy');
-    connectFocusHandler(headerCheckboxLabel);
 
     let detailsMain = document.createElement('main');
     detailsMain.className = 'details-main';
@@ -7979,9 +7966,6 @@ function createTracklistSection(tracklistId, tracklistData, isNewTracklist = fal
     `;
     details.appendChild(footer);
 
-    let manageTrklBtn = footer.querySelector('label[for^="edit-tracklist"].design-proxy');
-    connectFocusHandler(manageTrklBtn);
-
     return trlSectionFragment.firstElementChild;
 }
 
@@ -8008,9 +7992,6 @@ function createTracklistTracks(list, tracklistData) {
             </label> 
         `;
         list.appendChild(li);
-
-        let liCheckboxLabel = li.querySelector('label.design-proxy');
-        connectFocusHandler(liCheckboxLabel);
     });
 }
 
@@ -8146,8 +8127,6 @@ function createPlaylist(addedTracksData, clearPlaylist) {
             trackInfoBox.className = 'track-info-box';
             trackInfoBox.tabIndex = 0;
             track.appendChild(trackInfoBox);
-    
-            connectFocusHandler(trackInfoBox);
 
             let artistNameLim = document.createElement('div');
             artistNameLim.className = 'artist-name-limiter';
@@ -8489,7 +8468,7 @@ function connectKeyHandlers() {
         if (document.activeElement.matches('input[type="text"]')) return;
 
         // On/off volume
-        if ((event.code === 'KeyM' || (event.code === 'KeyR' && !event.shiftKey))) {
+        if (event.code === 'KeyM' || event.code === 'KeyR') {
             if (event.repeat) return;
             highlightButton(volumeBtn, event.code, volumeAction);
             return;
@@ -8616,11 +8595,12 @@ function connectKeyHandlers() {
     document.addEventListener('keydown', (event) => {
         if (event.shiftKey || event.ctrlKey || event.altKey || event.metaKey || event.repeat) return;
         if (event.code === 'KeyG') {
-            console.log(document.activeElement);
+            //console.log(document.activeElement);
             //console.log(highlightActiveElem);
             //console.log(eventManager.eventTypesByElement);
             //console.log(fileByFileInput);
             //console.log(tracklistsMapData);
+            console.log(tooltipHoverIntentByElem);
         }
     });
 }
@@ -8634,7 +8614,6 @@ runInitials();
 function runInitials() {
     initVisibleTracksCheckbox();
     initAddOptionsCheckbox();
-    initFocusHandlerConnections();
     initTooltipHoverIntentConnections();
     initPlayerChanges();
     createTracklistDatabase(tracklistsMapData);
