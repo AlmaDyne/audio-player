@@ -2,11 +2,11 @@ export const configStylish = `
 <template id="tmpl-stylish">
     <style>
         .row1 {
-            height: 10px;
+            height: 19px;
             text-align: center;
         }
         .row2 {
-            margin-bottom: 7px;
+            margin-bottom: 6px;
         }
         ::slotted(.btn-img-wrapper) {
             position: relative;
@@ -14,7 +14,7 @@ export const configStylish = `
         }
         ::slotted(#rewind),
         ::slotted(#forward) {
-            margin: 0 4px !important;
+            margin: 0 1px !important;
             vertical-align: middle;
         }
         .center-section {
@@ -23,7 +23,7 @@ export const configStylish = `
         }
         .indicator-wrapper {
             width: 75%;
-            margin: 8px auto;
+            margin: 11px auto;
         }
         ::slotted(#indicator) {
             height: 3px;

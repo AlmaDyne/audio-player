@@ -2,7 +2,7 @@ export const configClassic = `
 <template id="tmpl-classic">
     <style>
         .row1 {
-            margin-bottom: 16px;
+            margin-bottom: 6px;
         }
         .row2 {
             display: flex;
