@@ -3,11 +3,12 @@
     <head>
         <meta charset="utf-8">
         <meta name="description" content="">
-        <meta name="keywords" content="player, audio, music">
+        <meta name="keywords" content="audio, music, player, tracklist, playlist">
         <title>Audio Player</title>
         <link rel="icon" href="img/icons/favicon.png">
         <link rel="stylesheet" href="styles/fonts.css" type="text/css">
         <link rel="stylesheet" href="styles/style.css" type="text/css">
+        <link rel="stylesheet" href="styles/scrolling_cursors.css" type="text/css">
     </head>
 
     <body class="background-blur loading">
@@ -36,7 +37,7 @@
 
         <header></header>
         
-        <main id="player-container" aria-label="Player" data-initial>
+        <main id="audio-player-container" aria-label="Audio player" data-initial>
             <aside id="tracklist-database" class="container-left-side" aria-labelledby="tracklist-database-title">
                 <h3 id="tracklist-database-title"><span class="sheen-fx">Tracklists</span></h3>
                 
@@ -154,7 +155,7 @@
                 </section>
             </aside>
 
-            <div id="player" role="application">
+            <div id="audio-player" role="application">
                 <div class="selected-track">
                     <div id="start-info-display" hidden></div>
                     <div><span id="title-display" class="display"></span></div>
@@ -170,7 +171,7 @@
                         ><div class="digit">-</div>
                     </div>
                     <div id="time-range" data-tooltip>
-                        <div id="timeline"></div>
+                        <div id="time-line"></div>
                         <div id="time-bar" hidden></div>
                     </div>
                     <div id="duration" class="time-display">
@@ -182,7 +183,7 @@
                     </div>
                 </div>
 
-                <player-controls>
+                <audio-controls>
                     <i slot="play-pause" id="play-pause" class="icon-play" data-tooltip="Play/Pause"></i>
                     <i slot="stop" id="stop" class="icon-stop" data-tooltip="Stop"></i>
                     <i slot="rewind" id="rewind" class="icon-to-start" data-tooltip="Step back/Fast-rewind"></i>
@@ -202,11 +203,11 @@
                         <i id="volume" class="icon-volume" data-tooltip="Volume on/off"></i>
                         <div id="volume-range" data-tooltip>
                             <div class="inactive-range"></div>
-                            <div id="volumeline"></div>
+                            <div id="volume-line"></div>
                             <div id="volume-bar"></div>
                         </div>
                     </div>
-                </player-controls>
+                </audio-controls>
 
                 <div id="playlist-container">
                     <div class="playlist-scroll-arrow-box up">
@@ -252,18 +253,18 @@
                     </div>
                 </div>
 
-                <div class="player-footer">
-                    <div class="left-col">
+                <div class="audio-player-footer">
+                    <div class="column left">
                         <div class="config-wrapper">
                             <i id="configuration" class="icon-view-mode" data-tooltip="Buttons configuration"></i>
                         </div>
-                        <i id="coloring" class="icon-brush" data-tooltip="Player color"></i>
+                        <i id="coloring" class="icon-brush" data-tooltip="Audio player color"></i>
                         <i id="playlist-style" class="icon-align-center" data-tooltip="Playlist style"></i>
                     </div>
-                    <div class="center-col">
-                        <span class="version">v1.4.6</span>
+                    <div class="column center">
+                        <span class="version">v1.5.0</span>
                     </div>
-                    <div class="right-col">
+                    <div class="column right">
                         <i id="settings" class="icon-cog-circled" data-tooltip="Settings"></i>
                         <i id="info" class="icon-info" data-tooltip="Assigned keys info"></i>
                     </div>
@@ -323,7 +324,7 @@
                     <div class="scrollable-area" tabindex="0">
                         <h2 id="keys-info-title">Assigned Keys</h2>
 
-                        <!--Play/Pause-->
+                        <!--Play/pause-->
                         <section>
                             <div class="assigned-keys">
                                 <img src="img/keyboard_keys/w.png" alt="Key W">
@@ -376,7 +377,7 @@
                             </div>
                         </section>
 
-                        <!--Step Forward-->
+                        <!--Step forward-->
                         <section>
                             <div class="assigned-keys">
                                 <img src="img/keyboard_keys/d.png" alt="Key D">
@@ -404,7 +405,7 @@
                             </div>
                         </section>
 
-                        <!--Step Back-->
+                        <!--Step back-->
                         <section>
                             <div class="assigned-keys">
                                 <img src="img/keyboard_keys/a.png" alt="Key A">
@@ -435,7 +436,7 @@
                             </div>
                         </section>
 
-                        <!--Fast-Forward-->
+                        <!--Fast-forward-->
                         <section>
                             <div class="assigned-keys">
                                 <figure>
@@ -475,7 +476,7 @@
                             </div>
                         </section>
 
-                        <!--Fast-Rewind-->
+                        <!--Fast-rewind-->
                         <section>
                             <div class="assigned-keys">
                                 <figure>
@@ -514,7 +515,7 @@
                             </div>
                         </section>
 
-                        <!--Volume On/Off-->
+                        <!--Volume on/off-->
                         <section>
                             <div class="assigned-keys">
                                 <img src="img/keyboard_keys/r.png" alt="Key R">
@@ -538,7 +539,7 @@
                             </div>
                         </section>
 
-                        <!--Volume Increasing-->
+                        <!--Volume increasing-->
                         <section>
                             <div class="assigned-keys">
                                 <img src="img/keyboard_keys/shift-2.png" alt="Key Shift"
@@ -559,7 +560,7 @@
                             </div>
                         </section>
 
-                        <!--Volume Decreasing-->
+                        <!--Volume decreasing-->
                         <section>
                             <div class="assigned-keys">
                                 <img src="img/keyboard_keys/shift-2.png" alt="Key Shift"
@@ -665,7 +666,7 @@
                                             The <span class="emphase-1">repeat</span> button is <span class="emphase-3">
                                             enabled</span> in <span class="emphase-1">playlist</span> mode. When the 
                                             <span class="emphase-2">playlist</span> is <span class="emphase-3">
-                                            finished</span>, the player will <span class="emphase-1">stop playing and 
+                                            finished</span>, the audio player will <span class="emphase-1">stop playing and 
                                             return</span> to its <span class="emphase-3">initial</span> appearance.
                                         </p>
                                     </div>
@@ -692,7 +693,7 @@
                             </div>
                         </section>
 
-                        <!--Player buttons configuration-->
+                        <!--Audio player buttons configuration-->
                         <section>
                             <div class="assigned-keys">
                                 <img src="img/keyboard_keys/z.png" alt="Key Z">
@@ -713,7 +714,7 @@
                             </div>
                         </section>
 
-                        <!--Player Color-->
+                        <!--Player color-->
                         <section>
                             <div class="assigned-keys">
                                 <img src="img/keyboard_keys/x.png" alt="Key X">
@@ -733,7 +734,7 @@
                             </div>
                         </section>
 
-                        <!--Playlist Style-->
+                        <!--Playlist style-->
                         <section>
                             <div class="assigned-keys">
                                 <img src="img/keyboard_keys/c.png" alt="Key C">
@@ -788,7 +789,7 @@
                             </div>
                         </section>
 
-                        <!--Keys Info-->
+                        <!--Keys info-->
                         <section>
                             <div class="assigned-keys">
                                 <img src="img/keyboard_keys/i.png" alt="Key I">
@@ -809,7 +810,7 @@
                             </div>
                         </section>
 
-                        <!--Tracklist Database-->
+                        <!--Tracklist database-->
                         <section>
                             <div class="assigned-keys">
                                 <img src="img/keyboard_keys/t.png" alt="Key T">
@@ -836,7 +837,7 @@
                             </div>
                         </section>
 
-                        <!--Escape/Close button-->
+                        <!--Escape/close button-->
                         <section>
                             <div class="assigned-keys">
                                 <img src="img/keyboard_keys/esc.png" alt="Key Escape">
@@ -957,7 +958,7 @@
                                             elements <span class="emphase-3">are focused</span>, the specified <span class="emphase-2">key</span>
                                             combination will <span class="emphase-1">clear</span> the playlist and <span class="emphase-1">add</span>
                                             the <span class="emphase-2">selected</span> tracks from <span class="emphase-3">that tracklist</span>
-                                            to the player's <span class="emphase-3">playlist</span>.
+                                            to the audio player's <span class="emphase-3">playlist</span>.
                                         </p>
                                         <p>
                                             The corresponding <span class="emphase-2">button</span> works regardless of focus.
@@ -983,7 +984,7 @@
                                             When the database <span class="emphase-2">tracklist</span> or any of its active internal
                                             elements <span class="emphase-3">are focused</span>, the specified <span class="emphase-2">key</span>
                                             combination will <span class="emphase-1">add</span> the <span class="emphase-2">selected</span> tracks
-                                            from <span class="emphase-3">that tracklist</span> to the player's <span class="emphase-3">playlist</span>
+                                            from <span class="emphase-3">that tracklist</span> to the audio player's <span class="emphase-3">playlist</span>
                                             <span class="emphase-1">without clearing</span> it.
                                         </p>
                                         <p>
@@ -1166,7 +1167,7 @@
                             </div>
                         </section>
 
-                        <!--Clear Playlist-->
+                        <!--Clear playlist-->
                         <section>
                             <div class="assigned-keys">
                                 <img src="img/keyboard_keys/backspace.png" alt="Key Backspace">
@@ -1383,6 +1384,6 @@
             <p>All rights reserved<br>&#169; <time><script>document.write(new Date().getFullYear());</script></time></p>
         </footer>
             
-        <script src="scripts/player.js" type="module"></script>
+        <script src="scripts/audio_player.js" type="module"></script>
     </body>
 </html>
