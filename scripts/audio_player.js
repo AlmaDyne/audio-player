@@ -8531,9 +8531,9 @@ function connectKeyHandlers() {
         if (event.code === 'KeyG') {
             //console.log(document.activeElement);
             //console.log(highlightActiveElem);
-            console.log(eventManager.eventTypesByElement);
+            //console.log(eventManager.eventTypesByElement);
             //console.log(fileByFileInput);
-            //console.log(tracklistsMapData);
+            console.log(tracklistsMapData);
             //console.log(tooltipHoverIntentByElem);
         }
     });

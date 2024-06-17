@@ -295,7 +295,7 @@ tracklistsMapData.set('8cd1b10c-2984-48f9-91b2-0595440e477f', {
     )
 });*/
 
-createTestTracklist(0);
+createTestTracklist(10);
 
 function createTestTracklist(n) {
     let lgN = String(n).length;
@@ -313,7 +313,7 @@ function createTestTracklist(n) {
     }
     
     function TestTracklistObj(i) {
-        this.dateUpdated = (new Date(Date.now() + Number(i))).toISOString();
+        this.dateUpdated = (new Date(2000, 0, 1, 2, 0, 0, Number(i))).toISOString();
         this.tracklistTitle = `Test Tracklist ${i}`;
         this.cover = 'img/def_covers/no_cover_2.png';
         this.tracks = new Array();
