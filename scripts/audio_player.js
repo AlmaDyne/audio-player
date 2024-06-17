@@ -55,6 +55,7 @@ const playlistStyleBtn = document.getElementById('playlist-style');
 const settingsBtn = document.getElementById('settings');
 const keysInfoBtn = document.getElementById('info');
 const settingsArea = document.getElementById('settings-area');
+const settingsTitle = document.getElementById('settings-title');
 const curPlaylist = document.getElementById('current-playlist');
 const docScrollArrowsContainer = document.getElementById('document-scroll-arrows-container');
 const docScrollArrowUp = document.getElementById('document-scroll-arrow-up');
@@ -2952,6 +2953,7 @@ function tracklistDatabaseAction() {
     scrollDoc('left', 'smooth');
 
     tracklistDtbsBtn.classList.remove('enabled');
+    tracklistDtbsTitle.firstElementChild.classList.remove('run-sheen');
 
     if (tracklistDtbsBtn.classList.contains('waiting')) {
         runTracklistDatabaseAction();
@@ -3018,7 +3020,7 @@ function tracklistDatabaseAction() {
         audioPlayer.style.marginLeft = audioPlayerLeft + 'px';
         void audioPlayer.offsetWidth; // Causes a reflow
         audioPlayer.classList.add('smooth-moving');
-        audioPlayer.style.marginLeft = (canAutoChangeWidth && !settingsArea.hidden) ?
+        audioPlayer.style.marginLeft = canAutoChangeWidth && !settingsArea.hidden ?
             origDocWidth - settingsAreaWidth - audioPlayer.offsetWidth + 'px' :
             '';
 
@@ -3255,6 +3257,8 @@ function tracklistDatabaseAction() {
         tracklistDtbsBtn.classList.remove('waiting');
         tracklistDtbsBtn.classList.add('enabled');
 
+        tracklistDtbsTitle.firstElementChild.classList.add('run-sheen');
+
         enableTracklistsContainerScrollBar();
         checkPendingSettingsAction();
         checkStartInfoDisplaying();
@@ -3336,6 +3340,8 @@ window.showSettings = showSettings;
 window.hideSettings = hideSettings;
 
 function settingsAction() {
+    settingsTitle.firstElementChild.classList.remove('run-sheen');
+
     if (!settingsArea.hasAttribute('data-enabled')) {
         showSettings();
     } else {
@@ -3470,6 +3476,10 @@ function showSettings() {
 
         settingsArea.classList.add('active');
 
+        eventManager.addOnceEventListener(settingsArea, 'transitionend', function showSettingsTitleSheenFx() {
+            settingsTitle.firstElementChild.classList.add('run-sheen');
+        });
+
         if (selectedAudio) {
             highlightSelected(selectedAudio);
         } else { // If stop playback while the settings area is hidden,
@@ -3483,7 +3493,7 @@ function showSettings() {
             curPlaylist.scrollTo({
                 left: 0,
                 top: 0,
-                behavior: 'smooth'
+                behavior: 'instant'
             });
 
             activeElem.focus();
@@ -3497,6 +3507,7 @@ function hideSettings() {
     settingsArea.classList.remove('active');
 
     eventManager.clearEventHandlers(audioPlayer, 'transitionend');
+    eventManager.removeOnceEventListener(settingsArea, 'transitionend', 'showSettingsTitleSheenFx');
 
     if (highlightActiveElem) {
         if (highlightActiveElem.closest('#settings-area')) {
@@ -7526,7 +7537,6 @@ function showTracklistManager(tracklistSection) {
 }
 
 async function checkChangesBeforeHideTracklistManager() {
-    
     const trackForms = tracklistMgrWin.querySelector('.track-forms');
     const allInputs = Array.from(tracklistMgrWin.querySelectorAll('.scrollable-area input'));
     let isFormChanged = checkFormChanges(trackForms, allInputs);
@@ -8521,10 +8531,10 @@ function connectKeyHandlers() {
         if (event.code === 'KeyG') {
             //console.log(document.activeElement);
             //console.log(highlightActiveElem);
-            //console.log(eventManager.eventTypesByElement);
+            console.log(eventManager.eventTypesByElement);
             //console.log(fileByFileInput);
             //console.log(tracklistsMapData);
-            console.log(tooltipHoverIntentByElem);
+            //console.log(tooltipHoverIntentByElem);
         }
     });
 }

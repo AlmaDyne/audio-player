@@ -738,7 +738,7 @@ i {
 }
 #audio-player.show {
     transform-origin: 50% 0%;
-    animation: show-player 18ms cubic-bezier(0.3,1,0.5,1.4) forwards;
+    animation: show-player 1800ms cubic-bezier(0.3,1,0.5,1.4) forwards;
 }
 @keyframes show-player {
     0% {
@@ -795,6 +795,7 @@ i {
     width: 100%;
     height: inherit;
     font-size: 12pt;
+    line-height: 1.17;
     text-transform: none;
     color: var(--color-primary);
     overflow: auto;
@@ -2448,7 +2449,8 @@ audio-controls #volume-bar.active {
     transform: rotateZ(58deg) translate(-5em, 4.4em);
     opacity: 0;
 }
-.sheen-fx:hover::after {
+.sheen-fx:hover::after,
+.sheen-fx.run-sheen::after {
     animation: sheen 0.8s ease-in-out forwards;
 }
 @keyframes sheen {
