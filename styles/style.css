@@ -810,12 +810,15 @@ i {
 .selected-track > #start-info-display > .time {
     color: rgb(var(--common-color-emphase));
 }
-.selected-track > #start-info-display.finish-playlist {
+.selected-track > #start-info-display > .warning {
+    color: rgb(var(--common-color-warning));
+}
+/*.selected-track > #start-info-display.finish-playlist {
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 28pt;
-}
+}*/
 
 /* Track time info */
 .track-time-info {

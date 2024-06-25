@@ -1,4 +1,4 @@
-import { tracklistsMapData } from './tracklists.js';
+import { tracklistsJson } from './tracklists.js';
 import { randomNumber, getScrollbarWidth, eventManager } from './function_storage.js';
 import { configClassic } from './controls_config_classic.js';
 import { configStylish } from './controls_config_stylish.js';
@@ -151,6 +151,7 @@ let acceleration = false;
 let accelerationType = 'none';
 let removingTracksNum = 0;
 let userInitiatedFocus = true;
+let tracklistsCollection;
 
 defineProperty('selectedAudio', undefined);
 
@@ -1938,7 +1939,7 @@ visPlaylistArea.oncontextmenu = function(event) {
     }
     trackMenu.style.top = y + 'px';
 
-    let audio = event.target.closest('.track').querySelector('audio');
+    const audio = event.target.closest('.track').querySelector('audio');
 
     eventManager.addOnceEventListener(downloadLink, 'click', clickDownloadLink);
     document.addEventListener('pointerdown', removeTrackMenu);
@@ -5115,6 +5116,7 @@ function getSelectedTracksData(list) {
 ////////////////////////
 
 function showTracklistDeletion(tracklistSection) {
+    if (!tracklistsCollection) return;
     if (!tracklistMgrWin.hidden) return;
 
     document.getSelection().empty();
@@ -5132,7 +5134,7 @@ function showTracklistDeletion(tracklistSection) {
     const checkboxAll = tracklistDetails.querySelector('header.strip input[type="checkbox"]');
 
     let tracklistId = tracklistSection.dataset.id;
-    let tracklistData = tracklistsMapData.get(tracklistId);
+    let tracklistData = tracklistsCollection.get(tracklistId);
     let listLength = allTracklistTracks.length;
     let noTracksChecked = !checkboxAll.checked && !checkboxAll.classList.contains('partial-list');
     let shouldFocusTracklistSection = document.activeElem !== document.body;
@@ -5223,11 +5225,11 @@ function showTracklistDeletion(tracklistSection) {
             let isTracklistDeleted = await deleteTracklist(tracklistId);
             if (isTracklistDeleted) {
                 successDelTrackIds = new Set(pendDelTrackIds);
-                updateTracklistsMapData(); // Temporary code
+                updateTracklistsCollection(); // Temporary code
             }
         } else {
             successDelTrackIds = new Set( await deleteTracks(pendDelTrackIds) );
-            if (successDelTrackIds.size) updateTracklistsMapData(successDelTrackIds); // Temporary code
+            if (successDelTrackIds.size) updateTracklistsCollection(successDelTrackIds); // Temporary code
         }
 
         hideTracklistDeletion();
@@ -5389,7 +5391,7 @@ function showTracklistDeletion(tracklistSection) {
         let isTracklistDeleted = await deleteTracklist();
 
         if (isTracklistDeleted) {
-            updateTracklistsMapData(); // Temporary function
+            updateTracklistsCollection(); // Temporary function
             deleteTracklistSection();
         } else {
             hideTracklistDeletion();
@@ -5477,7 +5479,7 @@ function showTracklistDeletion(tracklistSection) {
             })
             .then(data => {
                 console.log('Tracklist deletion success:', data);
-                tracklistsMapData = data.tracklistsMapData;
+                tracklistsCollection = new Map(Object.entries(data.tracklistsCollection));
                 return true;
             })
             .catch(error => {
@@ -5489,7 +5491,7 @@ function showTracklistDeletion(tracklistSection) {
         return new Promise(resolve => setTimeout(() => resolve(true), 1e3)); // Temporary code
     }
 
-    function updateTracklistsMapData(delTrackIds = null) { // Temporary code
+    function updateTracklistsCollection(delTrackIds = null) { // Temporary code
         if (delTrackIds) {
             let restTracksData = [];
 
@@ -5507,9 +5509,9 @@ function showTracklistDeletion(tracklistSection) {
 
             console.log(tracklistData);
         } else {
-            tracklistsMapData.delete(tracklistId);
+            tracklistsCollection.delete(tracklistId);
             
-            console.log(tracklistsMapData);
+            console.log(tracklistsCollection);
         }
     }
 
@@ -5564,6 +5566,7 @@ function tracklistManagerAction(tracklistSection) {
 }
 
 function showTracklistManager(tracklistSection) {
+    if (!tracklistsCollection) return;
     if (!tracklistDelWin.hidden) return;
 
     document.getSelection().empty();
@@ -5626,7 +5629,7 @@ function showTracklistManager(tracklistSection) {
         tracklistDetails = tracklistSection.querySelector('.tracklist-details');
         list = tracklistDetails.querySelector('.list');
         tracklistId = tracklistSection.dataset.id;
-        tracklistData = tracklistsMapData.get(tracklistId);
+        tracklistData = tracklistsCollection.get(tracklistId);
         let coverSrc = tracklistData.cover;
         let baseUrl = window.location.protocol + '//' + window.location.host + '/';
         let coverUrl = null;
@@ -6369,7 +6372,7 @@ function showTracklistManager(tracklistSection) {
         
         if (curValue) {
             if (textInput === tracklistTitleInput) { // Tracklist title
-                isValid = ![...tracklistsMapData.values()]
+                isValid = ![...tracklistsCollection.values()]
                     .some(data => data.tracklistTitle === curValue && data.tracklistTitle !== origValue);
             } else { // Artist name and track title
                 isValid = true;
@@ -6562,7 +6565,7 @@ function showTracklistManager(tracklistSection) {
                 }
             }
 
-            updateTracklistsMapData(); // Temporary code
+            updateTracklistsCollection(); // Temporary code
             okBtn.disabled = false;
             return;
         }
@@ -6663,7 +6666,7 @@ function showTracklistManager(tracklistSection) {
                 })
                 .then(data => {
                     console.log('Tracklist deletion success:', data);
-                    tracklistsMapData = data.tracklistsMapData;
+                    tracklistsCollection = new Map(Object.entries(data.tracklistsCollection));
                     tracklistForm.classList.remove('deleting');
                     tracklistForm.classList.add('success-deleted');
                     trackFormItems.forEach(trackFormItem => {
@@ -6751,10 +6754,10 @@ function showTracklistManager(tracklistSection) {
                             tracklistForm.classList.add('success');
                             if (trlUploadFormRow) trlUploadFormRow.querySelector('.state > .ok').hidden = false;
 
-                            tracklistsMapData = data.tracklistsMapData;
+                            tracklistsCollection = new Map(Object.entries(data.tracklistsCollection));
                             if (action === 'create') {
                                 tracklistId = data.tracklistId;
-                                tracklistData = tracklistsMapData.get(tracklistId);
+                                tracklistData = tracklistsCollection.get(tracklistId);
                             }
 
                             resolve();
@@ -6834,7 +6837,7 @@ function showTracklistManager(tracklistSection) {
                         if (action === 'create') {
                             tracklistId = crypto.randomUUID();
                             tracklistData = {};
-                            tracklistsMapData.set(tracklistId, tracklistData);
+                            tracklistsCollection.set(tracklistId, tracklistData);
                         }
                         tracklistForm.classList.add('success');
                         if (trlUploadFormRow) trlUploadFormRow.querySelector('.state > .ok').hidden = false;
@@ -6885,7 +6888,7 @@ function showTracklistManager(tracklistSection) {
                         })
                         .then(data => {
                             console.log('Track ${trackOrder} deletion successful:', data);
-                            tracklistsMapData = data.tracklistsMapData;
+                            tracklistsCollection = new Map(Object.entries(data.tracklistsCollection));
                             trackFormItem.classList.add('success');
                             trackFormItem.querySelector('.status-text').textContent = 'has been deleted';
                             return { trackId, trackState: 'deleted' };
@@ -6976,7 +6979,7 @@ function showTracklistManager(tracklistSection) {
                                     trackFormItem.classList.add('success');
                                     if (trackUploadFormRow) trackUploadFormRow.querySelector('.state > .ok').hidden = false;
 
-                                    tracklistsMapData = data.tracklistsMapData;
+                                    tracklistsCollection = new Map(Object.entries(data.tracklistsCollection));
 
                                     resolve({ trackId: isExisting ? trackId : data.trackId, trackState });
                                 } else {
@@ -7065,11 +7068,11 @@ function showTracklistManager(tracklistSection) {
             totalUploadRow.querySelector(`.state > .${completeIconClass}`).hidden = false;
         }
 
-        function updateTracklistsMapData() { // Temporary code
+        function updateTracklistsCollection() { // Temporary code
             // Tracklist changes
             if (shouldDeleteTracklist) {
-                tracklistsMapData.delete(tracklistId);
-                console.log(tracklistsMapData);
+                tracklistsCollection.delete(tracklistId);
+                console.log(tracklistsCollection);
                 return;
             }
 
@@ -7135,7 +7138,7 @@ function showTracklistManager(tracklistSection) {
                 .sort((a, b) => a.order - b.order)
                 .forEach((trackData, idx) => trackData.order = idx + 1);
 
-            console.log(tracklistsMapData.get(tracklistId));
+            console.log(tracklistsCollection.get(tracklistId));
 
             function changeTextData(trackData, input) {
                 let textValue = correctText(input.value);
@@ -7217,7 +7220,7 @@ function showTracklistManager(tracklistSection) {
                     return;
                 }
 
-                sortedTracklists = Array.from(tracklistsMapData.entries()).sort(sortFunctions[trlsSortOrder]);
+                sortedTracklists = Array.from(tracklistsCollection.entries()).sort(sortFunctions[trlsSortOrder]);
                 newTracklistIdx = sortedTracklists.findIndex(([trlId, ]) => trlId === tracklistId);
                 
                 if (action === 'edit') {
@@ -7721,6 +7724,16 @@ const sortFunctions = {
 let trlsSortOrder = localStorage.getItem('tracklists_sort_order');
 let tracklistsNum = 0;
 
+function getTracklistsCollection() {
+    return fetch('scripts/tracklists.json')
+        .then(response => response.json())
+        .then(data => tracklistsCollection = new Map(Object.entries(data)))
+        .catch(error => console.error('Error loading tracklists:', error));
+
+    /*tracklistsCollection = new Map(Object.entries(JSON.parse(tracklistsJson)));
+    return Promise.resolve();*/
+}
+
 function createTracklistDatabase() {
     let trlsSortOrderIdx = trlsSortOrderBank.indexOf(trlsSortOrder);
     sortAndCreateTracklists(trlsSortOrderIdx);
@@ -7757,6 +7770,8 @@ function sortAndCreateTracklists(idx) {
 
     console.log('tracklist sort order = ' + trlsSortOrder);
 
+    if (!tracklistsCollection) return;
+
     if (!tracklistDatabase.hasAttribute('data-ready')) {
         createSortedTracklists();
     } else {
@@ -7788,7 +7803,7 @@ function sortAndCreateTracklists(idx) {
     }
 
     function createSortedTracklists() {
-        Array.from(tracklistsMapData.entries())
+        Array.from(tracklistsCollection.entries())
             .sort(sortFunctions[trlsSortOrder])
             .forEach(([key, value]) => {
                 let tracklistSection = createTracklistSection(key, value);
@@ -8198,7 +8213,7 @@ function showLastPlayedTrackInfo() {
                 setTimeout(() => startInfoDisplay.hidden = true, transTime);
             }, 1750);
         }, 1750 + transTime);
-    }, 250);
+    }, 750);
 }
 
 function saveLastPlayedAudioInfo(audio) {
@@ -8533,7 +8548,7 @@ function connectKeyHandlers() {
             //console.log(highlightActiveElem);
             //console.log(eventManager.eventTypesByElement);
             //console.log(fileByFileInput);
-            console.log(tracklistsMapData);
+            console.log(tracklistsCollection);
             //console.log(tooltipHoverIntentByElem);
         }
     });
@@ -8550,7 +8565,6 @@ function runInitials() {
     initAddOptionsCheckbox();
     initTooltipHoverIntentConnections();
     initAudioPlayerChanges();
-    createTracklistDatabase(tracklistsMapData);
 
     function initAudioPlayerChanges() {
         changeAudioControlsConfiguration(configsBank.indexOf(config));
@@ -8568,8 +8582,12 @@ eventManager.addOnceEventListener(window, 'load', hidePreload);
 function hidePreload() {
     console.log('page load time = ' + performance.now());
 
-    let hidePreloadDelay = (performance.now() < 500) ? (500 - performance.now()) : 0;
-    setTimeout(() => {
+    const waitTime = 500;
+    let hidePreloadDelay = performance.now() < waitTime ? (waitTime - performance.now()) : 0;
+    setTimeout(async () => {
+        await getTracklistsCollection();
+        createTracklistDatabase();
+
         preloader.classList.remove('active');
     
         eventManager.addOnceEventListener(preloader, 'transitionend', () => {
@@ -8591,7 +8609,15 @@ function hidePreload() {
                     tracklistDatabaseAction();
 
                     eventManager.addOnceEventListener(tracklistDatabase, 'endTacklistDtbsAnimation', () => {
-                        setTimeout(showLastPlayedTrackInfo, 200);
+                        if (tracklistsCollection) {
+                            showLastPlayedTrackInfo();
+                        } else {
+                            startInfoDisplay.innerHTML = `Tracklists are
+                                <span class="warning">not available</span>
+                                at the moment.`;
+                            startInfoDisplay.hidden = false;
+                            setTimeout(() => startInfoDisplay.style.opacity = 1, 750);
+                        }
                     });
                 }, timeDelay);
             });

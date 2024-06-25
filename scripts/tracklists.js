@@ -1,8 +1,10 @@
-export const tracklistsMapData = new Map();
+export { tracklistsJson };
+
+const tracklistsCollection = new Map();
 
 // https://almadyne.github.io/audio-player/
 
-tracklistsMapData.set('be2c049d-11d8-4060-8595-c05cb2e85930', {
+tracklistsCollection.set('be2c049d-11d8-4060-8595-c05cb2e85930', {
     dateUpdated: '2024-05-03T22:49:23.653Z',
 
     tracklistTitle: 'Experiments and Parodies',
@@ -69,7 +71,7 @@ tracklistsMapData.set('be2c049d-11d8-4060-8595-c05cb2e85930', {
     )
 });
 
-tracklistsMapData.set('75a7e1f4-2755-4e16-913e-d7cb23508ef2', {
+tracklistsCollection.set('75a7e1f4-2755-4e16-913e-d7cb23508ef2', {
     dateUpdated: '2024-05-03T22:50:26.112Z',
     
     tracklistTitle: 'Dmitry Miroshkin - Orchestra/Ethno/Folk',
@@ -122,7 +124,7 @@ tracklistsMapData.set('75a7e1f4-2755-4e16-913e-d7cb23508ef2', {
     )
 });
 
-tracklistsMapData.set('c06332da-5389-4b08-860d-b6d9a8c529ed', {
+tracklistsCollection.set('c06332da-5389-4b08-860d-b6d9a8c529ed', {
     dateUpdated: '2024-05-03T22:51:19.551Z',
     
     tracklistTitle: 'Dmitry Miroshkin - Piano Music',
@@ -168,7 +170,7 @@ tracklistsMapData.set('c06332da-5389-4b08-860d-b6d9a8c529ed', {
     )
 });
 
-tracklistsMapData.set('8cd1b10c-2984-48f9-91b2-0595440e477f', {
+tracklistsCollection.set('8cd1b10c-2984-48f9-91b2-0595440e477f', {
     dateUpdated: '2024-05-03T22:52:01.109Z',
     
     tracklistTitle: 'Dmitry Miroshkin & Anthony Driverson - Responses (2020)',
@@ -277,7 +279,7 @@ tracklistsMapData.set('8cd1b10c-2984-48f9-91b2-0595440e477f', {
     )
 });
 
-/*tracklistsMapData.set('', {
+/*tracklistsCollection.set('', {
     dateUpdated: '',
     
     tracklistTitle: '',
@@ -309,7 +311,7 @@ function createTestTracklist(n) {
             }
         }
 
-        tracklistsMapData.set(crypto.randomUUID(), new TestTracklistObj(i));
+        tracklistsCollection.set(crypto.randomUUID(), new TestTracklistObj(i));
     }
     
     function TestTracklistObj(i) {
@@ -329,3 +331,9 @@ function createTestTracklist(n) {
         }
     }
 }
+
+const tracklistsJson = JSON.stringify( Object.fromEntries(tracklistsCollection), null, 4 );
+
+/*navigator.clipboard.writeText(tracklistsJson)
+    .then(() => console.log('tracklistsJson was copied successfully'))
+    .catch(err => console.error('Error during tracklistsJson copying:', err));*/
