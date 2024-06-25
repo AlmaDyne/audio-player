@@ -7729,9 +7729,6 @@ function getTracklistsCollection() {
         .then(response => response.json())
         .then(data => tracklistsCollection = new Map(Object.entries(data)))
         .catch(error => console.error('Error loading tracklists:', error));
-
-    /*tracklistsCollection = new Map(Object.entries(JSON.parse(tracklistsJson)));
-    return Promise.resolve();*/
 }
 
 function createTracklistDatabase() {
